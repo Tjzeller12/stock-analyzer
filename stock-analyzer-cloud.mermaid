@@ -1,0 +1,40 @@
+graph TD
+    A[Client Browser] -->|HTTPS| B[AWS Elastic Load Balancer]
+    B --> C[EC2 Instance 1]
+    B --> D[EC2 Instance 2]
+    B --> E[EC2 Instance N]
+    
+    subgraph "AWS EC2 Instances"
+        C & D & E -->|Host| F[React Frontend]
+    end
+    
+    F -->|API Calls| G[Flask API on ECS]
+    
+    subgraph "AWS Services"
+        G -->|Authenticate| H[Cognito]
+        G -->|Process Data| I[Stock Analysis Service]
+        I <-->|Query/Update| J[(RDS Database)]
+        I -->|Fetch Data| K[External Stock API]
+        I -->|Store/Retrieve Data| L[S3 Bucket]
+        M[CloudWatch] -.->|Monitor| B & C & D & E & G & H & I & J & L
+    end
+    
+    subgraph "Database Contents"
+        J --> N[User Accounts]
+        J --> O[User Preferences]
+        J --> P[Stock Data]
+        J --> Q[Analysis Results]
+        J --> R[User Portfolios]
+    end
+    
+    subgraph "Stock Analysis Service Threads"
+        I --> S[Data Fetcher Thread]
+        I --> T[Data Processor Thread]
+        I --> U[Alert Generator Thread]
+    end
+
+    style N fill:#f9f,stroke:#333,stroke-width:2px
+    style O fill:#f9f,stroke:#333,stroke-width:2px
+    style P fill:#f9f,stroke:#333,stroke-width:2px
+    style Q fill:#f9f,stroke:#333,stroke-width:2px
+    style R fill:#f9f,stroke:#333,stroke-width:2px
