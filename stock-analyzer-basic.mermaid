@@ -1,0 +1,38 @@
+graph TD
+    A[Client Browser] -->|HTTP/HTTPS| B[Load Balancer]
+    B --> C[Web Server 1]
+    B --> D[Web Server 2]
+    B --> E[Web Server N]
+    
+    subgraph "Web Servers"
+        C & D & E -->|Host| F[React Frontend]
+    end
+    
+    F -->|API Calls| G[Flask API]
+    
+    subgraph "Backend Services"
+        G -->|Authenticate| H[Auth Service]
+        G -->|Process Data| I[Stock Analysis Service]
+        I <-->|Query/Update| J[(Database)]
+        I -->|Fetch Data| K[External Stock API]
+    end
+    
+    subgraph "Database Contents"
+        J --> L[User Accounts]
+        J --> M[User Preferences]
+        J --> N[Stock Data]
+        J --> O[Analysis Results]
+        J --> P[User Portfolios]
+    end
+    
+    subgraph "Stock Analysis Service Threads"
+        I --> Q[Data Fetcher Thread]
+        I --> R[Data Processor Thread]
+        I --> S[Alert Generator Thread]
+    end
+
+    style L fill:#f9f,stroke:#333,stroke-width:2px
+    style M fill:#f9f,stroke:#333,stroke-width:2px
+    style N fill:#f9f,stroke:#333,stroke-width:2px
+    style O fill:#f9f,stroke:#333,stroke-width:2px
+    style P fill:#f9f,stroke:#333,stroke-width:2px

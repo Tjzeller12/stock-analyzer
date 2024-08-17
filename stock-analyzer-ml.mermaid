@@ -1,0 +1,54 @@
+graph TD
+    A[Client Browser] -->|HTTPS| B[AWS Elastic Load Balancer]
+    B --> C[EC2 Instance 1]
+    B --> D[EC2 Instance 2]
+    B --> E[EC2 Instance N]
+    
+    subgraph "AWS EC2 Instances"
+        C & D & E -->|Host| F[React Frontend]
+    end
+    
+    F -->|API Calls| G[Flask API on ECS]
+    
+    subgraph "AWS Services"
+        G -->|Authenticate| H[Cognito]
+        G -->|Process Data| I[Stock Analysis Service]
+        I <-->|Query/Update| J[(RDS Database)]
+        I <-->|Get Predictions| K[SageMaker ML Model]
+        I -->|Fetch Data| L[External Stock API]
+        I -->|Store/Retrieve Data| M[S3 Bucket]
+        N[CloudWatch] -.->|Monitor| B & C & D & E & G & H & I & J & K & M
+    end
+    
+    subgraph "Database Contents"
+        J --> O[User Accounts]
+        J --> P[User Preferences]
+        J --> Q[Stock Data]
+        J --> R[Analysis Results]
+        J --> S[User Portfolios]
+    end
+    
+    subgraph "Stock Analysis Service Threads"
+        I --> T[Data Fetcher Thread]
+        I --> U[Data Processor Thread]
+        I --> V[Alert Generator Thread]
+    end
+
+    %% Color coding
+    style B fill:#FFA500,stroke:#333,stroke-width:2px
+    style C fill:#FFA500,stroke:#333,stroke-width:2px
+    style D fill:#FFA500,stroke:#333,stroke-width:2px
+    style E fill:#FFA500,stroke:#333,stroke-width:2px
+    style G fill:#FFA500,stroke:#333,stroke-width:2px
+    style H fill:#FFA500,stroke:#333,stroke-width:2px
+    style J fill:#FFA500,stroke:#333,stroke-width:2px
+    style M fill:#FFA500,stroke:#333,stroke-width:2px
+    style N fill:#FFA500,stroke:#333,stroke-width:2px
+    
+    style K fill:#90EE90,stroke:#333,stroke-width:2px
+
+    style O fill:#f9f,stroke:#333,stroke-width:2px
+    style P fill:#f9f,stroke:#333,stroke-width:2px
+    style Q fill:#f9f,stroke:#333,stroke-width:2px
+    style R fill:#f9f,stroke:#333,stroke-width:2px
+    style S fill:#f9f,stroke:#333,stroke-width:2px
