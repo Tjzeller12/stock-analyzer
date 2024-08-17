@@ -1,40 +1,26 @@
-import sys
-print(f"Python version: {sys.version}")
-print(f"Python path: {sys.executable}")
+# nube comment lol. Use 'source venv/bin/activate' to activate virtual environment
+# use python app.py when in server directory to run app
+# If using wrong python, run the start_project shell script
+from flask import Flask, jsonify
+from flask_cors import CORS
+import os
+from dotenv import load_dotenv
+import requests
 
-try:
-    import flask
-    print(f"Flask version: {flask.__version__}")
-except ImportError as e:
-    print(f"Failed to import Flask: {e}")
+load_dotenv()
 
-try:
-    import flask_cors
-    print(f"Flask-CORS version: {flask_cors.__version__}")
-except ImportError as e:
-    print(f"Failed to import Flask-CORS: {e}")
+app = Flask(__name__)
+CORS(app)
 
-try:
-    import dotenv
-    print(f"python-dotenv is installed")
-except ImportError as e:
-    print(f"Failed to import python-dotenv: {e}")
+@app.route('/api/hello', methods=['GET'])
+def hello_world():
+    return get_stock_data('MSFT')
 
-try:
-    from flask import Flask, jsonify
-    from flask_cors import CORS
-    from dotenv import load_dotenv
+def get_stock_data(symbol):
+    url = 'https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=' + symbol +'&interval=5min&apikey=Q4DQGD7ASEM0INDB'
+    req = requests.get(url)
+    data = req.json()
+    return data
 
-    load_dotenv()
-
-    app = Flask(__name__)
-    CORS(app)
-
-    @app.route('/api/hello', methods=['GET'])
-    def hello_world():
-        return jsonify({"message": "Hello from Flask!"})
-
-    if __name__ == '__main__':
-        app.run(debug=True)
-except Exception as e:
-    print(f"Error setting up the Flask app: {e}")
+if __name__ == '__main__':
+    app.run(debug=True)
