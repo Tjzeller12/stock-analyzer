@@ -1,0 +1,76 @@
+/* Main container for the login page */
+.login-container {
+  display: flex;
+  flex-direction: column; /* Stacks child elements vertically */
+  justify-content: center; /* Centers content vertically */
+  align-items: center; /* Centers content horizontally */
+  padding: 20px;
+  font-family: Arial, Helvetica, sans-serif;
+  min-height: 100vh; /* Ensures full viewport height */
+  background-color: #141414;
+  color: #ffffff;
+}
+
+/* Styling for the logo or main image */
+.login-container img {
+  max-height: 200px;
+  width: auto;
+  margin-bottom: 20px;
+}
+
+/* Main heading style */
+.login-container h1 {
+  font-size: 24px;
+  color: #06a94d;
+}
+
+/* Form container style */
+.login-container form {
+  display: flex;
+  flex-direction: column; /* Stacks form elements vertically */
+  width: 100%;
+  max-width: 400px; /* Limits form width on larger screens */
+  margin-top: 20px;
+  color: #08c05e;
+}
+
+/* Input field style */
+.login-container input {
+  padding: 10px;
+  margin-bottom: 10px;
+  font-size: 16px;
+  border: 1px solid #333;
+  border-radius: 5px;
+}
+
+/* Button style */
+.login-container button {
+  padding: 10px 20px;
+  background-color: #06a94d;
+  color: #141414;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+/* Button hover effect */
+.login-container button:hover {
+  transform: scale(1.025); /* Slightly enlarges button on hover */
+  background-color: #048d41;
+}
+
+/* Style for additional text (e.g., "Forgot password?") */
+.login-container p {
+  margin-top: 20px;
+  text-align: center;
+}
+
+/* Link style within paragraphs */
+.login-container p a {
+  color: #06a94d;
+}
+
+/* Link hover effect */
+.login-container p a:hover {
+  text-decoration: underline;
+}
