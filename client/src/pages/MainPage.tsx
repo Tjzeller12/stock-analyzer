@@ -50,25 +50,7 @@ const MainPage: React.FC = () => {
         </form>
       </div>
 
-      {/* Main content area with Portfolio and News buttons */}
-      <div className="portfolio-news-container">
-        <button
-          className="portfolio-button"
-          onClick={() => handleButtonClick("/portfolio")}
-        >
-          Portfolio
-          <div className="graph-placeholder"></div>
-        </button>
-        <button
-          className="news-button"
-          onClick={() => handleButtonClick("/news")}
-        >
-          News
-          <div className="news-placeholder"></div>
-        </button>
-      </div>
-
-      {/* Navigation buttons for additional features */}
+      {/* Navigation buttons */}
       <div className="button-container">
         {[
           { label: "Profile", path: "/profile" },
@@ -85,6 +67,24 @@ const MainPage: React.FC = () => {
             {button.label}
           </button>
         ))}
+      </div>
+
+      {/* Main content area with Portfolio and News buttons */}
+      <div className="portfolio-news-container">
+        <button
+          className="portfolio-button"
+          onClick={() => handleButtonClick("/portfolio")}
+        >
+          Portfolio
+          <div className="graph-placeholder"></div>
+        </button>
+        <button
+          className="news-button"
+          onClick={() => handleButtonClick("/news")}
+        >
+          News
+          <div className="news-placeholder"></div>
+        </button>
       </div>
     </div>
   );
