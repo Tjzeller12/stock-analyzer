@@ -1,30 +1,32 @@
-import "./LoginPage.css";
+import "./RegisterPage.css";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../resources/Stock_Market_Logo.png";
 
-// LoginPage component for user authentication
-const LoginPage: React.FC = () => {
+// RegisterPage component for user authentication
+const RegisterPage: React.FC = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [password_verify, checkPassword] = useState("");
+
   const navigate = useNavigate();
 
   // Handle form submission
-  const handleLogin = (e: React.FormEvent) => {
+  const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
     // TODO: Implement actual authentication logic
-    console.log("Login attempt with:", username, password);
+    console.log("Register attempt with:", username, password);
     navigate("/main");
   };
 
   return (
     <div>
-      <div className="login-container">
+      <div className="register-container">
         <h1>Stock Market Analyzer</h1>
         <img src={logo} alt="Stock Market Logo" />
-        <h2>Login</h2>
-        <form onSubmit={handleLogin}>
+        <h2>Register</h2>
+        <form onSubmit={handleRegister}>
           <div>
             <label htmlFor="username">Username:</label>
             <input
@@ -51,9 +53,18 @@ const LoginPage: React.FC = () => {
               {showPassword ? "Hide Password" : "Show Password"}
             </button>
           </div>
-          <button type="submit">Login</button>
+          <div>
+            <label htmlFor="password_verify">Re-Enter Password:</label>
+            <input
+              type="password"
+              id="password_verify"
+              value={password_verify}
+              onChange={(e) => checkPassword(e.target.value)}
+            />
+          </div>
+          <button type="submit">Register</button>
           <button type="button" onClick={() => navigate("/register")}>
-            Goto Register Page
+            Goto Login Page
           </button>
         </form>
       </div>
@@ -61,4 +72,4 @@ const LoginPage: React.FC = () => {
   );
 };
 
-export default LoginPage;
+export default RegisterPage;
