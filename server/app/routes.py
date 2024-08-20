@@ -1,8 +1,9 @@
 from flask import jsonify, Blueprint
 from app import db
-from app.models import User
+from app.models import User, Portfolio, Wishlist
 import requests
 from sqlalchemy import text
+from flask_bcrypt import Bcrypt
 
 # Blueprint orgonizes routes.
 bp = Blueprint('main', __name__)
@@ -18,20 +19,10 @@ def get_stock_data(symbol):
     #Return the stock data
     return data
 
-# Test route will change very soon
-@bp.route('/home', methods=['GET'])
-def data_test():
-    #Create two user objects
-    user_one = User(username='thomas', email='thomaszeller0@gmail.com', password_hash='123', longterm_investor=True)
-    user_two = User(username='michael', email='michaelzllr1@gmail.com', password_hash='124', longterm_investor=False)
-    #Add the users to the user table
-    db.session.add(user_one)
-    db.session.add(user_two)
-    db.session.commit()
-    #Print the entire user table
-    print(User.query.all())
-    #Test the get_stock_data method
-    return jsonify(get_stock_data('MSFT'))
+# Main route
+@bp.route('/', methods=['GET'])
+def index():
+    return "Welcome to the main page"
 
 # test route so we can check if we succesfully connected to the database
 @bp.route('/test_db')
