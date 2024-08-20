@@ -1,8 +1,7 @@
 import "./MainPage.css";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import logo from "./Stock_Market_Logo.png";
-
+import logo from "../resources/Stock_Market_Logo.png";
 // MainPage component: Serves as the dashboard for the stock analyzer application
 const MainPage: React.FC = () => {
   const navigate = useNavigate();
