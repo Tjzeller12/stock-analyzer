@@ -2,6 +2,7 @@ import "./LoginPage.css";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../resources/Stock_Market_Logo.png";
+import axios from "axios";
 
 // LoginPage component for user authentication
 const LoginPage: React.FC = () => {
@@ -11,21 +12,30 @@ const LoginPage: React.FC = () => {
   const navigate = useNavigate();
 
   // Handle form submission
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement actual authentication logic
+    try {
+      const response = await axios.post('http://your-backend-url/login', {
+        username,
+        password,
+      });
+      console.log(response.data);
+      navigate("/main");
+    } catch (error) {
+      console.error("Login failed:", error);
+    }
     console.log("Login attempt with:", username, password);
-    navigate("/main");
+    
   };
 
   return (
-    <div>
+    
       <div className="login-container">
         <h1>Stock Market Analyzer</h1>
         <img src={logo} alt="Stock Market Logo" />
         <h2>Login</h2>
         <form onSubmit={handleLogin}>
-          <div>
+          
             <label htmlFor="username">Username:</label>
             <input
               type="text"
@@ -33,31 +43,30 @@ const LoginPage: React.FC = () => {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
             />
-          </div>
-          <div>
-            <label htmlFor="password">Password:</label>
-            <input
-              type={showPassword ? "text" : "password"}
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-            <button
-              type="button"
-              onMouseDown={() => setShowPassword(true)}
-              onMouseUp={() => setShowPassword(false)}
-              onMouseLeave={() => setShowPassword(false)}
-            >
-              {showPassword ? "Hide Password" : "Show Password"}
-            </button>
-          </div>
+          <label htmlFor="username">Password:</label>
+          <div className="password-container">
+          <input
+            type={showPassword ? "text" : "password"}
+            id="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <button
+            type="button"
+            onMouseDown={() => setShowPassword(true)}
+            onMouseUp={() => setShowPassword(false)}
+            onMouseLeave={() => setShowPassword(false)}
+          >
+            {showPassword ? "Hide Password" : "Show Password"}
+          </button>
+        </div>
           <button type="submit">Login</button>
           <button type="button" onClick={() => navigate("/register")}>
             Goto Register Page
           </button>
         </form>
       </div>
-    </div>
+    
   );
 };
 

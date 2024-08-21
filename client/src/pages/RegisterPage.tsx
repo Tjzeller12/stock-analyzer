@@ -1,73 +1,98 @@
 import "./RegisterPage.css";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import logo from "../resources/Stock_Market_Logo.png";
 
 // RegisterPage component for user authentication
 const RegisterPage: React.FC = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("");
+  const [ltInvestor, setLtInvestor] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [password_verify, checkPassword] = useState("");
 
   const navigate = useNavigate();
 
   // Handle form submission
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement actual authentication logic
-    console.log("Register attempt with:", username, password);
-    navigate("/main");
+    try {
+      const response = await axios.post("http://localhost/register", {
+        username,
+        password,
+        email,
+        longterm_investor: ltInvestor,
+      });
+      console.log(response.data);
+      navigate("/main");
+    } catch (error) {
+      console.error("Regisration failed:", error);
+    }
+  };
+
+  const handleToggle = () => {
+    setLtInvestor(prevState => !prevState);
   };
 
   return (
-    <div>
-      <div className="register-container">
-        <h1>Stock Market Analyzer</h1>
-        <img src={logo} alt="Stock Market Logo" />
-        <h2>Register</h2>
-        <form onSubmit={handleRegister}>
-          <div>
-            <label htmlFor="username">Username:</label>
-            <input
-              type="text"
-              id="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-            />
-          </div>
-          <div>
-            <label htmlFor="password">Password:</label>
-            <input
-              type={showPassword ? "text" : "password"}
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-            <button
-              type="button"
-              onMouseDown={() => setShowPassword(true)}
-              onMouseUp={() => setShowPassword(false)}
-              onMouseLeave={() => setShowPassword(false)}
-            >
-              {showPassword ? "Hide Password" : "Show Password"}
-            </button>
-          </div>
-          <div>
-            <label htmlFor="password_verify">Re-Enter Password:</label>
-            <input
-              type="password"
-              id="password_verify"
-              value={password_verify}
-              onChange={(e) => checkPassword(e.target.value)}
-            />
-          </div>
-          <button type="submit">Register</button>
-          <button type="button" onClick={() => navigate("/register")}>
-            Goto Login Page
+    <div className="register-container">
+      <h1>Stock Market Analyzer</h1>
+      <img src={logo} alt="Stock Market Logo" />
+      <h2>Register</h2>
+      <form onSubmit={handleRegister}>
+        <label htmlFor="email">Email:</label>
+        <input
+          type="email"
+          id="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+
+        <label htmlFor="username">Username:</label>
+        <input
+          type="text"
+          id="username"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+        />
+        <label htmlFor="password">Password:</label>
+        <div className="password-container">
+          <input
+            type={showPassword ? "text" : "password"}
+            id="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <button
+            type="button"
+            onMouseDown={() => setShowPassword(true)}
+            onMouseUp={() => setShowPassword(false)}
+            onMouseLeave={() => setShowPassword(false)}
+          >
+            {showPassword ? "Hide Password" : "Show Password"}
           </button>
-        </form>
-      </div>
+        </div>
+        <div className="toggle-switch">
+          <input
+            type="checkbox"
+            id="ltInvestor"
+            checked={ltInvestor}
+            onChange={handleToggle}
+          />
+          <label htmlFor="ltInvestor">
+          <span className="slider"></span>
+          </label>
+          <span className="toggle-label">
+            {ltInvestor ? "Long-Term Investor" : "Short-Term Investor"}
+          </span>
+        </div>
+
+        <button type="submit">Register</button>
+        <button type="button" onClick={() => navigate("/login")}>
+          Goto Login Page
+        </button>
+      </form>
     </div>
   );
 };

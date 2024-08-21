@@ -37,6 +37,7 @@
 
 /* Input field style */
 .register-container input {
+  margin-top: 10px;
   padding: 10px;
   margin-bottom: 10px;
   font-size: 16px;
@@ -50,6 +51,7 @@
   background-color: #06a94d;
   color: #141414;
   margin-bottom: 10px;
+  margin-top: 10px;
   border: none;
   border-radius: 5px;
   cursor: pointer;
@@ -63,7 +65,7 @@
 
 /* Style for additional text (e.g., "Forgot password?") */
 .register-container p {
-  margin-top: 20px;
+  margin-top: 5px;
   text-align: center;
 }
 
@@ -76,3 +78,72 @@
 .register-container p a:hover {
   text-decoration: underline;
 }
+/* Container for password input and toggle switch */
+.password-container {
+  display:flex;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 20px;
+}
+.password-container input {
+  flex-grow: 1;
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #333;
+  border-radius: 5px;
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+  margin-bottom: 20px;
+}
+
+/* Hide default checkbox */
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #3b3b3b;
+  transition: .4s;
+  border-radius: 34px;
+}
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+.toggle-switch input:checked + label .slider {
+  background-color: #06a94d;
+}
+
+.toggle-switch input:checked + label .slider:before {
+  transform: translateX(26px);
+}
+
+.toggle-label {
+  position: absolute;
+  left: 70px;
+  top: 50%;
+  transform: translateY(-50%);
+  white-space: nowrap;
+}
+
