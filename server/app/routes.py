@@ -1,6 +1,6 @@
 from flask import jsonify, Blueprint
 from app import db
-from app.models import User, Portfolio, Wishlist
+from app.models import User, Portfolio, Stock, PortfolioStock
 import requests
 from sqlalchemy import text
 from flask_bcrypt import Bcrypt

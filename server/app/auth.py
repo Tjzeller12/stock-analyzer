@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from models import User, Portfolio, Wishlist
+from app.models import User, Portfolio
 from app import db, bcrypt
 
 # Make auth blueprint
@@ -10,17 +10,18 @@ def create_user(username, password_hash, email, lt_investor = False):
     new_user = User(username=username, password_hash=password_hash, email=email, longterm_investor=lt_investor)
     #initialize the users portfolio and wishlist
     portfolio = Portfolio(owner=new_user)
-    wishlist = Wishlist(owner=new_user)
     #Add and commit the user, protfollio, and wishlist to the database
     db.session.add(new_user)
     db.session.add(portfolio)
-    db.session.add(wishlist)
     db.session.commit()
 
 
 # attempt to register a new user
 @auth.route('/register', methods=['POST'])
 def register():
+    print("Register route hit")
+    data = request.get_json()
+    print("Received data:", data)
     data = request.get_json()
     username = data.get('username')
     password = data.get('password')
