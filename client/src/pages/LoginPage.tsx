@@ -15,7 +15,7 @@ const LoginPage: React.FC = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await axios.post('http://your-backend-url/login', {
+      const response = await axios.post("/login", {
         username,
         password,
       });
@@ -25,26 +25,23 @@ const LoginPage: React.FC = () => {
       console.error("Login failed:", error);
     }
     console.log("Login attempt with:", username, password);
-    
   };
 
   return (
-    
-      <div className="login-container">
-        <h1>Stock Market Analyzer</h1>
-        <img src={logo} alt="Stock Market Logo" />
-        <h2>Login</h2>
-        <form onSubmit={handleLogin}>
-          
-            <label htmlFor="username">Username:</label>
-            <input
-              type="text"
-              id="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-            />
-          <label htmlFor="username">Password:</label>
-          <div className="password-container">
+    <div className="login-container">
+      <h1>Stock Market Analyzer</h1>
+      <img src={logo} alt="Stock Market Logo" />
+      <h2>Login</h2>
+      <form onSubmit={handleLogin}>
+        <label htmlFor="username">Username:</label>
+        <input
+          type="text"
+          id="username"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+        />
+        <label htmlFor="username">Password:</label>
+        <div className="password-container">
           <input
             type={showPassword ? "text" : "password"}
             id="password"
@@ -60,13 +57,12 @@ const LoginPage: React.FC = () => {
             {showPassword ? "Hide Password" : "Show Password"}
           </button>
         </div>
-          <button type="submit">Login</button>
-          <button type="button" onClick={() => navigate("/register")}>
-            Goto Register Page
-          </button>
-        </form>
-      </div>
-    
+        <button type="submit">Login</button>
+        <button type="button" onClick={() => navigate("/register")}>
+          Goto Register Page
+        </button>
+      </form>
+    </div>
   );
 };
 

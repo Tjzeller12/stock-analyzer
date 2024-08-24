@@ -1,4 +1,6 @@
 import React from "react";
+import axios from "axios";
+import { useEffect } from "react";
 import {
   BrowserRouter as Router,
   Route,
@@ -11,6 +13,19 @@ import MainPage from "./MainPage";
 import "./App.css";
 
 function App() {
+  const testAPI = async () => {
+    console.log("Sending GET request to /api/test");
+    try {
+      const response = await axios.get("/api/test");
+      console.log("API test response:", response.data);
+    } catch (error) {
+      console.error("API test error:", error);
+    }
+  };
+
+  useEffect(() => {
+    testAPI();
+  }, []);
   return (
     <Router>
       <div className="App">
@@ -24,5 +39,4 @@ function App() {
     </Router>
   );
 }
-
 export default App;

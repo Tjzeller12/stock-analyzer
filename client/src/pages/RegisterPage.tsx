@@ -17,8 +17,9 @@ const RegisterPage: React.FC = () => {
   // Handle form submission
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Register attempt");
     try {
-      const response = await axios.post("http://localhost/register", {
+      const response = await axios.post("http://127.0.0.1:5000/auth/register", {
         username,
         password,
         email,
@@ -28,11 +29,15 @@ const RegisterPage: React.FC = () => {
       navigate("/main");
     } catch (error) {
       console.error("Regisration failed:", error);
+      if (axios.isAxiosError(error)) {
+        console.error("Response data:", error.response?.data);
+        console.error("Response status:", error.response?.status);
+      }
     }
   };
 
   const handleToggle = () => {
-    setLtInvestor(prevState => !prevState);
+    setLtInvestor((prevState) => !prevState);
   };
 
   return (
@@ -81,7 +86,7 @@ const RegisterPage: React.FC = () => {
             onChange={handleToggle}
           />
           <label htmlFor="ltInvestor">
-          <span className="slider"></span>
+            <span className="slider"></span>
           </label>
           <span className="toggle-label">
             {ltInvestor ? "Long-Term Investor" : "Short-Term Investor"}
