@@ -20,16 +20,12 @@ class User(db.Model):
     #Represent with the users username
     def __repr__(self):
         return f'<User {self.username}>'
-#IMPLEMENT THESE TABLES
+
 class Portfolio(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.String(32), db.ForeignKey('user.id'))
-    anual_return = db.Column(db.Float)
-    total_return = db.Column(db.Float)
-    total_investment = db.Column(db.Float)
-    total_withdrawal = db.Column(db.Float)
     #relationshios
-    stocks = db.relationship('PortfolioStock', backref='portfolio', lazy='dynamic')
+    stocks = db.relationship('Stock', backref='portfolio', lazy='dynamic')
     #Represent with the users username
     def __repr__(self):
         return f'<Portfolio {self.id}>'
@@ -38,20 +34,18 @@ class Portfolio(db.Model):
 class Stock(db.Model):
     id = db.Column(db.Integer, primary_key=True)  
     symbol = db.Column(db.String(4), index=True, unique=True)
-    weekly_high = db.Column(db.Float)
-    weekly_low = db.Column(db.Float)
-    weekly_open = db.Column(db.Float)
-    weekly_close = db.Column(db.Float)
+    name = db.Column(db.String(50))
+    industry = db.Column(db.String(50))
+    volatility_rating = db.Column(db.Float)
+    ev_to_ebita = db.Column(db.Float)
+    pe_ratio = db.Column(db.Float)
+    price = db.Column(db.Float)
+    market_cap = db.Column(db.Float)
+    buy_rating = db.Column(db.Float)
+    hold_rating = db.Column(db.Float)
+    sell_rating = db.Column(db.Float)
+    five_year_increase = db.Column(db.Float)
+    one_year_increase = db.Column(db.Float)
+    one_quarter_increase = db.Column(db.Float)
+    dividend_yield = db.Column(db.Float)
     
-
-
-class PortfolioStock(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    portfolio_id = db.Column(db.Integer, db.ForeignKey('portfolio.id'))
-    stock_id = db.Column(db.Integer, db.ForeignKey('stock.id'))
-    quantity = db.Column(db.Integer)
-    purchase_price = db.Column(db.Float)
-    purchase_date = db.Column(db.DateTime, default=datetime.utcnow)
-
-    def __repr__(self):
-        return f'<PortfolioStock {self.id}>'
