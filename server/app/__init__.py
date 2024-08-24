@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, request, jsonify, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_migrate import Migrate
@@ -6,21 +6,28 @@ from flask_redis import FlaskRedis
 from flask_cors import CORS
 from config import Config
 import logging
-from flask import Flask, jsonify
+
+
+
 
 # create instances of SQLAlchemy, Migrate, and FlaskRedis
 db = SQLAlchemy()
 bcrypt = Bcrypt()
 migrate = Migrate()
 redis_client = FlaskRedis()
+from app.models import User, Portfolio, Stock, PortfolioStock
 
 # Creates a new flask app and uses config.py to configure it
-def create_app(config_class=Config):
+def create_app(config_class=Config):  
     app = Flask(__name__)
     app.config.from_object(config_class)
     # initisalize db, migrate, radius_client, CORS, and Bcrypt
     db.init_app(app)
     bcrypt.init_app(app)
+    with app.app_context():
+        # Import routes and models
+        from . import routes, models
+        db.create_all()  # Create database tables for all models
     migrate.init_app(app, db)
     redis_client.init_app(app)
     CORS(app)
@@ -38,7 +45,10 @@ def create_app(config_class=Config):
 
     from app.routes import bp as main_bp
     app.register_blueprint(main_bp)
+
+    app.debug = True
     #Return fully configured app
     return app
 # detect db models. At bottom of file to prevent circular import
 from app import models 
+

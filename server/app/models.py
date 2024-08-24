@@ -1,8 +1,13 @@
 from app import db
+from uuid import uuid4
 from datetime import datetime
 # Users table. Contains all user information.
+
+def get_uuid():
+    return uuid4().hex
+
 class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.String(32), primary_key=True, unique=True, default=get_uuid)
     username = db.Column(db.String(64), index=True, unique=True)
     email = db.Column(db.String(120), index=True, unique=True)
     password_hash = db.Column(db.String(128))
@@ -18,7 +23,7 @@ class User(db.Model):
 #IMPLEMENT THESE TABLES
 class Portfolio(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user_id = db.Column(db.String(32), db.ForeignKey('user.id'))
     anual_return = db.Column(db.Float)
     total_return = db.Column(db.Float)
     total_investment = db.Column(db.Float)
