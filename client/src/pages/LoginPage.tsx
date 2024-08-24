@@ -15,7 +15,7 @@ const LoginPage: React.FC = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await axios.post("/login", {
+      const response = await axios.post("http://127.0.0.1:5000/auth/login", {
         username,
         password,
       });

@@ -48,7 +48,7 @@ def register():
 
 @auth.route('/@me')
 def get_user():
-        user = session.get('user')
+        user = session.get('username')
         if user is None:
             return jsonify({"error": "User not logged in"}), 401
         
@@ -65,14 +65,14 @@ def get_user():
 def login():
     # Attempt to get usernmae and password
     
-    username = request.json["email"]
+    username = request.json["username"]
     password = request.json["password"]
     
     # find user in database by username
     user = User.query.filter_by(username=username).first()
 
     # use check_password_hash to convert the password to hash code and see if it matches the users hash code
-    if user or bcrypt.check_password_hash(user.password_hash, password):
+    if user and bcrypt.check_password_hash(user.password_hash, password):
         return jsonify({"message": "Login successful"}), 201
     else:
         return jsonify({"error": "Invalid username or password"}), 401
