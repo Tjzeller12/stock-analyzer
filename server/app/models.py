@@ -36,7 +36,6 @@ class Stock(db.Model):
     symbol = db.Column(db.String(4), index=True, unique=True)
     name = db.Column(db.String(50))
     industry = db.Column(db.String(50))
-    volatility_rating = db.Column(db.Float)
     ev_to_ebita = db.Column(db.Float)
     pe_ratio = db.Column(db.Float)
     price = db.Column(db.Float)
@@ -44,8 +43,5 @@ class Stock(db.Model):
     buy_rating = db.Column(db.Float)
     hold_rating = db.Column(db.Float)
     sell_rating = db.Column(db.Float)
-    five_year_increase = db.Column(db.Float)
-    one_year_increase = db.Column(db.Float)
-    one_quarter_increase = db.Column(db.Float)
     dividend_yield = db.Column(db.Float)
     

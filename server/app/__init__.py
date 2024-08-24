@@ -15,7 +15,7 @@ db = SQLAlchemy()
 bcrypt = Bcrypt()
 migrate = Migrate()
 redis_client = FlaskRedis()
-from app.models import User, Portfolio, Stock, PortfolioStock
+from app.models import User, Portfolio, Stock
 
 # Creates a new flask app and uses config.py to configure it
 def create_app(config_class=Config):  
