@@ -1,4 +1,4 @@
-from flask import jsonify, Blueprint
+from flask import jsonify, Blueprint, request
 from app import db
 from app.models import User, Portfolio, Stock
 import requests
@@ -9,6 +9,22 @@ from datetime import date
 # Blueprint orgonizes routes.
 bp = Blueprint('main', __name__)
 
+@bp.route('/search', methods=['POST'])
+def search_stock():
+    # Check API if stock exists
+    symbol = request.json.get("symbol")
+    url = "https://www.alphavantage.co/query?function=OVERVIEW&symbol=" + symbol + "&apikey=Q4DQGD7ASEM0INDB"
+    # request data from API
+    req = requests.get(url)
+    #Convert it to JSON data
+    data = req.json()
+    # if stock exists add it to the portfolio
+    if data:
+        # add_stock(symbol)
+        return jsonify({"message": "Stock added successfully"}), 200
+    else:
+        print(f"Stock with symbol {symbol} not found.")
+        return jsonify({"error": "Stock not found"}), 404
 # Retrieves stock data from Alpha Vantage API using the stocks symbol
 def get_stock_data(symbol):
     #Update API URL with stocks symbol

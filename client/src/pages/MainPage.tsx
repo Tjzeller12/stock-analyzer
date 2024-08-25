@@ -1,7 +1,9 @@
 import "./MainPage.css";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import logo from "../resources/Stock_Market_Logo.png";
+
 // Stock interface contains data about a stock
 interface Stock {
   symbol: string;
@@ -36,10 +38,19 @@ const MainPage: React.FC = () => {
   };
 
   // Handler for stock symbol search (placeholder for future implementation)
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Search for:", searchSymbol);
     // TODO: Implement actual search functionality
+    try {
+      const response = await axios.post(
+        "http://127.0.0.1:5000/search",
+        { symbol: searchSymbol },
+        { headers: { "Content-Type": "application/json" } }
+      );
+    } catch (error) {
+      console.error("Search failed:", error);
+    }
   };
   // Placeholder data for stocks
   const stocks: Stock[] = [
