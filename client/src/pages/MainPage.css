@@ -159,6 +159,7 @@ h2 {
   overflow-y: auto;
   flex-grow: 1;
   max-height: 450px;
+  scrollbar-color: rgb(116, 116, 116) rgb(61, 61, 61);
 }
 
 .stock-row, .article-row{
