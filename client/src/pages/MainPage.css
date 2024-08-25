@@ -153,10 +153,12 @@ h2 {
 
 .stocks-list, .news-list {
   width: 100%;
-  max-width: 1000px;
+  
   background-color: #1e1e1e;
   border-radius: 5px;
-  overflow: hidden;
+  overflow-y: auto;
+  flex-grow: 1;
+  max-height: 450px;
 }
 
 .stock-row, .article-row{
