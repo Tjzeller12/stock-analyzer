@@ -10,6 +10,8 @@ from datetime import date
 bp = Blueprint('main', __name__)
 
 @bp.route('/search', methods=['POST'])
+
+
 def search_stock():
     # Check API if stock exists
     symbol = request.json.get("symbol")

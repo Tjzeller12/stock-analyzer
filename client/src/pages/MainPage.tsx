@@ -2,6 +2,7 @@ import "./MainPage.css";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import NewsFilterDropdown from "../NewsFilterDrop";
 import logo from "../resources/Stock_Market_Logo.png";
 
 // Stock interface contains data about a stock
@@ -26,6 +27,7 @@ interface Article {
 const MainPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchSymbol, setSearchSymbol] = useState("");
+  const [newsFilter, setNewsFilter] = useState("All");
 
   // Unified navigation handler for all buttons
   const handleButtonClick = (path: string) => {
@@ -267,6 +269,15 @@ const MainPage: React.FC = () => {
         {/* stock data for all the users stocks */}
         <div className="stock-container">
           <h2 className="my-stocks-title">My Stocks</h2>
+          <div className="stock-header">
+            <div className="stock-symbol-header">Symbol</div>
+            <div className="stock-name-header">Name</div>
+            <div className="stock-rating-header">Rating</div>
+            <div className="stock-safety-header">Safety</div>
+            <div className="stock-price-header">Price</div>
+            <div className="stock-pe_ratio-header">P/E Ratio</div>
+            <div className="stock-dividend-header">Dividend</div>
+          </div>
           <div className="stocks-list">
             {stocks.map((stock, index) => (
               <div
@@ -291,6 +302,7 @@ const MainPage: React.FC = () => {
         {/* news links for news that relates to the users stocks */}
         <div className="news-container">
           <h2 className="news-title">News</h2>
+          <NewsFilterDropdown filter={newsFilter} setFilter={setNewsFilter} />
           <div className="news-list">
             {articles.map((article, index) => (
               <div

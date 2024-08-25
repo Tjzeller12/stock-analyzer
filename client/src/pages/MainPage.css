@@ -121,17 +121,26 @@
   padding-bottom: 5px;
   margin-top: 20px;
   border-radius: 5px;
-  background-color:#007031;
+  background-color: #007031;
 }
 /* Individual nav button styling */
+.news-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
 
+.news-filter-dropdown {
+  width: 150px;
+}
 .nav-button {
   background-color: transparent;
   color: #ffffff;
   border: none;
   border-radius: 5px;
   padding: 10px 20px;
-  
+
   cursor: pointer;
   font-size: 16px;
   transition: transform 0.3s;
@@ -151,9 +160,33 @@ h2 {
   min-width: 70%;
 }
 
-.stocks-list, .news-list {
+.stock-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+  background: #069042;
+  height: 25px;
+  border-radius: 5px;
+  padding-left: 15px;
+  padding-right: 15px;
+}
+.stock-symbol-header,
+.stock-name-header,
+.stock-rating-header,
+.stock-safety-header,
+.stock-price-header,
+.stock-pe_ratio-header,
+.stock-dividend-header {
+  color: #ffffff;
+  flex: 1;
+  padding: 0 5px;
+}
+
+.stocks-list,
+.news-list {
   width: 100%;
-  
+
   background-color: #1e1e1e;
   border-radius: 5px;
   overflow-y: auto;
@@ -162,7 +195,8 @@ h2 {
   scrollbar-color: rgb(116, 116, 116) rgb(61, 61, 61);
 }
 
-.stock-row, .article-row{
+.stock-row,
+.article-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -170,24 +204,27 @@ h2 {
   border-bottom: 1px solid #333;
 }
 
-.article-row{
+.article-row {
   min-height: 80px;
   transition: filter 0.3s ease;
 }
 
-.stock-row:last-child, .article-row:last-child{
+.stock-row:last-child,
+.article-row:last-child {
   border-bottom: none;
 }
 
-.stock-row.even, .article-row.even{
+.stock-row.even,
+.article-row.even {
   background-color: #262626;
 }
 
-.stock-row.odd, .article-row.odd{
+.stock-row.odd,
+.article-row.odd {
   background-color: #1e1e1e;
 }
-.article-row:hover{
-  filter: brightness(120%)
+.article-row:hover {
+  filter: brightness(120%);
 }
 
 .stock-symbol,
@@ -198,7 +235,7 @@ h2 {
 .stock-pe_ratio,
 .stock-dividend,
 .article-title {
-  color:#069042;
+  color: #069042;
   flex: 1;
   padding: 0 5px;
 }
@@ -289,6 +326,4 @@ h2 {
     max-width: 300px;
     margin-bottom: 10px;
   }
-
-
 }
