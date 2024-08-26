@@ -1,4 +1,4 @@
-from flask import jsonify, Blueprint, request
+from flask import jsonify, Blueprint, request, session
 from app import db
 from app.models import User, Portfolio, Stock
 import requests
@@ -9,10 +9,21 @@ from datetime import date
 # Blueprint orgonizes routes.
 bp = Blueprint('main', __name__)
 
+def get_current_user():
+    user_id = session.get('user_id')
+    print(f"Session user_id: {user_id}")
+    if user_id:
+        user = User.query.filter_by(id=user_id).first()
+        print(f"Retrieved User: {user}")
+        return user
+    return None
+
 @bp.route('/search', methods=['POST'])
-
-
 def search_stock():
+    current_user = get_current_user()
+    if not current_user:
+        print("No user logged in")
+        return jsonify({"error": "Uder not logged in"}), 401
     # Check API if stock exists
     symbol = request.json.get("symbol")
     url = "https://www.alphavantage.co/query?function=OVERVIEW&symbol=" + symbol + "&apikey=Q4DQGD7ASEM0INDB"
@@ -22,8 +33,12 @@ def search_stock():
     data = req.json()
     # if stock exists add it to the portfolio
     if data:
-        # add_stock(symbol)
-        return jsonify({"message": "Stock added successfully"}), 200
+        portfolio = current_user.portfolio
+        if portfolio:
+            add_stock(symbol, portfolio.id)
+            return jsonify({"message": "Stock added successfully"}), 200
+        else:
+            return jsonify({"error": "User does not have a portfolio"}), 400
     else:
         print(f"Stock with symbol {symbol} not found.")
         return jsonify({"error": "Stock not found"}), 404
@@ -61,7 +76,10 @@ def get_stock_price(symbol):
 # Adds a stock to the users portfollio. If the stock is already in their portfolio then it is updated.
 def add_stock(symbol, portfolio_id):
     try:
-
+        current_user = get_current_user()
+        if not current_user:
+            return jsonify({"error": "Uder not logged in"}), 401
+        portfolio_id = current_user.portfolio.id
         #Get stock data from API
         data = get_stock_data(symbol)
         price = get_stock_price(symbol)
@@ -81,10 +99,11 @@ def add_stock(symbol, portfolio_id):
 
         if portfolio:
             
-            stock = Stock.query.filter_by(symbol=symbol.first())
+            stock = Stock.query.filter_by(symbol=symbol, portfolio_id=portfolio_id).first()
             #if stock is not in portfolio
             if stock is None:
                 new_stock = Stock(
+                    portfolio_id=portfolio_id,
                     symbol=symbol,
                     name=name,
                     industry=industry,

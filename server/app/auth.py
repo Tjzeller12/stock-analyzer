@@ -2,13 +2,15 @@ from flask import Blueprint, request, jsonify, session
 from app.models import User, Portfolio
 from app import bcrypt
 from app import db
-
+from app.routes import get_current_user
 # Make auth blueprint
 auth = Blueprint('auth', __name__)
 
 # creates a new user and adds it to the database
 def create_user(username, password_hash, email, longterm_investor = False):
     new_user = User(username=username, password_hash=password_hash, email=email, longterm_investor=longterm_investor)
+    db.session.commit()
+    session['user_id'] = new_user.id
     #initialize the users portfolio and wishlist
     portfolio = Portfolio(owner=new_user)
     #Add and commit the user, protfollio, and wishlist to the database
@@ -48,16 +50,18 @@ def register():
 
 @auth.route('/@me')
 def get_user():
-        user = session.get('username')
-        if user is None:
-            return jsonify({"error": "User not logged in"}), 401
+    user = get_current_user()
+    if user is None:
+        return jsonify({"error": "User not logged in"}), 401
+
+    return jsonify({
+        "username": user.username,
+        "email": user.email,
+        "longterm_investor": user.longterm_investor,
+        "message": "User successfully retrieved"
+    }), 200
+
         
-        user = User.query.filter_by(username=user).first()
-        return jsonify({
-            "username": user.username,
-            "email": user.email,
-            "longterm_investor": user.longterm_investor,
-            "message":"User successfully retrieved"}), 200
 
 
 # attempt to log user in using provided username and password
@@ -73,6 +77,7 @@ def login():
 
     # use check_password_hash to convert the password to hash code and see if it matches the users hash code
     if user and bcrypt.check_password_hash(user.password_hash, password):
+        session['user_id'] = user.id
         return jsonify({"message": "Login successful"}), 201
     else:
         return jsonify({"error": "Invalid username or password"}), 401

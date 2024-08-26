@@ -15,7 +15,7 @@ class User(db.Model):
     time_created = db.Column(db.DateTime, default=datetime.utcnow)
 
     #relationships
-    portfolio = db.relationship('Portfolio', backref='owner', uselist=False)
+    portfolio = db.relationship('Portfolio', backref='owner', uselist=False, cascade='all, delete-orphan')
     
     #Represent with the users username
     def __repr__(self):
@@ -23,9 +23,9 @@ class User(db.Model):
 
 class Portfolio(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.String(32), db.ForeignKey('user.id'))
+    user_id = db.Column(db.String(32), db.ForeignKey('user.id'), unique=True)
     #relationshios
-    stocks = db.relationship('Stock', backref='portfolio', lazy='dynamic')
+    stocks = db.relationship('Stock', backref='portfolio', lazy='dynamic', cascade='all, delete-orphan')
     #Represent with the users username
     def __repr__(self):
         return f'<Portfolio {self.id}>'
@@ -33,6 +33,7 @@ class Portfolio(db.Model):
 
 class Stock(db.Model):
     id = db.Column(db.Integer, primary_key=True)  
+    portfolio_id = db.Column(db.Integer, db.ForeignKey('portfolio.id'))
     symbol = db.Column(db.String(4), index=True, unique=True)
     name = db.Column(db.String(50))
     industry = db.Column(db.String(50))
@@ -45,3 +46,5 @@ class Stock(db.Model):
     sell_rating = db.Column(db.Float)
     dividend_yield = db.Column(db.Float)
     
+    def __repr__(self):
+        return f'<Stock {self.symbol}>'
