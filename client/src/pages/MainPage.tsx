@@ -1,5 +1,5 @@
 import "./MainPage.css";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import NewsFilterDropdown from "../NewsFilterDrop";
@@ -21,6 +21,8 @@ interface Article {
   link: string;
   title: string;
   news_company: string;
+  time_published: string;
+  summary: string;
 }
 
 // MainPage component: Serves as the dashboard for the stock analyzer application
@@ -28,6 +30,9 @@ const MainPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchSymbol, setSearchSymbol] = useState("");
   const [newsFilter, setNewsFilter] = useState("All");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [articles, setArticles] = useState<Article[]>([]);
 
   // Unified navigation handler for all buttons
   const handleButtonClick = (path: string) => {
@@ -54,6 +59,48 @@ const MainPage: React.FC = () => {
       console.error("Search failed:", error);
     }
   };
+
+  const handleFilterChange = async (filter: string) => {
+    setNewsFilter(filter);
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await axios.post(
+        "http://127.0.0.1:5000/news",
+        { filter: filter },
+        { headers: { "Content-Type": "application/json" } }
+      );
+      let extractedArticles: Article[] = [];
+
+      if (Array.isArray(response.data)) {
+        extractedArticles = response.data;
+      } else if (typeof response.data === "object" && response.data !== null) {
+        // Check for common properties that might contain the articles array
+        if (Array.isArray(response.data.articles)) {
+          extractedArticles = response.data.articles;
+        } else if (Array.isArray(response.data.feed)) {
+          extractedArticles = response.data.feed;
+        } else {
+          // If we can't find an array, try to create an array from the object
+          extractedArticles = [response.data];
+        }
+      }
+      if (extractedArticles.length > 0) {
+        setArticles(extractedArticles);
+      } else {
+        setError("No articles found");
+      }
+    } catch (error) {
+      console.error("Filter failed:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    handleFilterChange("All");
+  }, []);
+
   // Placeholder data for stocks
   const stocks: Stock[] = [
     {
@@ -175,50 +222,17 @@ const MainPage: React.FC = () => {
     },
   ];
   // Placeholder data for news articles
-  const articles: Article[] = [
-    {
-      image_link: "somelink",
-      link: "somelink",
-      title:
-        "Joe Rogan, is Joe Hogans little brother which has caused GameStop to crash?",
-      news_company: "CNN",
-    },
-    {
-      image_link: "somelink",
-      link: "somelink",
-      title:
-        "Joe Rogan, is Joe Hogans little brother which has caused GameStop to crash?",
-      news_company: "CNN",
-    },
-    {
-      image_link: "somelink",
-      link: "somelink",
-      title:
-        "Joe Rogan, is Joe Hogans little brother which has caused GameStop to crash?",
-      news_company: "CNN",
-    },
-    {
-      image_link: "somelink",
-      link: "somelink",
-      title: "Elon Musk tanks META stock down 20%",
-      news_company: "X",
-    },
-    {
-      image_link: "somelink",
-      link: "somelink",
-      title:
-        "Joe Rogan, is Joe Hogans little brother which has caused GameStop to crash?",
-      news_company: "CNN",
-    },
-    {
-      image_link: "somelink",
-      link: "somelink",
-      title:
-        "Donald Trump and Khamala Harris are having a baby? NVDA to the moon",
-      news_company: "Fox",
-    },
-  ];
-
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "N/A";
+    // Alpha Vantage format: YYYYMMDDTHHMM
+    const year = dateString.substring(0, 4);
+    const month = dateString.substring(4, 6);
+    const day = dateString.substring(6, 8);
+    const hour = dateString.substring(9, 11);
+    const minute = dateString.substring(11, 13);
+    const formattedDate = `${year}-${month}-${day}T${hour}:${minute}:00Z`;
+    return new Date(formattedDate).toLocaleString();
+  };
   return (
     <div className="main-container">
       {/* Header section with title and clickable logo */}
@@ -302,7 +316,10 @@ const MainPage: React.FC = () => {
         {/* news links for news that relates to the users stocks */}
         <div className="news-container">
           <h2 className="news-title">News</h2>
-          <NewsFilterDropdown filter={newsFilter} setFilter={setNewsFilter} />
+          <NewsFilterDropdown
+            filter={newsFilter}
+            setFilter={handleFilterChange}
+          />
           <div className="news-list">
             {articles.map((article, index) => (
               <div
@@ -310,9 +327,16 @@ const MainPage: React.FC = () => {
                 className={`article-row ${index % 2 === 0 ? "even" : "odd"}`}
                 onClick={() => window.open(article.link, "_blank")}
               >
-                <img src={article.image_link}></img>
-                <div className="article-title">{article.title} </div>
-                <div className="news-company">{article.news_company} </div>
+                <img className="news-header-img" src={article.image_link}></img>
+
+                <p className="article-summary"></p>
+                <div className="article-meta">
+                  <div className="article-title">{article.title} </div>
+                  <span className="news-company">{article.news_company}</span>
+                  <span className="time-published">
+                    {formatDate(article.time_published)}
+                  </span>
+                </div>
               </div>
             ))}
           </div>

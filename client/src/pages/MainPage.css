@@ -243,12 +243,21 @@ h2 {
 .article-title {
   font-weight: bold;
 }
-
+.article-meta {
+  display: flex;
+  font-size: 12px;
+  flex-direction: column;
+}
 .news-company {
   font-size: 12px;
   color: #077938;
 }
-
+.news-header-img {
+  max-height: 80px;
+  max-width: 80px;
+  height: auto;
+  width: auto;
+}
 .stock-symbol {
   font-weight: bold;
 }
