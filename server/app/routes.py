@@ -10,8 +10,6 @@ from datetime import date
 bp = Blueprint('main', __name__)
 
 @bp.route('/search', methods=['POST'])
-
-
 def search_stock():
     # Check API if stock exists
     symbol = request.json.get("symbol")
@@ -27,6 +25,42 @@ def search_stock():
     else:
         print(f"Stock with symbol {symbol} not found.")
         return jsonify({"error": "Stock not found"}), 404
+@bp.route('/news', methods=['POST'])
+def news_filter_selection():
+    #Upate API url with selected filter string
+    filter = request.json.get("filter")
+    if(filter == "all"):
+        url = "https://www.alphavantage.co/query?function=NEWS_SENTIMENT&apikey=Q4DQGD7ASEM0INDB"
+    else:
+        url = "https://www.alphavantage.co/query?function=NEWS_SENTIMENT&topics=" + filter + "&apikey=Q4DQGD7ASEM0INDB"
+    # request data from API
+    req = requests.get(url)
+    #Convert it to JSON data
+    data = req.json()
+
+    
+    #Return the news data
+    if data and 'feed' in data:
+        
+        processed_news = []
+        for article in data['feed']:
+            title = article.get('title', '')
+            if title == 'Before you continue':
+                continue
+            
+            # Use f-string for safe printing
+            
+            processed_news.append({
+                "image_link": article.get('banner_image', ''),
+                "link": article.get('url', ''),
+                "title": title,
+                "news_company": article.get('source', ''),
+                "time_published": article.get('time_published', ''),
+                "summary": article.get('summary', '')
+            })
+        return jsonify(processed_news), 200
+    else:
+        return jsonify({"error": "No news found"}), 404
 # Retrieves stock data from Alpha Vantage API using the stocks symbol
 def get_stock_data(symbol):
     #Update API URL with stocks symbol
