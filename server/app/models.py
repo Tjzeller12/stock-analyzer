@@ -1,3 +1,4 @@
+# models.py contains the database models for the application.
 from app import db
 from uuid import uuid4
 from datetime import datetime

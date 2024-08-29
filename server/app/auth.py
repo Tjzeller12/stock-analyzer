@@ -1,20 +1,32 @@
-from flask import Blueprint, request, jsonify, session
+# auth.py is a blueprint that handles user authentication. It contains routes for registering, logging in, and logging out users.
+from flask import Blueprint, request, jsonify, session, current_app
 from app.models import User, Portfolio
 from app import bcrypt
 from app import db
+#from __init__ import app
 from app.routes import get_current_user
+import jwt
+from datetime import datetime, timedelta
+
 # Make auth blueprint
 auth = Blueprint('auth', __name__)
+
+def create_token(user_id):
+    expiration = datetime.utcnow() + timedelta(hours=24)  # Token valid for 24 hours
+    token = jwt.encode({'user_id': user_id, 'exp': expiration}, 
+                       current_app.config['SECRET_KEY'], 
+                       algorithm='HS256')
+    return token
 
 # creates a new user and adds it to the database
 def create_user(username, password_hash, email, longterm_investor = False):
     new_user = User(username=username, password_hash=password_hash, email=email, longterm_investor=longterm_investor)
+    db.session.add(new_user)
     db.session.commit()
     session['user_id'] = new_user.id
     #initialize the users portfolio and wishlist
     portfolio = Portfolio(owner=new_user)
     #Add and commit the user, protfollio, and wishlist to the database
-    db.session.add(new_user)
     db.session.add(portfolio)
     db.session.commit()
 
@@ -41,11 +53,13 @@ def register():
 
     # Create new user
     create_user(username=username, password_hash=password_hash, email=email, longterm_investor=longterm_investor)
-
+    user = User.query.filter_by(username=username).first()
+    token = create_token(user.id)
     return jsonify({
         "username": username,
         "email": email,
         "longterm_investor": longterm_investor,
+        "token": token,
         "message":"User successfully created"}), 200
 
 @auth.route('/@me')
@@ -77,14 +91,15 @@ def login():
 
     # use check_password_hash to convert the password to hash code and see if it matches the users hash code
     if user and bcrypt.check_password_hash(user.password_hash, password):
-        session['user_id'] = user.id
-        return jsonify({"message": "Login successful"}), 201
+        token = create_token(user.id)
+        current_app.logger.info(f"User {username} logged in successfully with token {token}")
+        return jsonify({"message": "Login successful", "token": token}), 200
     else:
         return jsonify({"error": "Invalid username or password"}), 401
 
 
 @auth.route('/logout', methods=['POST'])
 def logout():
-    session.pop('user_id', None)
+    
     return jsonify({"message": "Logout successful"}), 200
 

@@ -1,3 +1,4 @@
+#__init__.py is the file that initializes the Flask app and all the extensions we will use in the app.
 from flask import Flask, request, jsonify, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
@@ -7,9 +8,6 @@ from flask_redis import FlaskRedis
 from flask_cors import CORS
 from config import Config
 import logging
-
-
-
 
 # create instances of SQLAlchemy, Migrate, and FlaskRedis
 db = SQLAlchemy()

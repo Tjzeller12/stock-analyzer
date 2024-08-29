@@ -18,8 +18,11 @@ class Config:
 
     # This set Redis URI. This works the same as the database URI
     # redis stores data in memory making read and write operations fast. It also supports many data structures and operations.
-    REDIS_URL = os.environ.get('REDIS_URL') or 'redis://localhost:6379/0'
+    REDIS_URL = os.environ['REDIS_URL'] or 'redis://localhost:6379/0'
     SESSION_TYPE = 'redis'
     SESSION_PERMANENT = False
     SESSION_USE_SIGNER = True
     SESSION_REDIS = redis.from_url(REDIS_URL)
+
+    SESSION_COOKIE_SAMESITE = 'Strict'  # Set to 'Strict' or 'None' if required
+    SESSION_COOKIE_SECURE = True  # Ensure this is True if using HTTPS
