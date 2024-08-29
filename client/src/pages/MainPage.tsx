@@ -60,6 +60,16 @@ const MainPage: React.FC = () => {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      const response = await axios.post("http://127.0.0.1:5000/auth/logout");
+      console.log(response.data);
+      navigate("/login");
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
+
   const handleFilterChange = async (filter: string) => {
     setNewsFilter(filter);
     setLoading(true);
@@ -253,7 +263,6 @@ const MainPage: React.FC = () => {
           { label: "Watchlist", path: "/watchlist" },
           { label: "AI Predictor *Coming Soon*", path: "/aipredictor" },
           { label: "Settings", path: "/settings" },
-          { label: "Logout", path: "/login" },
         ].map((button) => (
           <button
             key={button.path}
@@ -263,6 +272,9 @@ const MainPage: React.FC = () => {
             {button.label}
           </button>
         ))}
+        <button className="nav-button" onClick={() => handleLogout()}>
+          Logout
+        </button>
       </div>
 
       {/* Stock symbol search form */}
