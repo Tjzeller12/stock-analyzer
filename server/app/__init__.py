@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
+from flask_session import Session
 from flask_migrate import Migrate
 from flask_redis import FlaskRedis
 from flask_cors import CORS
@@ -15,6 +16,7 @@ db = SQLAlchemy()
 bcrypt = Bcrypt()
 migrate = Migrate()
 redis_client = FlaskRedis()
+server_session = Session()
 from app.models import User, Portfolio, Stock
 
 # Creates a new flask app and uses config.py to configure it
@@ -24,6 +26,7 @@ def create_app(config_class=Config):
     # initisalize db, migrate, radius_client, CORS, and Bcrypt
     db.init_app(app)
     bcrypt.init_app(app)
+    server_session.init_app(app)
     with app.app_context():
         # Import routes and models
         from . import routes, models
