@@ -64,6 +64,10 @@ const MainPage: React.FC = () => {
     try {
       const response = await axios.post("http://127.0.0.1:5000/auth/logout");
       console.log(response.data);
+      const token = localStorage.getItem("token");
+      console.log("Token:", token);
+      localStorage.removeItem("token");
+      
       navigate("/login");
     } catch (error) {
       console.error("Logout failed:", error);

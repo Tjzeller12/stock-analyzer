@@ -25,6 +25,9 @@ const RegisterPage: React.FC = () => {
         email,
         longterm_investor: ltInvestor,
       });
+      const token = response.data.token;
+      localStorage.setItem("token", token);
+      console.log("Token:", token);
       console.log(response.data);
       navigate("/main");
     } catch (error) {

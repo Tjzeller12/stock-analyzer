@@ -19,6 +19,9 @@ const LoginPage: React.FC = () => {
         username,
         password,
       });
+      const token = response.data.token;
+      localStorage.setItem("token", token);
+      console.log("Token:", token);
       console.log(response.data);
       navigate("/main");
     } catch (error) {
