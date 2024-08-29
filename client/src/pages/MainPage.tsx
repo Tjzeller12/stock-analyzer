@@ -48,13 +48,19 @@ const MainPage: React.FC = () => {
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Search for:", searchSymbol);
+    // Retrieve the token (assuming it's stored in local storage)
+    const token = localStorage.getItem("token");
     // TODO: Implement actual search functionality
     try {
       const response = await axios.post(
         "http://127.0.0.1:5000/search",
         { symbol: searchSymbol },
-        { headers: { "Content-Type": "application/json" } }
+        { headers: 
+          { "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`, },
+        }
       );
+      console.log(response.data);
     } catch (error) {
       console.error("Search failed:", error);
     }

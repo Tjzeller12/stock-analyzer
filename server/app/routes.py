@@ -1,29 +1,47 @@
-from flask import jsonify, Blueprint, request, session
+from flask import jsonify, Blueprint, request, session, current_app
 from app import db
 from app.models import User, Portfolio, Stock
 import requests
 from sqlalchemy import text
 from flask_bcrypt import Bcrypt
 from datetime import date
+import jwt
 
 # Blueprint orgonizes routes.
 bp = Blueprint('main', __name__)
 
 def get_current_user():
-    user_id = session.get('user_id')
-    print(f"Session user_id: {user_id}")
-    if user_id:
-        user = User.query.filter_by(id=user_id).first()
-        print(f"Retrieved User: {user}")
-        return user
+    # Get the token from the Authorization header
+    auth_header = request.headers.get('Authorization')
+    if auth_header:
+        token = auth_header.split(" ")[1]  # Bearer <token>
+        try:
+            # Decode the token to get the payload (which includes the user_id)
+            decoded_token = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=['HS256'])
+            user_id = decoded_token.get('user_id')
+            
+            # Query the user from the database using the extracted user_id
+            user = User.query.filter_by(id=user_id).first()
+            
+            if user:
+                print("User found")
+                return user
+            else:
+                print("No user")
+        except jwt.ExpiredSignatureError:
+            print("Token expired")
+            return None  # Handle expired token
+        except jwt.InvalidTokenError:
+            print("Token not found")
+            return None  # Handle invalid token
     return None
 
 @bp.route('/search', methods=['POST'])
 def search_stock():
     current_user = get_current_user()
     if not current_user:
-        print("No user logged in")
-        return jsonify({"error": "Uder not logged in"}), 401
+        current_app.logger.info("User not logged in")
+        return jsonify({"error": "User not logged in"}), 401
     # Check API if stock exists
     symbol = request.json.get("symbol")
     url = "https://www.alphavantage.co/query?function=OVERVIEW&symbol=" + symbol + "&apikey=Q4DQGD7ASEM0INDB"
