@@ -1,5 +1,5 @@
 # auth.py is a blueprint that handles user authentication. It contains routes for registering, logging in, and logging out users.
-from flask import Blueprint, request, jsonify, session, current_app
+from flask import Blueprint, request, jsonify, current_app
 from app.models import User, Portfolio
 from app import bcrypt
 from app import db
@@ -23,7 +23,7 @@ def create_user(username, password_hash, email, longterm_investor = False):
     new_user = User(username=username, password_hash=password_hash, email=email, longterm_investor=longterm_investor)
     db.session.add(new_user)
     db.session.commit()
-    session['user_id'] = new_user.id
+    token = create_token(new_user.id)
     #initialize the users portfolio and wishlist
     portfolio = Portfolio(owner=new_user)
     #Add and commit the user, protfollio, and wishlist to the database

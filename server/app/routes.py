@@ -110,7 +110,7 @@ def get_stock_data(symbol):
 # Retrieves the stocks price from Alpha Vantage API
 def get_stock_price(symbol):
     # Update API URL with symbol
-    url = "https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=" + symbol + " &interval=5min&&apikey=Q4DQGD7ASEM0INDB"
+    url = "https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=" + symbol + " &interval=5min&apikey=Q4DQGD7ASEM0INDB"
     # request data
     req = requests.get(url)
     # convert data tp JSON
@@ -119,7 +119,7 @@ def get_stock_price(symbol):
     time_series = data.get("Time Series (5min)", {})
     # Check if the data exist
     if not time_series:
-        return "No data available."
+        return None
     # Git the most recent time in data
     most_recent_date = next(iter(time_series))
     #Get most recent data with most recent time
