@@ -173,11 +173,12 @@ h2 {
 }
 .stock-symbol-header,
 .stock-name-header,
-.stock-rating-header,
-.stock-safety-header,
-.stock-price-header,
+.stock-ev-to-ebita-header,
 .stock-pe_ratio-header,
+.stock-price-header,
+.stock-market-cap-header,
 .stock-dividend-header {
+  white-space: nowrap;
   color: #ffffff;
   flex: 1;
   padding: 0 5px;
@@ -229,10 +230,10 @@ h2 {
 
 .stock-symbol,
 .stock-name,
-.stock-rating,
-.stock-safety,
+.stock-ev-to-ebita,
+.stock-pe-ratio,
 .stock-price,
-.stock-pe_ratio,
+.stock-market-cap,
 .stock-dividend,
 .article-title {
   color: #069042;
@@ -266,16 +267,17 @@ h2 {
   flex: 4px;
 }
 
-.stock-rating,
-.stock-safety {
+.stock-ev-to-ebita {
   text-align: center;
 }
 
 .stock-price,
-.stock-pe_ratio,
-.stock-dividend {
-  text-align: right;
+.stock-pe-ratio,
+.stock-dividend,
+.stock-market-cap {
+  text-align: center;
 }
+
 
 @media (max-width: 768px) {
   .article-row {
@@ -290,6 +292,7 @@ h2 {
   }
 }
 
+
 @media (max-width: 768px) {
   .stock-row {
     flex-wrap: wrap;
@@ -297,15 +300,15 @@ h2 {
 
   .stock-symbol,
   .stock-name,
-  .stock-rating,
-  .stock-safety,
+  .stock-ev-to-ebita,
+  .stock-pe-ratio,
   .stock-price,
-  .stock-pe_ratio,
-  .stock-dividend {
+  .stock-market-cap {
     width: 100%;
     text-align: left;
     margin-bottom: 5px;
   }
+
 }
 
 /* Responsive layout for smaller screens */

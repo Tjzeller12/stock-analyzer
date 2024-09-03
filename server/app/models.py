@@ -49,3 +49,18 @@ class Stock(db.Model):
     
     def __repr__(self):
         return f'<Stock {self.symbol}>'
+
+    def to_dict(self):
+        return {
+            'symbol': self.symbol,
+            'name': self.name,
+            'price': self.price,
+            'industry': self.industry,
+            'ev_to_ebita': self.ev_to_ebita,
+            'pe_ratio': self.pe_ratio,
+            'market_cap': self.market_cap,
+            'dividend_yield': self.dividend_yield,
+            'buy_rating': self.buy_rating,
+            'hold_rating': self.hold_rating,
+            'sell_rating': self.sell_rating
+        }

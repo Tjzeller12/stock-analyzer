@@ -4,16 +4,19 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import NewsFilterDropdown from "../NewsFilterDrop";
 import logo from "../resources/Stock_Market_Logo.png";
-
 // Stock interface contains data about a stock
 interface Stock {
   symbol: string;
   name: string;
-  rating: number;
-  safety: number;
   price: number;
+  industry: number;
+  ev_to_ebita: number;
   pe_ratio: number;
-  dividend: number;
+  market_cap: number;
+  dividend_yield: number;
+  buy_rating: number;
+  hold_rating: number;
+  sell_rating: number;
 }
 
 interface Article {
@@ -33,6 +36,8 @@ const MainPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [articles, setArticles] = useState<Article[]>([]);
+  const [sortBy, setSortBy] = useState("ev_to_ebita")
+  const [stocks, setStocks] = useState<Stock[]>([]);
 
   // Unified navigation handler for all buttons
   const handleButtonClick = (path: string) => {
@@ -60,6 +65,7 @@ const MainPage: React.FC = () => {
           Authorization: `Bearer ${token}`, },
         }
       );
+      fetchStocks();
       console.log(response.data);
     } catch (error) {
       console.error("Search failed:", error);
@@ -67,6 +73,7 @@ const MainPage: React.FC = () => {
   };
 
   const handleLogout = async () => {
+
     try {
       const response = await axios.post("http://127.0.0.1:5000/auth/logout");
       console.log(response.data);
@@ -77,6 +84,29 @@ const MainPage: React.FC = () => {
       navigate("/login");
     } catch (error) {
       console.error("Logout failed:", error);
+    }
+  };
+  const fetchStocks = async () => {
+    const token = localStorage.getItem("token");
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await axios.post(
+        "http://127.0.0.1:5000/stocks",
+        { sortBy: sortBy },
+        { headers: { "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`, } }
+      );
+      if (Array.isArray(response.data)) {
+        setStocks(response.data);
+      } else {
+        setError("No stocks found.");
+      }
+    } catch (error) {
+      console.error("Sorting failed:", error);
+      setError("Failed to fetch stocks.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -118,130 +148,11 @@ const MainPage: React.FC = () => {
   };
 
   useEffect(() => {
+    fetchStocks();
     handleFilterChange("All");
   }, []);
 
-  // Placeholder data for stocks
-  const stocks: Stock[] = [
-    {
-      symbol: "AAPL",
-      name: "Apple Inc.",
-      rating: 84,
-      safety: 98,
-      price: 150.25,
-      pe_ratio: 4,
-      dividend: 0.7,
-    },
-    {
-      symbol: "AAPL",
-      name: "Apple Inc.",
-      rating: 84,
-      safety: 98,
-      price: 150.25,
-      pe_ratio: 4,
-      dividend: 0.7,
-    },
-    {
-      symbol: "AAPL",
-      name: "Apple Inc.",
-      rating: 84,
-      safety: 98,
-      price: 150.25,
-      pe_ratio: 4,
-      dividend: 0.7,
-    },
-    {
-      symbol: "AAPL",
-      name: "Apple Inc.",
-      rating: 84,
-      safety: 98,
-      price: 150.25,
-      pe_ratio: 4,
-      dividend: 0.7,
-    },
-    {
-      symbol: "AAPL",
-      name: "Apple Inc.",
-      rating: 84,
-      safety: 98,
-      price: 150.25,
-      pe_ratio: 4,
-      dividend: 0.7,
-    },
-    {
-      symbol: "AAPL",
-      name: "Apple Inc.",
-      rating: 84,
-      safety: 98,
-      price: 150.25,
-      pe_ratio: 4,
-      dividend: 0.7,
-    },
-    {
-      symbol: "AAPL",
-      name: "Apple Inc.",
-      rating: 84,
-      safety: 98,
-      price: 150.25,
-      pe_ratio: 4,
-      dividend: 0.7,
-    },
-    {
-      symbol: "AAPL",
-      name: "Apple Inc.",
-      rating: 84,
-      safety: 98,
-      price: 150.25,
-      pe_ratio: 4,
-      dividend: 0.7,
-    },
-    {
-      symbol: "AAPL",
-      name: "Apple Inc.",
-      rating: 84,
-      safety: 98,
-      price: 150.25,
-      pe_ratio: 4,
-      dividend: 0.7,
-    },
-    {
-      symbol: "GOOGL",
-      name: "Alphabet Inc.",
-      rating: 83,
-      safety: 99,
-      price: 2750.8,
-      pe_ratio: 20,
-      dividend: 0.4,
-    },
-    {
-      symbol: "MSFT",
-      name: "Microsoft Corporation",
-      rating: 90,
-      safety: 100,
-      price: 305.15,
-      pe_ratio: 10,
-      dividend: 0.6,
-    },
-    {
-      symbol: "AMZN",
-      name: "Amazon.com, Inc.",
-      rating: 78,
-      safety: 95,
-      price: 3300.5,
-      pe_ratio: 35.5,
-      dividend: 0.0,
-    },
-    {
-      symbol: "TSLA",
-      name: "Tesla, Inc.",
-      rating: 73,
-      safety: 67,
-      price: 780.9,
-      pe_ratio: 80.2,
-      dividend: 0.7,
-    },
-  ];
-  // Placeholder data for news articles
+
   const formatDate = (dateString: string) => {
     if (!dateString) return "N/A";
     // Alpha Vantage format: YYYYMMDDTHHMM
@@ -252,6 +163,20 @@ const MainPage: React.FC = () => {
     const minute = dateString.substring(11, 13);
     const formattedDate = `${year}-${month}-${day}T${hour}:${minute}:00Z`;
     return new Date(formattedDate).toLocaleString();
+  };
+
+  const formatMarketCap = (value: number) => {
+    if (value >= 1e12) {
+      return (value / 1e12).toFixed(1) + "T";
+    } else if (value >= 1e9) {
+      return (value / 1e9).toFixed(1) + "B";
+    } else if (value >= 1e6) {
+      return (value / 1e6).toFixed(1) + "M";
+    } else if (value >= 1e3) {
+      return (value / 1e3).toFixed(1) + "K";
+    } else {
+      return value.toString();
+    }
   };
   return (
     <div className="main-container">
@@ -308,10 +233,10 @@ const MainPage: React.FC = () => {
           <div className="stock-header">
             <div className="stock-symbol-header">Symbol</div>
             <div className="stock-name-header">Name</div>
-            <div className="stock-rating-header">Rating</div>
-            <div className="stock-safety-header">Safety</div>
             <div className="stock-price-header">Price</div>
+            <div className="stock-ev-to-ebita-header">EV/EBITA</div>
             <div className="stock-pe_ratio-header">P/E Ratio</div>
+            <div className="stock-market-cap-header">Market Cap</div>
             <div className="stock-dividend-header">Dividend</div>
           </div>
           <div className="stocks-list">
@@ -322,14 +247,14 @@ const MainPage: React.FC = () => {
               >
                 <div className="stock-symbol">{stock.symbol}</div>
                 <div className="stock-name">{stock.name}</div>
-                <div className="stock-rating">{stock.rating.toFixed(2)}</div>
-                <div className="stock-safety">{stock.safety.toFixed(2)}</div>
                 <div className="stock-price">${stock.price.toFixed(2)}</div>
-                <div className="stock-pe_ratio">
-                  {stock.pe_ratio.toFixed(1)}
+                <div className="stock-ev-to-ebita">{stock.ev_to_ebita.toFixed(2)}</div>
+                <div className="stock-pe-ratio">${stock.pe_ratio.toFixed(2)}</div>
+                <div className="stock-market-cap">
+                  {formatMarketCap(stock.market_cap)}
                 </div>
                 <div className="stock-dividend">
-                  {stock.dividend.toFixed(1)}%
+                  {stock.dividend_yield.toFixed(2)}%
                 </div>
               </div>
             ))}

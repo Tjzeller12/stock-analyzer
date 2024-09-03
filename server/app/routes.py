@@ -44,13 +44,16 @@ def search_stock():
         return jsonify({"error": "User not logged in"}), 401
     # Check API if stock exists
     symbol = request.json.get("symbol")
+    if not symbol:
+        return jsonify({"error": "No symbol provided"}), 400
     url = "https://www.alphavantage.co/query?function=OVERVIEW&symbol=" + symbol + "&apikey=Q4DQGD7ASEM0INDB"
     # request data from API
     req = requests.get(url)
     #Convert it to JSON data
     data = req.json()
+    print(data)
     # if stock exists add it to the portfolio
-    if data:
+    if data and 'Symbol' in data:
         portfolio = current_user.portfolio
         if portfolio:
             add_stock(symbol, portfolio.id)
@@ -60,6 +63,35 @@ def search_stock():
     else:
         print(f"Stock with symbol {symbol} not found.")
         return jsonify({"error": "Stock not found"}), 404
+
+@bp.route('/stocks', methods=['POST'])
+def stock_sort_by():
+    sort_by = request.json.get("sortBy")
+    current_user = get_current_user()
+    if not current_user:
+        current_app.logger.info("User not logged in")
+        return jsonify({"error": "User not logged in"}), 401
+    
+    portfolio = current_user.portfolio
+    if portfolio:
+        update_stocks(portfolio.id)
+        stocks = Stock.query.filter_by(portfolio_id=portfolio.id).order_by(getattr(Stock, sort_by)).all()
+        print("Stocks returned.")
+        return jsonify([stock.to_dict() for stock in stocks])
+    else:
+        return jsonify({"error": "User does not have a portfolio"}), 400
+
+def update_stocks(portfolio_id):
+    portfolio = Portfolio.query.get(portfolio_id)
+    if portfolio:
+        for stock in portfolio.stocks:
+            add_stock(stock.symbol, portfolio_id)
+    else:
+        current_app.logger.error(f"Portfolio with id {portfolio_id} not found")
+
+            
+        
+
 @bp.route('/news', methods=['POST'])
 def news_filter_selection():
     #Upate API url with selected filter string
@@ -110,7 +142,7 @@ def get_stock_data(symbol):
 # Retrieves the stocks price from Alpha Vantage API
 def get_stock_price(symbol):
     # Update API URL with symbol
-    url = "https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=" + symbol + " &interval=5min&apikey=Q4DQGD7ASEM0INDB"
+    url = "https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=" + symbol + "&interval=5min&apikey=Q4DQGD7ASEM0INDB"
     # request data
     req = requests.get(url)
     # convert data tp JSON
@@ -119,34 +151,47 @@ def get_stock_price(symbol):
     time_series = data.get("Time Series (5min)", {})
     # Check if the data exist
     if not time_series:
+        print("No time series")
         return None
     # Git the most recent time in data
     most_recent_date = next(iter(time_series))
     #Get most recent data with most recent time
     most_recent_data = time_series[most_recent_date]
     # Return the high during the 5 min interval
-    return most_recent_data.get("2. high", None)
+    price = most_recent_data.get("2. high", None)
+    if price is None:
+        print("No high")
+    return price
+
+def safe_float(value, default=0.0):
+    try:
+        return float(value)
+    except (ValueError, TypeError):
+        return default
 
 # Adds a stock to the users portfollio. If the stock is already in their portfolio then it is updated.
 def add_stock(symbol, portfolio_id):
     try:
-        current_user = get_current_user()
-        if not current_user:
-            return jsonify({"error": "Uder not logged in"}), 401
-        portfolio_id = current_user.portfolio.id
         #Get stock data from API
         data = get_stock_data(symbol)
         price = get_stock_price(symbol)
+        if not data:
+            print("Data returned none")
+        if price is None:
+            print("Price returned none")
+        if not data or price is None:
+            print(f"API limit reached or data unavailable for symbol: {symbol}")
+            return
         
         name = data.get("Name", "N/A")
         industry = data.get("Industry", "N/A")
-        ev_to_ebita = float(data.get("EVToEBITDA", 0))
-        pe_ratio = float(data.get("PERatio", 0))
-        market_cap = float(data.get("MarketCapitalization", 0))
-        buy_rating = float(data.get("AnalystRatingStrongBuy", 0))
-        hold_rating = float(data.get("AnalystRatingHold", 0))
-        sell_rating = float(data.get("AnalystRatingSell", 0))
-        dividend_yield = float(data.get("DividendYield", 0))
+        ev_to_ebita = safe_float(data.get("EVToEBITDA", 0))
+        pe_ratio = safe_float(data.get("PERatio", 0))
+        market_cap = safe_float(data.get("MarketCapitalization", 0))
+        buy_rating = safe_float(data.get("AnalystRatingStrongBuy", 0))
+        hold_rating = safe_float(data.get("AnalystRatingHold", 0))
+        sell_rating = safe_float(data.get("AnalystRatingSell", 0))
+        dividend_yield = safe_float(data.get("DividendYield", 0))
 
         #Get the portfolio we are adding data to
         portfolio = Portfolio.query.get(portfolio_id)
@@ -195,7 +240,6 @@ def add_stock(symbol, portfolio_id):
             print(f"Stock with symbol {symbol} not found.")
     except Exception as e:
         print(f"Error adding stock: {e}")
-
 
 # Main route
 @bp.route('/', methods=['GET'])
