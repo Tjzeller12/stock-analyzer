@@ -2,7 +2,7 @@ from flask import jsonify, Blueprint, request, session, current_app
 from app import db
 from app.models import User, Portfolio, Stock
 import requests
-from sqlalchemy import text
+from sqlalchemy import text, desc
 from flask_bcrypt import Bcrypt
 from datetime import date
 import jwt
@@ -10,6 +10,7 @@ import jwt
 # Blueprint orgonizes routes.
 bp = Blueprint('main', __name__)
 
+# Attemps to recieve user token from front-end. Quereys that user by ID and returns it.
 def get_current_user():
     # Get the token from the Authorization header
     auth_header = request.headers.get('Authorization')
@@ -36,8 +37,10 @@ def get_current_user():
             return None  # Handle invalid token
     return None
 
+# Searches for the stock and if it exist it adds it to the users portfolio.
 @bp.route('/search', methods=['POST'])
 def search_stock():
+    # Get user
     current_user = get_current_user()
     if not current_user:
         current_app.logger.info("User not logged in")
@@ -56,6 +59,7 @@ def search_stock():
     if data and 'Symbol' in data:
         portfolio = current_user.portfolio
         if portfolio:
+            # Add stock to portfolio
             add_stock(symbol, portfolio.id)
             return jsonify({"message": "Stock added successfully"}), 200
         else:
@@ -64,8 +68,10 @@ def search_stock():
         print(f"Stock with symbol {symbol} not found.")
         return jsonify({"error": "Stock not found"}), 404
 
+#Recieves a string that states what the user wants to sort the stocks by from the front end and sorts the users porfolio
 @bp.route('/stocks', methods=['POST'])
 def stock_sort_by():
+    #Get sort by
     sort_by = request.json.get("sortBy")
     current_user = get_current_user()
     if not current_user:
@@ -75,7 +81,7 @@ def stock_sort_by():
     portfolio = current_user.portfolio
     if portfolio:
         update_stocks(portfolio.id)
-        stocks = Stock.query.filter_by(portfolio_id=portfolio.id).order_by(getattr(Stock, sort_by)).all()
+        stocks = Stock.query.filter_by(portfolio_id=portfolio.id).order_by(desc(getattr(Stock, sort_by))).all()
         print("Stocks returned.")
         return jsonify([stock.to_dict() for stock in stocks])
     else:

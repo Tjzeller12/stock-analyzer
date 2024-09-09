@@ -73,7 +73,6 @@ const MainPage: React.FC = () => {
   };
 
   const handleLogout = async () => {
-
     try {
       const response = await axios.post("http://127.0.0.1:5000/auth/logout");
       console.log(response.data);
@@ -223,6 +222,9 @@ const MainPage: React.FC = () => {
           />
           <button type="submit">Add</button>
         </form>
+      </div>
+      <div className="sort-by-dropdown">
+
       </div>
 
       {/* Main content area with My Stocks and News buttons */}
