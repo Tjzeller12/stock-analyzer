@@ -25,6 +25,7 @@ const RegisterPage: React.FC = () => {
         email,
         longterm_investor: ltInvestor,
       });
+      // Set token in local storage
       const token = response.data.token;
       localStorage.setItem("token", token);
       console.log("Token:", token);
@@ -39,6 +40,7 @@ const RegisterPage: React.FC = () => {
     }
   };
 
+  // Toggle long-term investor checkbox
   const handleToggle = () => {
     setLtInvestor((prevState) => !prevState);
   };

@@ -12,6 +12,7 @@ import LoginPage from "./LoginPage";
 import MainPage from "./MainPage";
 import "./App.css";
 
+// App.tsx is the main component that renders the entire application.
 function App() {
   const testAPI = async () => {
     console.log("Sending GET request to /api/test");
@@ -23,6 +24,7 @@ function App() {
     }
   };
 
+  // UseEffect is used to call the testAPI function when the component is mounted.
   useEffect(() => {
     testAPI();
   }, []);

@@ -4,9 +4,11 @@ from uuid import uuid4
 from datetime import datetime
 # Users table. Contains all user information.
 
+# Generates a unique identifier for each user
 def get_uuid():
     return uuid4().hex
 
+# User table. Contains all user information.
 class User(db.Model):
     id = db.Column(db.String(32), primary_key=True, unique=True, default=get_uuid)
     username = db.Column(db.String(64), index=True, unique=True)
@@ -22,6 +24,7 @@ class User(db.Model):
     def __repr__(self):
         return f'<User {self.username}>'
 
+# Portfolio table. Contains all portfolio information.
 class Portfolio(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.String(32), db.ForeignKey('user.id'), unique=True)
@@ -31,7 +34,7 @@ class Portfolio(db.Model):
     def __repr__(self):
         return f'<Portfolio {self.id}>'
     
-
+# Stock table. Contains all stock information.
 class Stock(db.Model):
     id = db.Column(db.Integer, primary_key=True)  
     portfolio_id = db.Column(db.Integer, db.ForeignKey('portfolio.id'))
@@ -47,9 +50,11 @@ class Stock(db.Model):
     sell_rating = db.Column(db.Float)
     dividend_yield = db.Column(db.Float)
     
+    #Represent with the stock symbol
     def __repr__(self):
         return f'<Stock {self.symbol}>'
 
+    # Converts the stock object to a dictionary
     def to_dict(self):
         return {
             'symbol': self.symbol,

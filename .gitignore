@@ -17,7 +17,7 @@ dist/
 # Python
 __pycache__/
 *.pyc
-venv/
+.venv/
 .env
 # VS Code settings
 .vscode/

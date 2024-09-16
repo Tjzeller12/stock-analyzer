@@ -19,6 +19,7 @@ const LoginPage: React.FC = () => {
         username,
         password,
       });
+      // Set token in local storage
       const token = response.data.token;
       localStorage.setItem("token", token);
       console.log("Token:", token);
@@ -30,6 +31,7 @@ const LoginPage: React.FC = () => {
     console.log("Login attempt with:", username, password);
   };
 
+  // Login page
   return (
     <div className="login-container">
       <h1>Stock Market Analyzer</h1>

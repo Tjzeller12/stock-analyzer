@@ -77,12 +77,14 @@
 .login-container p a:hover {
   text-decoration: underline;
 }
+/* Styling for the password input field */
 .password-container {
   display: flex;
   align-items: center;
   width: 100%;
   margin-bottom: 20px;
 }
+/* Styling for the password input field */
 .password-container input {
   flex-grow: 1;
   padding: 10px;

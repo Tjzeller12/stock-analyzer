@@ -87,6 +87,7 @@ def stock_sort_by():
     else:
         return jsonify({"error": "User does not have a portfolio"}), 400
 
+# Updates the stocks in the portfolio
 def update_stocks(portfolio_id):
     portfolio = Portfolio.query.get(portfolio_id)
     if portfolio:
@@ -95,9 +96,7 @@ def update_stocks(portfolio_id):
     else:
         current_app.logger.error(f"Portfolio with id {portfolio_id} not found")
 
-            
-        
-
+# Retrieves news data from Alpha Vantage API
 @bp.route('/news', methods=['POST'])
 def news_filter_selection():
     #Upate API url with selected filter string
@@ -169,6 +168,7 @@ def get_stock_price(symbol):
         print("No high")
     return price
 
+# Safely converts a value to a float
 def safe_float(value, default=0.0):
     try:
         return float(value)

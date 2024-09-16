@@ -93,6 +93,7 @@
   border-radius: 5px;
 }
 
+/* Toggle switch style */
 .toggle-switch {
   position: relative;
   display: inline-block;
@@ -108,7 +109,7 @@
   height: 0;
 }
 
-
+/* Slider style */
 .slider {
   position: absolute;
   cursor: pointer;
@@ -120,6 +121,7 @@
   transition: .4s;
   border-radius: 34px;
 }
+/* Slider before style */
 .slider:before {
   position: absolute;
   content: "";
@@ -131,14 +133,15 @@
   transition: .4s;
   border-radius: 50%;
 }
+/* Slider after style */
 .toggle-switch input:checked + label .slider {
   background-color: #06a94d;
 }
-
+/* Slider before hover effect */
 .toggle-switch input:checked + label .slider:before {
   transform: translateX(26px);
 }
-
+/* Toggle label style */
 .toggle-label {
   position: absolute;
   left: 70px;

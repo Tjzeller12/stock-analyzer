@@ -19,6 +19,7 @@ interface Stock {
   sell_rating: number;
 }
 
+// Article interface contains data about a news article
 interface Article {
   image_link: string;
   link: string;
@@ -72,6 +73,7 @@ const MainPage: React.FC = () => {
     }
   };
 
+  // Logout function
   const handleLogout = async () => {
     try {
       const response = await axios.post("http://127.0.0.1:5000/auth/logout");
@@ -85,6 +87,8 @@ const MainPage: React.FC = () => {
       console.error("Logout failed:", error);
     }
   };
+
+  // Fetch stocks from the server
   const fetchStocks = async () => {
     const token = localStorage.getItem("token");
     setLoading(true);
@@ -164,6 +168,7 @@ const MainPage: React.FC = () => {
     return new Date(formattedDate).toLocaleString();
   };
 
+  // Format market cap
   const formatMarketCap = (value: number) => {
     if (value >= 1e12) {
       return (value / 1e12).toFixed(1) + "T";
@@ -177,6 +182,8 @@ const MainPage: React.FC = () => {
       return value.toString();
     }
   };
+
+  // Main page
   return (
     <div className="main-container">
       {/* Header section with title and clickable logo */}
@@ -277,7 +284,6 @@ const MainPage: React.FC = () => {
                 onClick={() => window.open(article.link, "_blank")}
               >
                 <img className="news-header-img" src={article.image_link}></img>
-
                 <p className="article-summary"></p>
                 <div className="article-meta">
                   <div className="article-title">{article.title} </div>

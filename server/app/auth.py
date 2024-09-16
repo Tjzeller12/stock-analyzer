@@ -62,6 +62,7 @@ def register():
         "token": token,
         "message":"User successfully created"}), 200
 
+# Get current user
 @auth.route('/@me')
 def get_user():
     user = get_current_user()
@@ -74,9 +75,6 @@ def get_user():
         "longterm_investor": user.longterm_investor,
         "message": "User successfully retrieved"
     }), 200
-
-        
-
 
 # attempt to log user in using provided username and password
 @auth.route('/login', methods=['POST'])
@@ -97,7 +95,7 @@ def login():
     else:
         return jsonify({"error": "Invalid username or password"}), 401
 
-
+# Logout route
 @auth.route('/logout', methods=['POST'])
 def logout():
     
