@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import NewsFilterDropdown from "../NewsFilterDrop";
 import logo from "../resources/Stock_Market_Logo.png";
+import { API_BASE_URL } from "../config";
 // Stock interface contains data about a stock
 interface Stock {
   symbol: string;
@@ -37,7 +38,7 @@ const MainPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [articles, setArticles] = useState<Article[]>([]);
-  const [sortBy, setSortBy] = useState("ev_to_ebita")
+  const [sortBy, setSortBy] = useState("ev_to_ebita");
   const [stocks, setStocks] = useState<Stock[]>([]);
 
   // Unified navigation handler for all buttons
@@ -59,11 +60,13 @@ const MainPage: React.FC = () => {
     // TODO: Implement actual search functionality
     try {
       const response = await axios.post(
-        "http://127.0.0.1:5000/search",
+        "http://localhost:5001/search",
         { symbol: searchSymbol },
-        { headers: 
-          { "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`, },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
       fetchStocks();
@@ -76,12 +79,12 @@ const MainPage: React.FC = () => {
   // Logout function
   const handleLogout = async () => {
     try {
-      const response = await axios.post("http://127.0.0.1:5000/auth/logout");
+      const response = await axios.post("http://localhost:5001/auth/logout");
       console.log(response.data);
       const token = localStorage.getItem("token");
       console.log("Token:", token);
       localStorage.removeItem("token");
-      
+
       navigate("/login");
     } catch (error) {
       console.error("Logout failed:", error);
@@ -95,10 +98,14 @@ const MainPage: React.FC = () => {
     setError(null);
     try {
       const response = await axios.post(
-        "http://127.0.0.1:5000/stocks",
+        "http://localhost:5001/stocks",
         { sortBy: sortBy },
-        { headers: { "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`, } }
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       if (Array.isArray(response.data)) {
         setStocks(response.data);
@@ -119,7 +126,7 @@ const MainPage: React.FC = () => {
     setError(null);
     try {
       const response = await axios.post(
-        "http://127.0.0.1:5000/news",
+        "http://localhost:5001/news",
         { filter: filter },
         { headers: { "Content-Type": "application/json" } }
       );
@@ -154,7 +161,6 @@ const MainPage: React.FC = () => {
     fetchStocks();
     handleFilterChange("All");
   }, []);
-
 
   const formatDate = (dateString: string) => {
     if (!dateString) return "N/A";
@@ -230,9 +236,7 @@ const MainPage: React.FC = () => {
           <button type="submit">Add</button>
         </form>
       </div>
-      <div className="sort-by-dropdown">
-
-      </div>
+      <div className="sort-by-dropdown"></div>
 
       {/* Main content area with My Stocks and News buttons */}
       <div className="my-stocks-news-container">
@@ -257,8 +261,12 @@ const MainPage: React.FC = () => {
                 <div className="stock-symbol">{stock.symbol}</div>
                 <div className="stock-name">{stock.name}</div>
                 <div className="stock-price">${stock.price.toFixed(2)}</div>
-                <div className="stock-ev-to-ebita">{stock.ev_to_ebita.toFixed(2)}</div>
-                <div className="stock-pe-ratio">${stock.pe_ratio.toFixed(2)}</div>
+                <div className="stock-ev-to-ebita">
+                  {stock.ev_to_ebita.toFixed(2)}
+                </div>
+                <div className="stock-pe-ratio">
+                  ${stock.pe_ratio.toFixed(2)}
+                </div>
                 <div className="stock-market-cap">
                   {formatMarketCap(stock.market_cap)}
                 </div>

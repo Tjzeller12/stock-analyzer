@@ -19,7 +19,7 @@ const RegisterPage: React.FC = () => {
     e.preventDefault();
     console.log("Register attempt");
     try {
-      const response = await axios.post("http://127.0.0.1:5000/auth/register", {
+      const response = await axios.post("http://localhost:5001/auth/register", {
         username,
         password,
         email,

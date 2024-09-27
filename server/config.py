@@ -11,7 +11,7 @@ class Config:
     # set database Uniform Resource Identifier (URI) by trying to get the DATABASE_URL. If it is not found then
     # it uses default local PostgreSQL URI
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
-        'postgresql://localhost/stock_analyzer_database'
+        'postgresql://zeller:june1200@db/stock_analyzer_database'
     # Tracking modifications can be reasorce-intensive so we will turn it off
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ECHO = True

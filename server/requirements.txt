@@ -25,3 +25,5 @@ urllib3==2.2.2
 Werkzeug==3.0.3
 redis==5.0.1 
 PyJWT==2.8.0
+flask-jwt-extended==2.0.0   
+flask-session==0.8.0

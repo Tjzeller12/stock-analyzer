@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../resources/Stock_Market_Logo.png";
 import axios from "axios";
+import { API_BASE_URL } from '../config';
 
 // LoginPage component for user authentication
 const LoginPage: React.FC = () => {
@@ -15,7 +16,7 @@ const LoginPage: React.FC = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await axios.post("http://127.0.0.1:5000/auth/login", {
+      const response = await axios.post('http://localhost:5001/auth/login', {
         username,
         password,
       });
