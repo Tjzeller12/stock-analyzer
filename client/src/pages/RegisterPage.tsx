@@ -44,7 +44,7 @@ const RegisterPage: React.FC = () => {
   const handleToggle = () => {
     setLtInvestor((prevState) => !prevState);
   };
-
+  
   return (
     <div className="register-container">
       <h1>Stock Market Analyzer</h1>

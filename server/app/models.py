@@ -34,38 +34,50 @@ class Portfolio(db.Model):
     def __repr__(self):
         return f'<Portfolio {self.id}>'
     
-# Stock table. Contains all stock information.
-class Stock(db.Model):
-    id = db.Column(db.Integer, primary_key=True)  
-    portfolio_id = db.Column(db.Integer, db.ForeignKey('portfolio.id'))
-    symbol = db.Column(db.String(4), index=True, unique=True)
+# Mster table for all stocks to be stored in
+class StockMaster(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    symbol = db.Column(db.String(6), unique=True, index=True)  # Unique symbol
     name = db.Column(db.String(50))
     industry = db.Column(db.String(50))
     ev_to_ebita = db.Column(db.Float)
     pe_ratio = db.Column(db.Float)
     price = db.Column(db.Float)
     market_cap = db.Column(db.Float)
+    dividend_yield = db.Column(db.Float)
     buy_rating = db.Column(db.Float)
     hold_rating = db.Column(db.Float)
     sell_rating = db.Column(db.Float)
-    dividend_yield = db.Column(db.Float)
-    
-    #Represent with the stock symbol
-    def __repr__(self):
-        return f'<Stock {self.symbol}>'
 
-    # Converts the stock object to a dictionary
+    def __repr__(self):
+        return f'<StockMaster {self.symbol}>'
+
     def to_dict(self):
         return {
             'symbol': self.symbol,
             'name': self.name,
-            'price': self.price,
             'industry': self.industry,
-            'ev_to_ebita': self.ev_to_ebita,
-            'pe_ratio': self.pe_ratio,
-            'market_cap': self.market_cap,
-            'dividend_yield': self.dividend_yield,
-            'buy_rating': self.buy_rating,
-            'hold_rating': self.hold_rating,
-            'sell_rating': self.sell_rating
+            'ev_to_ebita': self.ev_to_ebita or 0.0,
+            'pe_ratio': self.pe_ratio or 0.0,
+            'price': self.price or 0.0,
+            'market_cap': self.market_cap or 0.0,
+            'dividend_yield': self.dividend_yield or 0.0,
+            'buy_rating': self.buy_rating or 0.0,
+            'hold_rating': self.hold_rating or 0.0,
+            'sell_rating': self.sell_rating or 0.0,
         }
+
+# Stock table. A stock belongs to a portfolio and has its information stored in the stock master.
+class Stock(db.Model):
+    id = db.Column(db.Integer, primary_key=True)  
+    portfolio_id = db.Column(db.Integer, db.ForeignKey('portfolio.id'))
+    stock_master_id = db.Column(db.Integer, db.ForeignKey('stock_master.id'))
+    stock_master = db.relationship('StockMaster')  # Relationship to the master stock table
+    
+    def __repr__(self):
+        return f'<Stock {self.stock_master.symbol} in Portfolio {self.portfolio_id}>'
+
+    def to_dict(self):
+        stock_data = self.stock_master.to_dict()
+        stock_data['notes'] = self.notes
+        return stock_data

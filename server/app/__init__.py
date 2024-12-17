@@ -31,7 +31,6 @@ def create_app(config_class=Config):
         db.create_all()  # Create database tables for all models
     migrate.init_app(app, db)
     redis_client.init_app(app)
-    CORS(app)
     CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
 
     #simple test route

@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import NewsFilterDropdown from "../NewsFilterDrop";
 import logo from "../resources/Stock_Market_Logo.png";
+import refresh_icon from "../resources/refresh_icon.png";
 // Stock interface contains data about a stock
 interface Stock {
   symbol: string;
@@ -49,27 +50,65 @@ const MainPage: React.FC = () => {
   const handleLogoClick = () => {
     navigate("/main");
   };
-
-  // Handler for stock symbol search (placeholder for future implementation)
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Search for:", searchSymbol);
-    // Retrieve the token (assuming it's stored in local storage)
+  //Get the token and return it to send to the backend
+  const getAuthHeaders = () => {
     const token = localStorage.getItem("token");
+    return {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    };
+  };
+   // Handler for refresh (placeholder for future implementation)
+   const handleRefresh = async (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log("Refresh Stocks");
     // TODO: Implement actual search functionality
     try {
       const response = await axios.post(
-        "http://127.0.0.1:5000/search",
-        { symbol: searchSymbol },
-        { headers: 
-          { "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`, },
-        }
+        "http://127.0.0.1:5000/refresh",
+        {},
+        { headers: getAuthHeaders()}
       );
       fetchStocks();
       console.log(response.data);
     } catch (error) {
-      console.error("Search failed:", error);
+      console.error("Refresh failed:", error);
+    }
+  };
+
+  // Handler for stock symbol search (placeholder for future implementation)
+  const handleRemove = async (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log("Search for:", searchSymbol);
+    // TODO: Implement actual search functionality
+    try {
+      const response = await axios.post(
+        "http://127.0.0.1:5000/remove",
+        { symbol: searchSymbol },
+        { headers: getAuthHeaders()}
+      );
+      fetchStocks();
+      console.log(response.data);
+    } catch (error) {
+      console.error("Remove failed:", error);
+    }
+  };
+  // Handler for stock symbol search (placeholder for future implementation)
+  const handleAdd = async (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log("Search for:", searchSymbol);
+
+    // TODO: Implement actual search functionality
+    try {
+      const response = await axios.post(
+        "http://127.0.0.1:5000/add",
+        { symbol: searchSymbol },
+        { headers: getAuthHeaders()}
+      );
+      fetchStocks();
+      console.log(response.data);
+    } catch (error) {
+      console.error("Add failed:", error);
     }
   };
 
@@ -150,12 +189,6 @@ const MainPage: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    fetchStocks();
-    handleFilterChange("All");
-  }, []);
-
-
   const formatDate = (dateString: string) => {
     if (!dateString) return "N/A";
     // Alpha Vantage format: YYYYMMDDTHHMM
@@ -182,6 +215,14 @@ const MainPage: React.FC = () => {
       return value.toString();
     }
   };
+  useEffect(() => {
+    fetchStocks();
+    handleFilterChange("All");
+  }, []);
+  useEffect(() => {
+    // Called whenever sortBy changes
+    fetchStocks();
+  }, [sortBy]);
 
   // Main page
   return (
@@ -220,14 +261,25 @@ const MainPage: React.FC = () => {
 
       {/* Stock symbol search form */}
       <div className="search-container">
-        <form onSubmit={handleSearch}>
+        <form>
           <input
-            type="text"
-            placeholder="Symbol i.e. NVDA"
-            value={searchSymbol}
-            onChange={(e) => setSearchSymbol(e.target.value)}
-          />
-          <button type="submit">Add</button>
+          type="text"
+          placeholder="Symbol i.e. NVDA"
+          value={searchSymbol}
+          onChange={(e) => setSearchSymbol(e.target.value)}
+        />
+        <button type="button" onClick={handleAdd} title="Add Stock" className="add-button">
+          +
+        </button>
+        <button type="button" onClick={handleRemove} title="Remove Stock" className="remove-button">
+          -
+        </button>
+        <button type="button" onClick={handleRefresh} title="Refresh Portfolio" className="refresh-button">
+        <img
+          src={refresh_icon}
+          alt="Stock Market Logo"
+        />
+        </button>
         </form>
       </div>
       <div className="sort-by-dropdown">
@@ -240,13 +292,14 @@ const MainPage: React.FC = () => {
         <div className="stock-container">
           <h2 className="my-stocks-title">My Stocks</h2>
           <div className="stock-header">
-            <div className="stock-symbol-header">Symbol</div>
-            <div className="stock-name-header">Name</div>
-            <div className="stock-price-header">Price</div>
-            <div className="stock-ev-to-ebita-header">EV/EBITA</div>
-            <div className="stock-pe_ratio-header">P/E Ratio</div>
-            <div className="stock-market-cap-header">Market Cap</div>
-            <div className="stock-dividend-header">Dividend</div>
+            {/* Negative symbols in front of sort by value indicate that it should be sorted in decending order. */}
+            <div className="stock-symbol-header" onClick={() => setSortBy("symbol")}>Symbol</div>
+            <div className="stock-name-header" onClick={() => setSortBy("name")}>Name </div>
+            <div className="stock-price-header" onClick={() => setSortBy("price")}>Price</div>
+            <div className="stock-ev-to-ebita-header" onClick={() => setSortBy("-ev_to_ebita")}>EV/EBITA</div>
+            <div className="stock-pe_ratio-header" onClick={() => setSortBy("pe_ratio")}>P/E Ratio</div>
+            <div className="stock-market-cap-header" onClick={() => setSortBy("-market_cap")}>Market Cap</div>
+            <div className="stock-dividend-header" onClick={() => setSortBy("-dividend_yield")}>Dividend</div>
           </div>
           <div className="stocks-list">
             {stocks.map((stock, index) => (
@@ -258,7 +311,7 @@ const MainPage: React.FC = () => {
                 <div className="stock-name">{stock.name}</div>
                 <div className="stock-price">${stock.price.toFixed(2)}</div>
                 <div className="stock-ev-to-ebita">{stock.ev_to_ebita.toFixed(2)}</div>
-                <div className="stock-pe-ratio">${stock.pe_ratio.toFixed(2)}</div>
+                <div className="stock-pe-ratio">{stock.pe_ratio.toFixed(2)}</div>
                 <div className="stock-market-cap">
                   {formatMarketCap(stock.market_cap)}
                 </div>

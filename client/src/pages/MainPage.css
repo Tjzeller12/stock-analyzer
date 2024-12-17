@@ -10,6 +10,15 @@
   color: #ffffff;
 }
 /* Header layout with logo and title */
+
+.stock-symbol-header:hover, .stock-name-header:hover,
+.stock-price-header:hover, .stock-ev-to-ebita-header:hover,
+.stock-pe_ratio-header:hover, .stock-market-cap-header:hover,
+.stock-dividend-header:hover {
+  background-color: #007d36;
+  border-radius: 5px;
+}
+
 .main-page-header {
   display: flex;
   justify-content: space-between;
@@ -54,8 +63,6 @@
   padding: 10px 20px;
   background-color: #06a94d;
   color: #141414;
-  border: none;
-  border-radius: 0 5px 5px 0;
   cursor: pointer;
 }
 /* Layout for my-stocks and news buttons */
@@ -85,6 +92,33 @@
   border-radius: 5px;
   background-color: #007031;
 }
+.remove-button {
+  border-bottom-right-radius: 5px;
+  border-top-right-radius: 5px;
+}
+.refresh-button {
+  border-radius:5px;
+  margin-left: 2px;
+}
+.remove-button {
+  
+  margin-left: 1px;
+}
+.refresh-button img{
+  max-width: 15px;
+  max-height:25px;
+}
+
+.add-button, .remove-button, .refresh-button {
+  font-size: 30px;
+  border: black;
+  border-width: 2px;
+  transition: background-color 0.3s, transform 0.2s; /* Adds smooth hover effects */
+}
+.add-button:hover, .remove-button:hover, .refresh-button:hover {
+  background-color: #048d41;
+}
+
 /* Individual nav button styling */
 .news-header {
   display: flex;
@@ -135,6 +169,7 @@ h2 {
   padding-left: 15px;
   padding-right: 15px;
 }
+
 /* Stock header symbols */
 .stock-symbol-header,
 .stock-name-header,
@@ -147,6 +182,7 @@ h2 {
   color: #ffffff;
   flex: 1;
   padding: 0 5px;
+  cursor: pointer;
 }
 /* Stocks and news list style */
 .stocks-list,

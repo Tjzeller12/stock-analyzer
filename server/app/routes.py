@@ -1,6 +1,6 @@
 from flask import jsonify, Blueprint, request, session, current_app
 from app import db
-from app.models import User, Portfolio, Stock
+from app.models import User, Portfolio, Stock, StockMaster
 import requests
 from sqlalchemy import text, desc
 from flask_bcrypt import Bcrypt
@@ -36,10 +36,40 @@ def get_current_user():
             print("Token not found")
             return None  # Handle invalid token
     return None
+@bp.route('/remove', methods=['POST'])
+def remove_stock():
+    current_user = get_current_user()
+    if not current_user:
+        current_app.logger.info("User not logged in")
+        return jsonify({"error": "User not logged in"}), 401
+    symbol = request.json.get("symbol")
+    if not symbol:
+        return jsonify({"error": "No symbol provided"}), 400
+    portfolio = current_user.portfolio
+    if not portfolio:
+        return jsonify({"error": "User does not have a portfolio"}), 400
+    try:
+        # Join Stock with StockMaster to filter by symbol
+        stock = ( Stock.query.join(StockMaster).filter(Stock.portfolio_id == portfolio.id, StockMaster.symbol == symbol).first())
+
+        if not stock:
+            return jsonify({"error": f"Stock {symbol} not found in your portfolio."}), 404
+
+        # Delete the stock from the user's portfolio
+        db.session.delete(stock)
+        db.session.commit()
+        db.session.expire_all()
+        return jsonify({"success": f"Stock {symbol} removed from your portfolio."}), 200
+
+    except Exception as e:
+        db.session.rollback()  # Rollback in case of error
+        current_app.logger.error(f"Error removing stock: {e}")
+        return jsonify({"error": "An error occurred while removing the stock."}), 500
+
 
 # Searches for the stock and if it exist it adds it to the users portfolio.
-@bp.route('/search', methods=['POST'])
-def search_stock():
+@bp.route('/add', methods=['POST'])
+def add_stock_to_portfolio():
     # Get user
     current_user = get_current_user()
     if not current_user:
@@ -49,24 +79,17 @@ def search_stock():
     symbol = request.json.get("symbol")
     if not symbol:
         return jsonify({"error": "No symbol provided"}), 400
-    url = "https://www.alphavantage.co/query?function=OVERVIEW&symbol=" + symbol + "&apikey=Q4DQGD7ASEM0INDB"
-    # request data from API
-    req = requests.get(url)
-    #Convert it to JSON data
-    data = req.json()
-    print(data)
-    # if stock exists add it to the portfolio
-    if data and 'Symbol' in data:
-        portfolio = current_user.portfolio
-        if portfolio:
-            # Add stock to portfolio
-            add_stock(symbol, portfolio.id)
-            return jsonify({"message": "Stock added successfully"}), 200
-        else:
-            return jsonify({"error": "User does not have a portfolio"}), 400
-    else:
-        print(f"Stock with symbol {symbol} not found.")
-        return jsonify({"error": "Stock not found"}), 404
+    portfolio = current_user.portfolio
+    if not portfolio:
+        current_app.logger.info("User does not have a portfolio")
+        return jsonify({"error": "User does not have a portfolio"}), 400
+    result = add_stock(symbol, portfolio.id)
+    # Determine the response based on the result
+    if "error" in result:
+        current_app.logger.error(f"Error adding stock: {result['error']}")
+        return jsonify(result), 400
+    current_app.logger.info(f"Successfully added stock: {symbol} to portfolio.")
+    return jsonify(result), 200
 
 #Recieves a string that states what the user wants to sort the stocks by from the front end and sorts the users porfolio
 @bp.route('/stocks', methods=['POST'])
@@ -79,22 +102,64 @@ def stock_sort_by():
         return jsonify({"error": "User not logged in"}), 401
     
     portfolio = current_user.portfolio
-    if portfolio:
-        update_stocks(portfolio.id)
-        stocks = Stock.query.filter_by(portfolio_id=portfolio.id).order_by(desc(getattr(Stock, sort_by))).all()
-        print("Stocks returned.")
-        return jsonify([stock.to_dict() for stock in stocks])
-    else:
+    if not portfolio:
         return jsonify({"error": "User does not have a portfolio"}), 400
+    try:
+        if sort_by[0] == '-':
+            stocks = Stock.query.join(StockMaster).filter(Stock.portfolio_id == portfolio.id).order_by(desc(getattr(StockMaster, sort_by[1:]))).all()
+        else:
+            stocks = Stock.query.join(StockMaster).filter(Stock.portfolio_id == portfolio.id).order_by(getattr(StockMaster, sort_by)).all()
+        print("Stocks returned.")
+        return jsonify([stock.stock_master.to_dict() for stock in stocks])
+
+    except AttributeError:
+        return jsonify({"error": f"Invalid sort field: {sort_by}"})
+    except Exception as e:
+        current_app.logger.error(f"Error fetching stocks: {e}")
+        return jsonify({"error": "An error occurred while fetching stocks."})
 
 # Updates the stocks in the portfolio
-def update_stocks(portfolio_id):
-    portfolio = Portfolio.query.get(portfolio_id)
-    if portfolio:
-        for stock in portfolio.stocks:
-            add_stock(stock.symbol, portfolio_id)
-    else:
-        current_app.logger.error(f"Portfolio with id {portfolio_id} not found")
+@bp.route('/refresh', methods=['POST'])
+def update_stocks():
+    current_user = get_current_user()
+    if not current_user:
+        current_app.logger.info("User not logged in")
+        return jsonify({"error": "User not logged in"}), 401
+    portfolio = current_user.portfolio
+    if not portfolio:
+        current_app.logger.error(f"Portfolio with id {portfolio.id} not found")
+        return jsonify({"error": "User does not have a portfolio"}), 400
+    stocks = stock = ( Stock.query.join(StockMaster).filter(Stock.portfolio_id == portfolio.id).all())
+    for stock in stocks:
+        #Get stock data from API
+        symbol = stock.stock_master.symbol
+        # Fetch updated data from API
+        try:
+            data = get_stock_data(symbol)
+            price = get_stock_price(symbol)
+
+            if not data or price is None:
+                current_app.logger.warning(f"Data unavailable for symbol: {symbol}")
+                continue  # Skip this stock and proceed to the next
+
+            # Update StockMaster fields
+            stock.stock_master.name = data.get("Name", "N/A")
+            stock.stock_master.industry = data.get("Industry", "N/A")
+            stock.stock_master.ev_to_ebita = safe_float(data.get("EVToEBITDA", 0))
+            stock.stock_master.pe_ratio = safe_float(data.get("PERatio", 0))
+            stock.stock_master.market_cap = safe_float(data.get("MarketCapitalization", 0))
+            stock.stock_master.buy_rating = safe_float(data.get("AnalystRatingStrongBuy", 0))
+            stock.stock_master.hold_rating = safe_float(data.get("AnalystRatingHold", 0))
+            stock.stock_master.sell_rating = safe_float(data.get("AnalystRatingSell", 0))
+            stock.stock_master.dividend_yield = safe_float(data.get("DividendYield", 0))
+            stock.stock_master.price = price
+
+        except Exception as e:
+            current_app.logger.error(f"Error updating stock {symbol}: {e}")
+            continue  # Log the error and move to the next stock
+    db.session.commit()
+    return jsonify({'message': 'The stock refresh was successful'}), 200
+            
 
 # Retrieves news data from Alpha Vantage API
 @bp.route('/news', methods=['POST'])
@@ -174,9 +239,8 @@ def safe_float(value, default=0.0):
         return float(value)
     except (ValueError, TypeError):
         return default
-
-# Adds a stock to the users portfollio. If the stock is already in their portfolio then it is updated.
-def add_stock(symbol, portfolio_id):
+# Adds a stock to the MasterStocks
+def add_to_master(symbol):
     try:
         #Get stock data from API
         data = get_stock_data(symbol)
@@ -186,66 +250,53 @@ def add_stock(symbol, portfolio_id):
         if price is None:
             print("Price returned none")
         if not data or price is None:
-            print(f"API limit reached or data unavailable for symbol: {symbol}")
-            return
-        
-        name = data.get("Name", "N/A")
-        industry = data.get("Industry", "N/A")
-        ev_to_ebita = safe_float(data.get("EVToEBITDA", 0))
-        pe_ratio = safe_float(data.get("PERatio", 0))
-        market_cap = safe_float(data.get("MarketCapitalization", 0))
-        buy_rating = safe_float(data.get("AnalystRatingStrongBuy", 0))
-        hold_rating = safe_float(data.get("AnalystRatingHold", 0))
-        sell_rating = safe_float(data.get("AnalystRatingSell", 0))
-        dividend_yield = safe_float(data.get("DividendYield", 0))
-
-        #Get the portfolio we are adding data to
-        portfolio = Portfolio.query.get(portfolio_id)
-
-        if portfolio:
-            
-            stock = Stock.query.filter_by(symbol=symbol, portfolio_id=portfolio_id).first()
-            #if stock is not in portfolio
-            if stock is None:
-                new_stock = Stock(
-                    portfolio_id=portfolio_id,
-                    symbol=symbol,
-                    name=name,
-                    industry=industry,
-                    ev_to_ebita=ev_to_ebita,
-                    pe_ratio=pe_ratio,
-                    price=price,
-                    market_cap=market_cap,
-                    buy_rating=buy_rating,
-                    hold_rating=hold_rating,
-                    sell_rating=sell_rating,
-                    dividend_yield=dividend_yield
-                )
-
-                portfolio.stocks.append(new_stock)
-                db.session.add(new_stock)
-
-                print(f"Stock {symbol} added successfully.")
-            else:
-
-                #Update each value of the stock
-                stock.industry = industry
-                stock.ev_to_ebita = ev_to_ebita
-                stock.pe_ratio = pe_ratio
-                stock.market_cap = market_cap
-                stock.buy_rating = buy_rating
-                stock.hold_rating = hold_rating
-                stock.sell_rating = sell_rating
-                stock.dividend_yield = dividend_yield
-
-                print(f"Stock {symbol} updated successfully.")
-            
-            #Commit the transaction
-            db.session.commit()
-        else:
-            print(f"Stock with symbol {symbol} not found.")
+            return {"error": f"API limit reached or data unavailable for symbol: {symbol}"}
+        # add to stock master    
+        stock = StockMaster(
+            symbol=symbol,
+            name = data.get("Name", "N/A"),
+            industry = data.get("Industry", "N/A"),
+            ev_to_ebita = safe_float(data.get("EVToEBITDA", 0)),
+            pe_ratio = safe_float(data.get("PERatio", 0)),
+            market_cap = safe_float(data.get("MarketCapitalization", 0)),
+            buy_rating = safe_float(data.get("AnalystRatingStrongBuy", 0)),
+            hold_rating = safe_float(data.get("AnalystRatingHold", 0)),
+            sell_rating = safe_float(data.get("AnalystRatingSell", 0)),
+            dividend_yield = safe_float(data.get("DividendYield", 0)),
+            price = price
+        )
+        db.session.add(stock)
+        db.session.commit()
+        db.session.expire_all()
+        return stock
     except Exception as e:
+        db.session.rollback()
+        print(f"Error adding stock to master: {e}")
+        return {"error": f"An error occurred: {str(e)}"}
+# Adds a stock to the users portfollio. If the stock is already in their portfolio then it is updated.
+def add_stock(symbol, portfolio_id):
+    try:
+        # Add stock to master
+        stock_master = StockMaster.query.filter_by(symbol=symbol).first()
+            # if not in stock master
+        if not stock_master:
+            stock_master = add_to_master(symbol)
+        # check if stock is in portfolio
+        existing_stock = Stock.query.filter(Stock.portfolio_id == portfolio_id, Stock.stock_master_id == stock_master.id).first()
+        if existing_stock:
+            return {"message": f"Stock {symbol} is already in your portfolio."}
+        new_stock = Stock(
+            portfolio_id=portfolio_id,
+            stock_master_id=stock_master.id,
+        )
+        db.session.add(new_stock)
+        db.session.commit()
+        db.session.expire_all()
+        return {"message": f"Stock {symbol} added to your portfolio."}
+    except Exception as e:
+        db.session.rollback()  # Rollback to maintain database consistency
         print(f"Error adding stock: {e}")
+        return {"error": f"An error occurred: {str(e)}"}
 
 # Main route
 @bp.route('/', methods=['GET'])
