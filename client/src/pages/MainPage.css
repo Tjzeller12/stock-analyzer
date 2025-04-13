@@ -11,9 +11,12 @@
 }
 /* Header layout with logo and title */
 
-.stock-symbol-header:hover, .stock-name-header:hover,
-.stock-price-header:hover, .stock-ev-to-ebita-header:hover,
-.stock-pe_ratio-header:hover, .stock-market-cap-header:hover,
+.stock-symbol-header:hover,
+.stock-name-header:hover,
+.stock-price-header:hover,
+.stock-ev-to-ebita-header:hover,
+.stock-pe_ratio-header:hover,
+.stock-market-cap-header:hover,
 .stock-dividend-header:hover {
   background-color: #007d36;
   border-radius: 5px;
@@ -97,25 +100,28 @@
   border-top-right-radius: 5px;
 }
 .refresh-button {
-  border-radius:5px;
+  border-radius: 5px;
   margin-left: 2px;
 }
 .remove-button {
-  
   margin-left: 1px;
 }
-.refresh-button img{
+.refresh-button img {
   max-width: 15px;
-  max-height:25px;
+  max-height: 25px;
 }
 
-.add-button, .remove-button, .refresh-button {
+.add-button,
+.remove-button,
+.refresh-button {
   font-size: 30px;
   border: black;
   border-width: 2px;
   transition: background-color 0.3s, transform 0.2s; /* Adds smooth hover effects */
 }
-.add-button:hover, .remove-button:hover, .refresh-button:hover {
+.add-button:hover,
+.remove-button:hover,
+.refresh-button:hover {
   background-color: #048d41;
 }
 
@@ -313,7 +319,6 @@ h2 {
     text-align: left;
     margin-bottom: 5px;
   }
-
 }
 
 /* Responsive layout for smaller screens */

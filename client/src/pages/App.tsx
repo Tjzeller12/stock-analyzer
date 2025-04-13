@@ -10,14 +10,15 @@ import {
 import RegisterPage from "./RegisterPage";
 import LoginPage from "./LoginPage";
 import MainPage from "./MainPage";
+import StockPage from "./StockPage";
 import "./App.css";
 
 // App.tsx is the main component that renders the entire application.
 function App() {
   const testAPI = async () => {
-    console.log("Sending GET request to /api/test");
+    console.log("Sending GET request to /api/test_db");
     try {
-      const response = await axios.get("/api/test");
+      const response = await axios.get("/api/test_db");
       console.log("API test response:", response.data);
     } catch (error) {
       console.error("API test error:", error);
@@ -35,6 +36,7 @@ function App() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/main" element={<MainPage />} />
+          <Route path="/stock/:symbol" element={<StockPage />} />
           <Route path="/" element={<Navigate replace to="/login" />} />
         </Routes>
       </div>

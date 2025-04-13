@@ -152,6 +152,10 @@ const MainPage: React.FC = () => {
     }
   };
 
+  const handleStockClick = (symbol: string) => {
+    navigate(`/stock/${symbol}`);
+  };
+
   const handleFilterChange = async (filter: string) => {
     setNewsFilter(filter);
     setLoading(true);
@@ -306,6 +310,8 @@ const MainPage: React.FC = () => {
               <div
                 key={stock.symbol}
                 className={`stock-row ${index % 2 === 0 ? "even" : "odd"}`}
+                onClick={() => handleStockClick(stock.symbol)}
+                style={{ cursor: "pointer" }}
               >
                 <div className="stock-symbol">{stock.symbol}</div>
                 <div className="stock-name">{stock.name}</div>
