@@ -1,5 +1,6 @@
 #__init__.py is the file that initializes the Flask app and all the extensions we will use in the app.
 from flask import Flask, request, jsonify, session
+from flask_caching import Cache
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_session import Session
@@ -15,6 +16,7 @@ bcrypt = Bcrypt()
 migrate = Migrate()
 redis_client = FlaskRedis()
 server_session = Session()
+cache = Cache()
 from app.models import User, Portfolio, Stock
 
 # Creates a new flask app and uses config.py to configure it
@@ -32,6 +34,8 @@ def create_app(config_class=Config):
     migrate.init_app(app, db)
     redis_client.init_app(app)
     CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
+
+    cache.init_app(app, config={'CACHE_TYPE': 'simple'})
 
     #simple test route
     @app.route('/api/test', methods=['GET'])
@@ -54,4 +58,5 @@ def create_app(config_class=Config):
     return app
 # detect db models. At bottom of file to prevent circular import
 from app import models 
+
 

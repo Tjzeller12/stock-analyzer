@@ -1,6 +1,6 @@
 import datetime
 from flask import jsonify, Blueprint, request, session, current_app
-from app import db
+from app import db, cache
 from app.models import GeneralStockNews, User, Portfolio, Stock, StockMaster, Filter
 import requests
 from sqlalchemy import text, desc
@@ -137,6 +137,7 @@ def stock_sort_by():
 
 # Updates the stocks in the portfolio
 @bp.route('/refresh', methods=['POST'])
+@cache.memoize(timeout=900)
 def update_stocks():
     # Get current user
     current_user = get_current_user()
@@ -165,17 +166,6 @@ def update_stocks():
                 current_app.logger.warning(f"Data unavailable for symbol: {symbol}")
                 continue  # Skip this stock and proceed to the next
 
-            # Update StockMaster fields
-            stock.stock_master.name = data.get("Name", "N/A")
-            stock.stock_master.industry = data.get("Industry", "N/A")
-            stock.stock_master.ev_to_ebita = safe_float(data.get("EVToEBITDA", 0))
-            stock.stock_master.pe_ratio = safe_float(data.get("PERatio", 0))
-            stock.stock_master.market_cap = safe_float(data.get("MarketCapitalization", 0))
-            stock.stock_master.buy_rating = safe_float(data.get("AnalystRatingStrongBuy", 0))
-            stock.stock_master.hold_rating = safe_float(data.get("AnalystRatingHold", 0))
-            stock.stock_master.sell_rating = safe_float(data.get("AnalystRatingSell", 0))
-            stock.stock_master.dividend_yield = safe_float(data.get("DividendYield", 0))
-            stock.stock_master.price = price
             # Update stock master
             db.session.commit()
             db.session.expire_all()
@@ -229,6 +219,7 @@ def in_depth_data():
 
 # Retrieves news data from Alpha Vantage API
 @bp.route('/news', methods=['POST'])
+@cache.memoize(timeout=900)
 def news_filter_selection():
     
     #Upate API url with selected filter string
@@ -297,11 +288,8 @@ def news_filter_selection():
     else:
         return jsonify({"error": "No news found"}), 404
 # Retrieves stock data from Alpha Vantage API using the stocks symbol
+@cache.memoize(timeout=900)
 def get_stock_data(symbol):
-    # If the stock was updated in the last 15 minutes then return the data from the database
-    stock_master = StockMaster.query.filter_by(symbol=symbol).first()
-    if stock_master and stock_master.last_stock_update and stock_master.last_stock_update > datetime.datetime.now() - timedelta(minutes=15):
-        return stock_master.to_dict()
     #Update API URL with stocks symbol
     url = "https://www.alphavantage.co/query?function=OVERVIEW&symbol=" + symbol + "&apikey=Q4DQGD7ASEM0INDB"
     # request data from API
@@ -312,12 +300,10 @@ def get_stock_data(symbol):
     return data
     
 # Retrieves the stocks price from Alpha Vantage API
+@cache.memoize(timeout=900)
 def get_stock_price(symbol):
-    # If the stock was updated in the last 15 minutes then return the price from the database
-    stock_master = StockMaster.query.filter_by(symbol=symbol).first()
-    if stock_master and stock_master.last_stock_update and stock_master.last_stock_update > datetime.datetime.now() - timedelta(minutes=15):
-        return stock_master.price
     # Update API URL with symbol
+    stock_master = StockMaster.query.filter_by(symbol=symbol).first()
     
     url = "https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=" + symbol + "&interval=5min&apikey=Q4DQGD7ASEM0INDB"
     # request data
@@ -357,11 +343,8 @@ def safe_float(value, default=0.0):
 # Adds a stock to the MasterStocks
 def add_to_master(symbol):
     try:
-        # If the stock was updated in the last 15 minutes then return the data from the database
         stock_master = StockMaster.query.filter_by(symbol=symbol).first()
-        if stock_master and stock_master.last_stock_update and stock_master.last_stock_update > datetime.datetime.now() - timedelta(minutes=15):
-            return stock_master
-        
+
         #Get stock data from API
         data = get_stock_data(symbol)
         price = get_stock_price(symbol)
@@ -416,11 +399,11 @@ def add_to_master(symbol):
         print(f"Error adding stock to master: {e}")
         return {"error": f"An error occurred: {str(e)}"}
         
+# Retrieves in-depth financial data from the API
+@cache.memoize(timeout=900)
 def get_in_depth_financials(symbol):
     try:
-        stock_master = StockMaster.query.filter_by(symbol=symbol).first()
-        if stock_master and stock_master.last_in_depth_update and stock_master.last_in_depth_update > datetime.datetime.now() - timedelta(minutes=15):
-            return stock_master.to_dict()
+
         
         api_key = "zHCoDbscJgZjgP0WIa1nO8wewFlCoK0H"
         
@@ -442,18 +425,21 @@ def get_in_depth_financials(symbol):
         cf_data = cf_response.json()[0] if cf_response.json() else {}
         bs_data = bs_response.json()[0] if bs_response.json() else {}
         km_data = km_response.json()[0] if km_response.json() else {}
+        stock_master = StockMaster.query.filter_by(symbol=symbol).first()
+        if stock_master:
 
-        # Update the stock master with the new in-depth financial data
-        stock_master.free_cash_flow = safe_float(cf_data.get("freeCashFlow", 0))
-        stock_master.debt_to_equity = safe_float(bs_data.get("totalDebt", 0)) / safe_float(bs_data.get("totalStockholdersEquity", 1))  # Calculated
-        stock_master.roic = safe_float(km_data.get("roic", 0))
-        stock_master.price_to_fc = safe_float(km_data.get("pfcfRatio", 0))
-        stock_master.cashAndCashEquivalents = safe_float(bs_data.get("cashAndCashEquivalents", 0))
-        stock_master.last_in_depth_update = datetime.datetime.now()
+            # Update the stock master with the new in-depth financial data
+            stock_master.free_cash_flow = safe_float(cf_data.get("freeCashFlow", 0))
+            stock_master.debt_to_equity = safe_float(bs_data.get("totalDebt", 0)) / safe_float(bs_data.get("totalStockholdersEquity", 1))  # Calculated
+            stock_master.roic = safe_float(km_data.get("roic", 0))
+            stock_master.price_to_fc = safe_float(km_data.get("pfcfRatio", 0))
+            stock_master.cashAndCashEquivalents = safe_float(bs_data.get("cashAndCashEquivalents", 0))
+            stock_master.last_in_depth_update = datetime.datetime.now()
 
-        db.session.commit()
-        db.session.expire_all()
+            db.session.commit()
+
         return stock_master.to_dict()
+    
     except Exception as e:
         db.session.rollback()
         print(f"Error getting in-depth financials: {e}")
