@@ -2,6 +2,7 @@ import os
 from flask import Flask
 from app.models import db, User, Portfolio, Stock
 from sqlalchemy import text
+from app.routes import seed_filters
 
 def create_app():
     app = Flask(__name__)
@@ -21,6 +22,10 @@ def reset_db():
         # Create all tables
         db.create_all()
         print("All tables recreated.")
+
+        # Seed the filters
+        seed_filters()
+        print("Filters seeded.")
 
 if __name__ == "__main__":
     reset_db()
