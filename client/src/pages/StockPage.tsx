@@ -78,19 +78,19 @@ const StockPage: React.FC = () => {
 
   const fetchAlphaBotSummary = async () => {
     if (!symbol) return;
-    setLoading(true);
+
     try {
       const response = await axios.post(
         "http://127.0.0.1:5000/alphaBot/news_summary",
-        { symbol },
+        { stock_symbol: symbol }, // Make sure this matches exactly
         { headers: getAuthHeaders() }
       );
-      console.log("Received alpha bot summary:", response.data);
-      
+      console.log("Response:", response.data); // Debug log
+      if (response.data.summary) {
+        setSummary(response.data.summary);
+      }
     } catch (error) {
-      console.error("Alpha bot summary fetch failed:", error);
-    } finally {
-      setLoading(false);
+      console.error("Error fetching summary:", error);
     }
   };
 
@@ -325,14 +325,22 @@ const StockPage: React.FC = () => {
             </div>
             <button className="send-refresh-button" onClick={handleSendRefresh}>
               {useLlama ? "Send" : "Refresh"}
-              <i className={`fas ${useLlama ? "fa-paper-plane" : "fa-sync-alt"}`}></i>
+              <i
+                className={`fas ${useLlama ? "fa-paper-plane" : "fa-sync-alt"}`}
+              ></i>
             </button>
           </div>
           {stock?.news_sentiment && (
             <div className="stock-llm-summary-sentiment">
-              <div>Positive: {(stock.news_sentiment.positive * 100).toFixed(1)}%</div>
-              <div>Neutral: {(stock.news_sentiment.neutral * 100).toFixed(1)}%</div>
-              <div>Negative: {(stock.news_sentiment.negative * 100).toFixed(1)}%</div>
+              <div>
+                Positive: {(stock.news_sentiment.positive * 100).toFixed(1)}%
+              </div>
+              <div>
+                Neutral: {(stock.news_sentiment.neutral * 100).toFixed(1)}%
+              </div>
+              <div>
+                Negative: {(stock.news_sentiment.negative * 100).toFixed(1)}%
+              </div>
             </div>
           )}
         </div>
