@@ -1,8 +1,8 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 # Use a pipeline as a high-level helper
+from app import cache
 from openai import OpenAI
 import requests
-import statistics
 import os
 
 
@@ -24,6 +24,7 @@ client = OpenAI(
 def alphaBot_endpoint():
     return jsonify({"message": "AlphaBot is running"}), 200
 
+@cache.memoize(timeout=3600)
 @alphaBot_bp.route('/alphaBot/article_sentiment', methods=['POST'])
 def get_article_sentiment(summary):
     finbert_response = requests.post(
@@ -34,28 +35,49 @@ def get_article_sentiment(summary):
     return finbert_response.json()
 
 @alphaBot_bp.route('/alphaBot/news_summary', methods=['POST'])
-def get_news_summary(news_list, stock_symbol, article_sentiment):
-    # Join the news list into a single string
-    news_string = " ".join([news.get("title", "") for news in news_list])
-    # Create the prompt
-    prompt = f"Summarize {stock_symbol}'s news and state given the following news: {news_string} and overall sentiment: {article_sentiment}"
-    # Make the request to the Groq API
-    url = "https://api.groq.com/openai/v1/chat/completions"
-    # Make the request to the Groq API
-    payload = {
-        "prompt": prompt,
-        "max_tokens": 100,
-        "model": "grok-beta"
-    }
+def get_news_summary():
+    data = request.json
+    stock_symbol = data.get("stock_symbol")
+    if not stock_symbol:
+        return jsonify({"error": "Stock symbol is required"}), 400
+    
+    news_list = get_news_list(stock_symbol)
+    if not news_list:
+        return jsonify({"error": "Failed to fetch news list"}), 500
+    
+    articles = news_list['feed'][:10]
+    
+    formated_articles = [
+        f"Article {i+1}: {article.get('title', '')} - {article.get('summary', '')}"
+        for i, article in enumerate(articles)
+    ]
 
-    headers = {
-        "Authorization": f"Bearer {GROK_KEY}",
-        "Content-Type": "application/json"
-    }
+    news_string = "\n".join(formated_articles)
 
-    response = requests.post(url, headers=headers, json=payload)
-    return response.json().get("text", "Summary not found")
+    prompt = (
+        f"Here are up to 10 news articles for {stock_symbol}:\n"
+        f"{news_string}\n"
+        f"Please analyze the sentiment of each article and provide a summary of the overall sentiment for {stock_symbol}. "
+        "Try to be cautious with sensationalism and try to be objective. Provide just the summary, no other text. "
+        "Summarize key points and most significant details of the events/trends."
+    )
 
+    try:
+        response = client.chat.completions.create(
+            model="grok-beta",
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant that summarizes news articles."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=1000,
+        )
+        summary = response.choices[0].message.content.strip()
+        return jsonify({"summary": summary}), 200
+    except Exception as e:
+        current_app.logger.error(f"Error generating news summary: {e}")
+        return jsonify({"error": "Failed to generate news summary"}), 500
+        
+@cache.memoize(timeout=3600)
 def get_news_list(stock_symbol):
     url = f"https://www.alphavantage.co/query?function=NEWS_SENTIMENT&tickers={stock_symbol}&apikey={ALPHA_VANTAGE_KEY}"
     response = requests.get(url)

@@ -51,7 +51,7 @@ def create_app(config_class=Config):
     app.register_blueprint(main_bp)
 
     from app.alphaBot import alphaBot_bp
-    app.register_blueprint(alphaBot_bp, url_prefix='/alphaBot')
+    app.register_blueprint(alphaBot_bp)
 
     app.debug = True
     #Return fully configured app
