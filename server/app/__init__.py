@@ -44,10 +44,16 @@ def create_app(config_class=Config):
         return jsonify({"message": "Test successful!"})
 
     #import blue print to organize routes
-    from app.auth import auth as auth_blueprint
+    from app.routes.auth import auth as auth_blueprint
     app.register_blueprint(auth_blueprint, url_prefix='/auth')
 
-    from app.routes import bp as main_bp
+    from app.routes.portfolio import bp as portfolio_bp
+    app.register_blueprint(portfolio_bp, url_prefix='/portfolio')
+
+    from app.routes.stock_data import bp as stock_data_bp
+    app.register_blueprint(stock_data_bp, url_prefix='/data')
+
+    from app.routes.main import bp as main_bp
     app.register_blueprint(main_bp)
 
     from app.alphaBot import alphaBot_bp
