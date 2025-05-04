@@ -1,8 +1,8 @@
-import "./RegisterPage.css";
+import axios from "axios";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import logo from "../resources/Stock_Market_Logo.png";
+import "./RegisterPage.css";
 
 // RegisterPage component for user authentication
 const RegisterPage: React.FC = () => {
@@ -44,7 +44,7 @@ const RegisterPage: React.FC = () => {
   const handleToggle = () => {
     setLtInvestor((prevState) => !prevState);
   };
-  
+
   return (
     <div className="register-container">
       <h1>Stock Market Analyzer</h1>

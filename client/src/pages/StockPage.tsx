@@ -1,11 +1,9 @@
-import "./StockPage.css";
-import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import React, { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import "./StockPage.css";
 
 import logo from "../resources/Stock_Market_Logo.png";
-import refresh_icon from "../resources/refresh_icon.png";
 
 interface Sentiment {
   positive: number;
@@ -63,7 +61,7 @@ const StockPage: React.FC = () => {
     try {
       console.log("Fetching stock data for:", symbol); // Debug log
       const response = await axios.post(
-        `http://127.0.0.1:5000/stock_data`,
+        `http://127.0.0.1:5000/data/stock_data`,
         { symbol: symbol },
         { headers: getAuthHeaders() }
       );
@@ -130,7 +128,7 @@ const StockPage: React.FC = () => {
     setLoading(true);
     try {
       const response = await axios.post(
-        `http://127.0.0.1:5000/in_depth_data`,
+        `http://127.0.0.1:5000/data/in_depth_data`,
         { symbol: symbol },
         { headers: getAuthHeaders() }
       );
