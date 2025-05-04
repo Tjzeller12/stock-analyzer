@@ -1,4 +1,4 @@
-#!/Users/michaelzeller/Desktop/stock-analyzer/server/.venv/bin/python3.12
+#!/Users/thomaszeller/Desktop/stock-analyzer/server/.venv/bin/python3.12
 # -*- coding: utf-8 -*-
 import re
 import sys
