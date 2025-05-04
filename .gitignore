@@ -3,8 +3,7 @@
 venv/
 server/.venv/
 server/venv/
-server/app/venv/
-server/app/myenv/
+server/myenv/
 
 # Python bytecode and caches
 *.pyc

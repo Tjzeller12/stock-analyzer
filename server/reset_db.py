@@ -1,8 +1,8 @@
 import os
 from flask import Flask
-from app.models import db, User, Portfolio, Stock
+from app.models import db
 from sqlalchemy import text
-from app.routes import seed_filters
+from app.services.news_manager import seed_filters
 
 def create_app():
     app = Flask(__name__)
