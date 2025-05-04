@@ -1,10 +1,10 @@
-import "./MainPage.css";
+import axios from "axios";
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import NewsFilterDropdown from "../NewsFilterDrop";
 import logo from "../resources/Stock_Market_Logo.png";
 import refresh_icon from "../resources/refresh_icon.png";
+import "./MainPage.css";
 // Stock interface contains data about a stock
 interface Stock {
   symbol: string;
@@ -38,7 +38,7 @@ const MainPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [articles, setArticles] = useState<Article[]>([]);
-  const [sortBy, setSortBy] = useState("ev_to_ebita")
+  const [sortBy, setSortBy] = useState("ev_to_ebita");
   const [stocks, setStocks] = useState<Stock[]>([]);
 
   // Unified navigation handler for all buttons
@@ -58,16 +58,16 @@ const MainPage: React.FC = () => {
       Authorization: `Bearer ${token}`,
     };
   };
-   // Handler for refresh (placeholder for future implementation)
-   const handleRefresh = async (e: React.FormEvent) => {
+  // Handler for refresh (placeholder for future implementation)
+  const handleRefresh = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Refresh Stocks");
     // TODO: Implement actual search functionality
     try {
       const response = await axios.post(
-        "http://127.0.0.1:5000/refresh",
+        "http://127.0.0.1:5000/portfolio/refresh",
         {},
-        { headers: getAuthHeaders()}
+        { headers: getAuthHeaders() }
       );
       fetchStocks();
       console.log(response.data);
@@ -83,9 +83,9 @@ const MainPage: React.FC = () => {
     // TODO: Implement actual search functionality
     try {
       const response = await axios.post(
-        "http://127.0.0.1:5000/remove",
+        "http://127.0.0.1:5000/portfolio/remove",
         { symbol: searchSymbol },
-        { headers: getAuthHeaders()}
+        { headers: getAuthHeaders() }
       );
       fetchStocks();
       console.log(response.data);
@@ -101,9 +101,9 @@ const MainPage: React.FC = () => {
     // TODO: Implement actual search functionality
     try {
       const response = await axios.post(
-        "http://127.0.0.1:5000/add",
+        "http://127.0.0.1:5000/portfolio/add",
         { symbol: searchSymbol },
-        { headers: getAuthHeaders()}
+        { headers: getAuthHeaders() }
       );
       fetchStocks();
       console.log(response.data);
@@ -120,7 +120,7 @@ const MainPage: React.FC = () => {
       const token = localStorage.getItem("token");
       console.log("Token:", token);
       localStorage.removeItem("token");
-      
+
       navigate("/login");
     } catch (error) {
       console.error("Logout failed:", error);
@@ -134,10 +134,14 @@ const MainPage: React.FC = () => {
     setError(null);
     try {
       const response = await axios.post(
-        "http://127.0.0.1:5000/stocks",
+        "http://127.0.0.1:5000/portfolio/stocks",
         { sortBy: sortBy },
-        { headers: { "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`, } }
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       if (Array.isArray(response.data)) {
         setStocks(response.data);
@@ -162,7 +166,7 @@ const MainPage: React.FC = () => {
     setError(null);
     try {
       const response = await axios.post(
-        "http://127.0.0.1:5000/news",
+        "http://127.0.0.1:5000/data/news",
         { filter: filter },
         { headers: { "Content-Type": "application/json" } }
       );
@@ -246,8 +250,6 @@ const MainPage: React.FC = () => {
       <div className="button-container">
         {[
           { label: "Profile", path: "/profile" },
-          { label: "Watchlist", path: "/watchlist" },
-          { label: "AI Predictor *Coming Soon*", path: "/aipredictor" },
           { label: "Settings", path: "/settings" },
         ].map((button) => (
           <button
@@ -267,28 +269,38 @@ const MainPage: React.FC = () => {
       <div className="search-container">
         <form>
           <input
-          type="text"
-          placeholder="Symbol i.e. NVDA"
-          value={searchSymbol}
-          onChange={(e) => setSearchSymbol(e.target.value)}
-        />
-        <button type="button" onClick={handleAdd} title="Add Stock" className="add-button">
-          +
-        </button>
-        <button type="button" onClick={handleRemove} title="Remove Stock" className="remove-button">
-          -
-        </button>
-        <button type="button" onClick={handleRefresh} title="Refresh Portfolio" className="refresh-button">
-        <img
-          src={refresh_icon}
-          alt="Stock Market Logo"
-        />
-        </button>
+            type="text"
+            placeholder="Symbol i.e. NVDA"
+            value={searchSymbol}
+            onChange={(e) => setSearchSymbol(e.target.value)}
+          />
+          <button
+            type="button"
+            onClick={handleAdd}
+            title="Add Stock"
+            className="add-button"
+          >
+            +
+          </button>
+          <button
+            type="button"
+            onClick={handleRemove}
+            title="Remove Stock"
+            className="remove-button"
+          >
+            -
+          </button>
+          <button
+            type="button"
+            onClick={handleRefresh}
+            title="Refresh Portfolio"
+            className="refresh-button"
+          >
+            <img src={refresh_icon} alt="Stock Market Logo" />
+          </button>
         </form>
       </div>
-      <div className="sort-by-dropdown">
-
-      </div>
+      <div className="sort-by-dropdown"></div>
 
       {/* Main content area with My Stocks and News buttons */}
       <div className="my-stocks-news-container">
@@ -297,13 +309,48 @@ const MainPage: React.FC = () => {
           <h2 className="my-stocks-title">My Stocks</h2>
           <div className="stock-header">
             {/* Negative symbols in front of sort by value indicate that it should be sorted in decending order. */}
-            <div className="stock-symbol-header" onClick={() => setSortBy("symbol")}>Symbol</div>
-            <div className="stock-name-header" onClick={() => setSortBy("name")}>Name </div>
-            <div className="stock-price-header" onClick={() => setSortBy("price")}>Price</div>
-            <div className="stock-ev-to-ebita-header" onClick={() => setSortBy("-ev_to_ebita")}>EV/EBITA</div>
-            <div className="stock-pe_ratio-header" onClick={() => setSortBy("pe_ratio")}>P/E Ratio</div>
-            <div className="stock-market-cap-header" onClick={() => setSortBy("-market_cap")}>Market Cap</div>
-            <div className="stock-dividend-header" onClick={() => setSortBy("-dividend_yield")}>Dividend</div>
+            <div
+              className="stock-symbol-header"
+              onClick={() => setSortBy("symbol")}
+            >
+              Symbol
+            </div>
+            <div
+              className="stock-name-header"
+              onClick={() => setSortBy("name")}
+            >
+              Name
+            </div>
+            <div
+              className="stock-price-header"
+              onClick={() => setSortBy("price")}
+            >
+              Price
+            </div>
+            <div
+              className="stock-ev-to-ebita-header"
+              onClick={() => setSortBy("-ev_to_ebita")}
+            >
+              EV/EBITA
+            </div>
+            <div
+              className="stock-pe_ratio-header"
+              onClick={() => setSortBy("pe_ratio")}
+            >
+              P/E Ratio
+            </div>
+            <div
+              className="stock-market-cap-header"
+              onClick={() => setSortBy("-market_cap")}
+            >
+              Market Cap
+            </div>
+            <div
+              className="stock-dividend-header"
+              onClick={() => setSortBy("-dividend_yield")}
+            >
+              Dividend
+            </div>
           </div>
           <div className="stocks-list">
             {stocks.map((stock, index) => (
@@ -316,8 +363,12 @@ const MainPage: React.FC = () => {
                 <div className="stock-symbol">{stock.symbol}</div>
                 <div className="stock-name">{stock.name}</div>
                 <div className="stock-price">${stock.price.toFixed(2)}</div>
-                <div className="stock-ev-to-ebita">{stock.ev_to_ebita.toFixed(2)}</div>
-                <div className="stock-pe-ratio">{stock.pe_ratio.toFixed(2)}</div>
+                <div className="stock-ev-to-ebita">
+                  {stock.ev_to_ebita.toFixed(2)}
+                </div>
+                <div className="stock-pe-ratio">
+                  {stock.pe_ratio.toFixed(2)}
+                </div>
                 <div className="stock-market-cap">
                   {formatMarketCap(stock.market_cap)}
                 </div>
