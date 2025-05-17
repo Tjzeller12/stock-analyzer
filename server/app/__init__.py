@@ -53,6 +53,9 @@ def create_app(config_class=Config):
     from app.routes.stock_data import bp as stock_data_bp
     app.register_blueprint(stock_data_bp, url_prefix='/data')
 
+    from app.routes.profile import bp as profile_bp
+    app.register_blueprint(profile_bp, url_prefix='/profile')
+
     from app.routes.main import bp as main_bp
     app.register_blueprint(main_bp)
 

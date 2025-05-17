@@ -166,14 +166,12 @@ h2 {
 /* Stock header style */
 .stock-header {
   display: flex;
-  justify-content: space-between;
+  min-width: 100%;
   align-items: center;
   margin-bottom: 5px;
   background: #069042;
   height: 25px;
   border-radius: 5px;
-  padding-left: 15px;
-  padding-right: 15px;
 }
 
 /* Stock header symbols */

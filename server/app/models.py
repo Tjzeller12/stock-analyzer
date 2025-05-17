@@ -16,6 +16,12 @@ class User(db.Model):
     password_hash = db.Column(db.String(128))
     longterm_investor = db.Column(db.Boolean)
     time_created = db.Column(db.DateTime, default=datetime.utcnow)
+    def to_dict(self):
+        return {
+            'username' : self.username,
+            'email': self.email,
+            'longterm_investor': self.longterm_investor
+        }
 
     #relationships
     portfolio = db.relationship('Portfolio', backref='owner', uselist=False, cascade='all, delete-orphan')
