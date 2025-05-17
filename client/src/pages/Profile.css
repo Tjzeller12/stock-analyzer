@@ -1,3 +1,4 @@
+@import url(../main.css);
 .profile-container {
   display: flex;
   flex-direction: column;
@@ -5,87 +6,12 @@
   align-items: center;
   padding: 20px;
   font-family: Arial, Helvetica, sans-serif;
-  background-color: #141414;
+  background-color: var(--background-color);
   color: #ffffff;
-}
-
-.profile-header {
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  width: 100%;
-  margin-bottom: 20px;
 }
 
 .blank-space {
   min-height: 90vh;
-}
-
-.form-container {
-  background-color: #212121;
-  padding: 20px;
-  border-radius: 10px;
-}
-
-/* Main heading style */
-.profile-header h1 {
-  font-size: 30px;
-  color: #06a94d;
-}
-.profile-header img {
-  max-height: 75px;
-  width: auto;
-  cursor: pointer;
-  transition: transform 0.3s;
-}
-
-/* Logo hover effect */
-.profile-header img:hover {
-  transform: scale(1.1);
-}
-
-/* Main heading style */
-.profile-container h1 {
-  font-size: 24px;
-  color: #06a94d;
-}
-
-/* Form container style */
-.profile-container form {
-  display: flex;
-  flex-direction: column; /* Stacks form elements vertically */
-  width: 100%;
-  margin-bottom: 20px;
-  max-width: 400px; /* Limits form width on larger screens */
-  margin-top: 20px;
-  color: #08c05e;
-}
-
-/* Input field style */
-.profile-container input {
-  margin-top: 10px;
-  padding: 10px;
-  margin-bottom: 10px;
-  font-size: 16px;
-  border: 1px solid #333;
-  border-radius: 5px;
-}
-
-/* Button style */
-.profile-container button {
-  padding: 10px 20px;
-  background-color: #06a94d;
-  color: #141414;
-  margin-bottom: 10px;
-  margin-top: 10px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.profile-container button:hover {
-  transform: scale(1.025); /* Slightly enlarges button on hover */
-  background-color: #048d41;
 }
 
 /* Link hover effect */
@@ -97,11 +23,6 @@
   opacity: 0;
   width: 0;
   height: 0;
-}
-
-.form-container {
-  justify-content: left;
-  align-items: left;
 }
 
 .form-row {
@@ -120,24 +41,8 @@
   width: 250px;
 }
 
-.non-editable {
-  background-color: #b4b4b4;
-}
-
-.link {
-  display: inline-block;
-  font-size: 12px;
-  color: #08c05e;
-  cursor: pointer;
-  margin: 10px 0;
-  padding: 2px 5px;
-}
-.link:hover {
-  color: #0ba453;
-}
-
 .reset-password-container {
-  background-color: #3c3c3c;
+  background-color: var(--passwrd-reset-bg-color);
   padding: 7px;
   border-radius: 5px;
 }

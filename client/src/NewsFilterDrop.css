@@ -1,27 +1,22 @@
-.filter-container{
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: #048d41;
-    height: 25px;
-    
-    margin-bottom: 5px;
-    border-radius: 5px;
+@import url(./main.css);
+
+.list-header {
+  justify-content: center;
 }
-.filter-container label{
-    color: white;
-    font-size: 14px;
-    margin-left: 5px;
+.list-header label {
+  color: white;
+  font-size: 14px;
+  margin-left: 5px;
 }
-.filter-container select{
-    padding-left: 10px;
-    width: 100%;
-    height: 100%;
-    background-color: #048d41;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    font-size: 14px;
-    align-items: right;
-    cursor: pointer;
+.list-header select {
+  padding-left: 10px;
+  width: 100%;
+  height: 100%;
+  background-color: #048d41;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 14px;
+  align-items: right;
+  cursor: pointer;
 }

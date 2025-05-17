@@ -1,51 +1,14 @@
-/* Global styles for full-height layout */
-.main-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-height: 100vh;
-  padding: 20px;
-  font-family: Arial, sans-serif;
-  background-color: #141414;
-  color: #ffffff;
-}
+@import url(../main.css);
+
 /* Header layout with logo and title */
 
-.stock-symbol-header:hover,
-.stock-name-header:hover,
-.stock-price-header:hover,
-.stock-ev-to-ebita-header:hover,
-.stock-pe_ratio-header:hover,
-.stock-market-cap-header:hover,
-.stock-dividend-header:hover {
+.stock-list-name:hover {
   background-color: #007d36;
   border-radius: 5px;
+  margin-left: 10px;
+  margin-right: 10px;
 }
 
-.main-page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  margin-bottom: 20px;
-}
-/* Main heading style */
-.main-page-header h1 {
-  font-size: 24px;
-  color: #06a94d;
-}
-/* Interactive logo styling */
-
-.main-page-header img {
-  max-height: 75px;
-  width: auto;
-  cursor: pointer;
-  transition: transform 0.3s;
-}
-/* Logo hover effect */
-.main-page-header img:hover {
-  transform: scale(1.1);
-}
 /* Search form layout */
 
 .search-container form {
@@ -57,9 +20,10 @@
   flex-grow: 1;
   padding: 10px;
   font-size: 16px;
-  border: 1px solid #333;
-  border-top-left-radius: 5px;
-  border-bottom-left-radius: 5px;
+  border: 1px solid -var(--border-color);
+  border-top-right-radius: 0px;
+  border-bottom-right-radius: 0px;
+  height: 35px;
 }
 /* Search button */
 .search-container button {
@@ -68,6 +32,11 @@
   color: #141414;
   cursor: pointer;
 }
+
+.news-container {
+  margin-top: 20px;
+}
+
 /* Layout for my-stocks and news buttons */
 
 .my-stocks-news-container {
@@ -86,7 +55,7 @@
 
 .button-container {
   display: flex;
-  justify-content: space-evenly;
+  justify-content: right;
   width: 100%;
   gap: 20px;
   padding-top: 5px;
@@ -95,12 +64,18 @@
   border-radius: 5px;
   background-color: #007031;
 }
+
+.toggle-switch {
+  margin-right: 150px;
+  margin-top: 14px !important;
+  margin-bottom: 13px !important;
+  font-size: 13px;
+}
 .remove-button {
-  border-bottom-right-radius: 5px;
-  border-top-right-radius: 5px;
+  border-bottom-left-radius: 0px;
+  border-top-left-radius: 0px;
 }
 .refresh-button {
-  border-radius: 5px;
   margin-left: 2px;
 }
 .remove-button {
@@ -109,6 +84,9 @@
 .refresh-button img {
   max-width: 15px;
   max-height: 25px;
+}
+.add-button {
+  border-radius: 0px;
 }
 
 .add-button,
@@ -160,28 +138,17 @@ h2 {
 }
 /* Stock container style */
 .stock-container {
-  min-width: 70%;
+  background-color: transparent !important;
+  min-width: 60%;
   font-size: 14px;
 }
 /* Stock header style */
-.stock-header {
-  display: flex;
+.list-header {
   min-width: 100%;
-  align-items: center;
-  margin-bottom: 5px;
-  background: #069042;
-  height: 25px;
-  border-radius: 5px;
 }
 
 /* Stock header symbols */
-.stock-symbol-header,
-.stock-name-header,
-.stock-ev-to-ebita-header,
-.stock-pe_ratio-header,
-.stock-price-header,
-.stock-market-cap-header,
-.stock-dividend-header {
+.stock-list-name {
   white-space: nowrap;
   color: #ffffff;
   flex: 1;
@@ -193,21 +160,25 @@ h2 {
 .news-list {
   width: 100%;
 
-  background-color: #1e1e1e;
+  background-color: var(--list-color);
   border-radius: 5px;
   overflow-y: auto;
   flex-grow: 1;
   max-height: 450px;
-  scrollbar-color: rgb(116, 116, 116) rgb(61, 61, 61);
+  scrollbar-color: var(--scrollbar-color);
 }
 /* Stocks and news row style */
 .stock-row,
 .article-row {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   padding: 15px;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid var(--border-color);
+  position: relative;
+}
+.news-header-img {
+  flex: 0 0 auto;
+  margin-right: auto;
 }
 /* Article row style */
 .article-row {
@@ -222,12 +193,12 @@ h2 {
 /* Even row style */
 .stock-row.even,
 .article-row.even {
-  background-color: #262626;
+  background-color: var(--even-row-color);
 }
 /* Odd row style */
 .stock-row.odd,
 .article-row.odd {
-  background-color: #1e1e1e;
+  background-color: var(--list-color);
 }
 /* Article row hover effect */
 .article-row:hover {
@@ -236,13 +207,9 @@ h2 {
 /* Stock and article data */
 .stock-symbol,
 .stock-name,
-.stock-ev-to-ebita,
-.stock-pe-ratio,
-.stock-price,
-.stock-market-cap,
-.stock-dividend,
+.stock-data,
 .article-title {
-  color: #069042;
+  color: var(--stock-data-color);
   flex: 1;
   padding: 0 5px;
 }
@@ -253,8 +220,15 @@ h2 {
 /* Article meta style */
 .article-meta {
   display: flex;
+  justify-content: center;
   font-size: 12px;
   flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+
+.time-published {
+  color: var(--text-color);
 }
 /* News company style */
 .news-company {
@@ -276,15 +250,7 @@ h2 {
 .stock-name {
   flex: 4px;
 }
-/* Stock ev to ebitda style */
-.stock-ev-to-ebita {
-  text-align: center;
-}
-/* Stock price, pe ratio, and market cap style */
-.stock-price,
-.stock-pe-ratio,
-.stock-dividend,
-.stock-market-cap {
+.stock-data {
   text-align: center;
 }
 /* Responsive layout for smaller screens */
@@ -309,10 +275,7 @@ h2 {
   /* Stock symbol, name, ev to ebitda, pe ratio, price, and market cap style */
   .stock-symbol,
   .stock-name,
-  .stock-ev-to-ebita,
-  .stock-pe-ratio,
-  .stock-price,
-  .stock-market-cap {
+  .stock-data {
     width: 100%;
     text-align: left;
     margin-bottom: 5px;

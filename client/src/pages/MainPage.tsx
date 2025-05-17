@@ -1,7 +1,9 @@
 import axios from "axios";
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import NewsFilterDropdown from "../NewsFilterDrop";
+import { ThemeContext } from "../ThemeContext";
+import "../main.css";
 import logo from "../resources/Stock_Market_Logo.png";
 import refresh_icon from "../resources/refresh_icon.png";
 import "./MainPage.css";
@@ -40,6 +42,7 @@ const MainPage: React.FC = () => {
   const [articles, setArticles] = useState<Article[]>([]);
   const [sortBy, setSortBy] = useState("ev_to_ebita");
   const [stocks, setStocks] = useState<Stock[]>([]);
+  const { theme, toggleTheme } = useContext(ThemeContext);
 
   // Unified navigation handler for all buttons
   const handleButtonClick = (path: string) => {
@@ -236,7 +239,7 @@ const MainPage: React.FC = () => {
   return (
     <div className="main-container">
       {/* Header section with title and clickable logo */}
-      <header className="main-page-header">
+      <header className="main-header">
         <h1>Stock Analyzer Dashboard</h1>
         <img
           src={logo}
@@ -248,10 +251,7 @@ const MainPage: React.FC = () => {
 
       {/* Navigation buttons for additional features */}
       <div className="button-container">
-        {[
-          { label: "Profile", path: "/profile" },
-          { label: "Settings", path: "/settings" },
-        ].map((button) => (
+        {[{ label: "Profile", path: "/profile" }].map((button) => (
           <button
             key={button.path}
             className="nav-button"
@@ -263,6 +263,18 @@ const MainPage: React.FC = () => {
         <button className="nav-button" onClick={() => handleLogout()}>
           Logout
         </button>
+        <div className="toggle-switch">
+          <input
+            type="checkbox"
+            id="theme"
+            checked={theme === "dark"}
+            onChange={toggleTheme}
+          />
+          <label htmlFor="theme">
+            <span className="slider"></span>
+          </label>
+          <span className="toggle-label">Dark Theme</span>
+        </div>
       </div>
 
       {/* Stock symbol search form */}
@@ -273,6 +285,7 @@ const MainPage: React.FC = () => {
             placeholder="Symbol i.e. NVDA"
             value={searchSymbol}
             onChange={(e) => setSearchSymbol(e.target.value)}
+            className="input-field"
           />
           <button
             type="button"
@@ -307,46 +320,40 @@ const MainPage: React.FC = () => {
         {/* stock data for all the users stocks */}
         <div className="stock-container">
           <h2 className="my-stocks-title">My Stocks</h2>
-          <div className="stock-header">
+          <div className="list-header">
             {/* Negative symbols in front of sort by value indicate that it should be sorted in decending order. */}
             <div
-              className="stock-symbol-header"
+              className="stock-list-name"
               onClick={() => setSortBy("symbol")}
             >
               Symbol
             </div>
-            <div
-              className="stock-name-header"
-              onClick={() => setSortBy("name")}
-            >
+            <div className="stock-list-name" onClick={() => setSortBy("name")}>
               Name
             </div>
-            <div
-              className="stock-price-header"
-              onClick={() => setSortBy("price")}
-            >
+            <div className="stock-list-name" onClick={() => setSortBy("price")}>
               Price
             </div>
             <div
-              className="stock-ev-to-ebita-header"
+              className="stock-list-name"
               onClick={() => setSortBy("-ev_to_ebita")}
             >
               EV/EBITA
             </div>
             <div
-              className="stock-pe_ratio-header"
+              className="stock-list-name"
               onClick={() => setSortBy("pe_ratio")}
             >
               P/E Ratio
             </div>
             <div
-              className="stock-market-cap-header"
+              className="stock-list-name"
               onClick={() => setSortBy("-market_cap")}
             >
               Market Cap
             </div>
             <div
-              className="stock-dividend-header"
+              className="stock-list-name"
               onClick={() => setSortBy("-dividend_yield")}
             >
               Dividend
@@ -362,17 +369,13 @@ const MainPage: React.FC = () => {
               >
                 <div className="stock-symbol">{stock.symbol}</div>
                 <div className="stock-name">{stock.name}</div>
-                <div className="stock-price">${stock.price.toFixed(2)}</div>
-                <div className="stock-ev-to-ebita">
-                  {stock.ev_to_ebita.toFixed(2)}
-                </div>
-                <div className="stock-pe-ratio">
-                  {stock.pe_ratio.toFixed(2)}
-                </div>
-                <div className="stock-market-cap">
+                <div className="stock-data">${stock.price.toFixed(2)}</div>
+                <div className="stock-data">{stock.ev_to_ebita.toFixed(2)}</div>
+                <div className="stock-data">{stock.pe_ratio.toFixed(2)}</div>
+                <div className="stock-data">
                   {formatMarketCap(stock.market_cap)}
                 </div>
-                <div className="stock-dividend">
+                <div className="stock-data">
                   {stock.dividend_yield.toFixed(2)}%
                 </div>
               </div>

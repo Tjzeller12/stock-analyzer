@@ -1,6 +1,7 @@
 import axios from "axios";
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import "../main.css";
 import "./StockPage.css";
 
 import logo from "../resources/Stock_Market_Logo.png";
@@ -207,9 +208,11 @@ const StockPage: React.FC = () => {
 
   return (
     <div className="stock-container">
-      <header className="stock-page-header">
+      <header className="main-header">
         <div className="stock-page-header-left">
-          <h1>{stock ? `${stock.symbol} - ${stock.name}` : symbol}</h1>
+          <h1 className="stock-page-header">
+            {stock ? `${stock.symbol} - ${stock.name}` : symbol}
+          </h1>
           <div className="stock-price-container">
             <div>${stock?.price.toFixed(2)}</div>
           </div>
@@ -239,43 +242,41 @@ const StockPage: React.FC = () => {
       </header>
 
       <div className="stock-data-container">
-        <div className="stock-ev-to-ebita-container">
-          <span className="stock-ev-to-ebita-label">EV/EBITDA</span>
+        <div className="stock-info-container">
+          <span className="stock-info-label">EV/EBITDA</span>
           <div>{stock?.ev_to_ebita}</div>
         </div>
-        <div className="stock-pe-ratio-container">
-          <span className="stock-pe-ratio-label">PE Ratio</span>
+        <div className="stock-info-container">
+          <span className="stock-info-label">PE Ratio</span>
           <div>{stock?.pe_ratio}</div>
         </div>
-        <div className="stock-market-cap-container">
-          <span className="stock-market-cap-label">Market Cap</span>
+        <div className="stock-info-container">
+          <span className="stock-info-label">Market Cap</span>
           <div>{formatMarketCap(stock?.market_cap || 0)}</div>
         </div>
-        <div className="stock-dividend-yield-container">
-          <span className="stock-dividend-yield-label">Dividend Yield</span>
+        <div className="stock-info-container">
+          <span className="stock-info-label">Dividend Yield</span>
           <div>{stock?.dividend_yield}</div>
         </div>
-        <div className="free-cash-flow-container">
-          <span className="free-cash-flow-label">Free Cash Flow</span>
+        <div className="stock-info-container">
+          <span className="stock-info-label">Free Cash Flow</span>
           <div>{formatFreeCashFlow(stock?.free_cash_flow || 0)}</div>
         </div>
-        <div className="stock-debt-to-equity-container">
-          <span className="stock-debt-to-equity-label">Debt to Equity</span>
+        <div className="stock-info-container">
+          <span className="stock-info-label">Debt to Equity</span>
           <div>{formatDebtToEquity(stock?.debt_to_equity || 0)}</div>
         </div>
-        <div className="stock-roic-container">
-          <span className="stock-roic-label">ROIC</span>
+        <div className="stock-info-container">
+          <span className="stock-info-label">ROIC</span>
           <div>{formatRoic(stock?.roic || 0)}</div>
         </div>
-        <div className="stock-price-to-fc-container">
-          <span className="stock-price-to-fc-label">Price to FC</span>
+        <div className="stock-info-container">
+          <span className="stock-info-label">Price to FC</span>
           <div>{formatPriceToFc(stock?.price_to_fc || 0)}</div>
         </div>
 
-        <div className="stock-cash-and-cash-equivalents-container">
-          <span className="stock-cash-and-cash-equivalents-label">
-            Cash and Cash Equivalents
-          </span>
+        <div className="stock-info-container">
+          <span className="stock-info-label">Cash and Cash Equivalents</span>
           <div>
             {formatCashAndCashEquivalents(stock?.cashAndCashEquivalents || 0)}
           </div>

@@ -1,3 +1,5 @@
+@import url(../main.css);
+
 /* Main container for the login page */
 .login-container {
   display: flex;
@@ -7,7 +9,7 @@
   padding: 20px;
   font-family: Arial, Helvetica, sans-serif;
   min-height: 100vh; /* Ensures full viewport height */
-  background-color: #141414;
+  background-color: var(--background-color);
   color: #ffffff;
 }
 
@@ -18,65 +20,6 @@
   margin-bottom: 20px;
 }
 
-/* Main heading style */
-.login-container h1 {
-  font-size: 24px;
-  color: #06a94d;
-}
-
-/* Form container style */
-.login-container form {
-  display: flex;
-  flex-direction: column; /* Stacks form elements vertically */
-  width: 100%;
-  margin-bottom: 20px;
-  max-width: 400px; /* Limits form width on larger screens */
-  margin-top: 20px;
-  color: #08c05e;
-}
-
-/* Input field style */
-.login-container input {
-  padding: 10px;
-  margin-bottom: 10px;
-  font-size: 16px;
-  border: 1px solid #333;
-  border-radius: 5px;
-}
-
-/* Button style */
-.login-container button {
-  padding: 10px 20px;
-  background-color: #06a94d;
-  color: #141414;
-  margin-top: 10px;
-  margin-bottom: 10px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-/* Button hover effect */
-.login-container button:hover {
-  transform: scale(1.025); /* Slightly enlarges button on hover */
-  background-color: #048d41;
-}
-
-/* Style for additional text (e.g., "Forgot password?") */
-.login-container p {
-  margin-top: 5px;
-  text-align: center;
-}
-
-/* Link style within paragraphs */
-.login-container p a {
-  color: #06a94d;
-}
-
-/* Link hover effect */
-.login-container p a:hover {
-  text-decoration: underline;
-}
 /* Styling for the password input field */
 .password-container {
   display: flex;
