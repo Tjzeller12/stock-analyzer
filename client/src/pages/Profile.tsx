@@ -1,9 +1,9 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import "../main.css";
 import logo from "../resources/Stock_Market_Logo.png";
 import "./Profile.css";
-
 type PasswordField = {
   value: string;
   show: boolean;
@@ -128,8 +128,8 @@ const Profile: React.FC = () => {
   }, []);
   return (
     <div className="profile-container">
-      <header className="profile-header">
-        <h1>Stock Analyzer Dashboard</h1>
+      <header className="main-header">
+        <h1>Stock Analyzer</h1>
         <img
           src={logo}
           alt="Stock Market Logo"
@@ -140,13 +140,14 @@ const Profile: React.FC = () => {
       <h2>Profile</h2>
       <div className="blank-space">
         <div className="form-container">
-          <form onSubmit={handleSave}>
+          <form className="user-form" onSubmit={handleSave}>
             <div className="form-row">
               <label>Username: </label>
               <input
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
+                className="input-field"
               />
             </div>
             <div className="form-row">
@@ -179,6 +180,7 @@ const Profile: React.FC = () => {
                   <div className="form-row">
                     <label>New Password:</label>
                     <input
+                      className="input-field"
                       type={newPassword.show ? "text" : "password"}
                       id="password"
                       value={newPassword.value}
@@ -196,6 +198,7 @@ const Profile: React.FC = () => {
                   <div className="form-row">
                     <label>Confirm Password:</label>
                     <input
+                      className="input-field"
                       type={confirmPassword.show ? "text" : "password"}
                       id="confirmPassword"
                       value={confirmPassword.value}

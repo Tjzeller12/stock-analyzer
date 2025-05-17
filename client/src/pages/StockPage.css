@@ -1,3 +1,4 @@
+@import url(../main.css);
 .stock-container {
   display: flex;
   flex-direction: column;
@@ -5,17 +6,10 @@
   min-height: 100vh;
   padding: 20px;
   font-family: Arial, sans-serif;
-  background-color: #141414;
-  color: #ffffff;
+  background-color: var(--background-color) !important;
+  color: var(--text-color);
 }
 
-.stock-page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  margin-bottom: 20px;
-}
 /* make the header next to the price container*/
 .stock-page-header-left {
   display: flex;
@@ -27,20 +21,9 @@
   align-items: center;
   gap: 10px;
 }
-.stock-page-header h1 {
+.stock-page-header {
   font-size: 32px;
   color: #06a94d;
-}
-
-.stock-page-header img {
-  max-height: 75px;
-  width: auto;
-  cursor: pointer;
-  transition: transform 0.3s;
-}
-
-.stock-page-header img:hover {
-  transform: scale(1.1);
 }
 
 /* Container for all stock data items */
@@ -56,16 +39,10 @@
 }
 
 /* Individual data containers */
-.stock-ev-to-ebita-container,
-.stock-pe-ratio-container,
-.stock-market-cap-container,
-.stock-dividend-yield-container,
-.free-cash-flow-container,
-.stock-debt-to-equity-container,
-.stock-roic-container,
-.stock-price-to-fc-container,
-.stock-cash-and-cash-equivalents-container {
-  background-color: #1e1e1e; /* Slightly lighter than background for contrast */
+.stock-info-container {
+  background-color: var(
+    --list-color
+  ); /* Slightly lighter than background for contrast */
   padding: 15px;
   border-radius: 8px;
   text-align: center;
@@ -74,15 +51,7 @@
 }
 
 /* Labels for each data item */
-.stock-ev-to-ebita-label,
-.stock-pe-ratio-label,
-.stock-market-cap-label,
-.stock-dividend-yield-label,
-.free-cash-flow-label,
-.stock-debt-to-equity-label,
-.stock-roic-label,
-.stock-price-to-fc-label,
-.stock-cash-and-cash-equivalents-label {
+.stock-info-label {
   display: block;
   font-size: 14px;
   font-weight: bold;
@@ -95,7 +64,7 @@
   justify-content: center;
   align-items: center;
   flex-direction: row;
-  color: #b2b2b2;
+  color: var(--stock-price-color);
   font-size: 32px;
   font-weight: bold;
   gap: 5px;
@@ -106,7 +75,7 @@
   justify-content: space-between;
   align-items: center;
   gap: 4px;
-  background-color: #1e1e1e;
+  background-color: var(--list-color);
   padding: 15px;
   border-radius: 8px;
   text-align: center;
@@ -168,7 +137,7 @@
   gap: 10px;
   width: 97.5%;
   height: 100%;
-  background-color: #757575;
+  background-color: var(--stock-graph-llm-color-bg);
   padding: 15px;
 
   border-radius: 8px;
@@ -178,7 +147,7 @@
   flex-direction: column;
   align-items: center;
   gap: 10px;
-  background-color: #1e1e1e;
+  background-color: var(--list-color);
   padding: 15px;
   border-radius: 8px;
   width: 60%;
@@ -193,7 +162,7 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 10px;
-  background-color: #1e1e1e;
+  background-color: var(--list-color);
   padding: 15px;
   width: 40%;
   border-radius: 8px;
@@ -223,7 +192,7 @@
   flex-direction: column;
   align-items: center;
   gap: 10px;
-  background-color: #313131;
+  background-color: var(--llm-field-bg-color);
   padding: 15px;
   border-radius: 8px;
   width: 95%;
@@ -290,17 +259,4 @@
   border: 1px solid #b2b2b2;
   border-radius: 5px;
   font-size: 14px;
-}
-
-.send-refresh-button {
-  padding: 10px 20px;
-  background-color: #06a94d;
-  color: #ffffff;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.send-refresh-button:hover {
-  background-color: #04b350;
 }

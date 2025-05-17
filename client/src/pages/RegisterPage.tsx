@@ -1,6 +1,7 @@
 import axios from "axios";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import "../main.css";
 import logo from "../resources/Stock_Market_Logo.png";
 import "./RegisterPage.css";
 
@@ -50,59 +51,64 @@ const RegisterPage: React.FC = () => {
       <h1>Stock Market Analyzer</h1>
       <img src={logo} alt="Stock Market Logo" />
       <h2>Register</h2>
-      <form onSubmit={handleRegister}>
-        <label htmlFor="email">Email:</label>
-        <input
-          type="email"
-          id="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-
-        <label htmlFor="username">Username:</label>
-        <input
-          type="text"
-          id="username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-        />
-        <label htmlFor="password">Password:</label>
-        <div className="password-container">
+      <div className="form-container">
+        <form className="user-form" onSubmit={handleRegister}>
+          <label htmlFor="email">Email:</label>
           <input
-            type={showPassword ? "text" : "password"}
-            id="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            className="input-field"
+            type="email"
+            id="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
           />
-          <button
-            type="button"
-            onMouseDown={() => setShowPassword(true)}
-            onMouseUp={() => setShowPassword(false)}
-            onMouseLeave={() => setShowPassword(false)}
-          >
-            {showPassword ? "Hide Password" : "Show Password"}
+
+          <label htmlFor="username">Username:</label>
+          <input
+            className="input-field"
+            type="text"
+            id="username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+          />
+          <label htmlFor="password">Password:</label>
+          <div className="password-container">
+            <input
+              className="input-field"
+              type={showPassword ? "text" : "password"}
+              id="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <button
+              type="button"
+              onMouseDown={() => setShowPassword(true)}
+              onMouseUp={() => setShowPassword(false)}
+              onMouseLeave={() => setShowPassword(false)}
+            >
+              {showPassword ? "Hide Password" : "Show Password"}
+            </button>
+          </div>
+          <div className="toggle-switch">
+            <input
+              type="checkbox"
+              id="ltInvestor"
+              checked={ltInvestor}
+              onChange={handleToggle}
+            />
+            <label htmlFor="ltInvestor">
+              <span className="slider"></span>
+            </label>
+            <span className="toggle-label">
+              {ltInvestor ? "Long-Term Investor" : "Short-Term Investor"}
+            </span>
+          </div>
+
+          <button type="submit">Register</button>
+          <button type="button" onClick={() => navigate("/login")}>
+            Goto Login Page
           </button>
-        </div>
-        <div className="toggle-switch">
-          <input
-            type="checkbox"
-            id="ltInvestor"
-            checked={ltInvestor}
-            onChange={handleToggle}
-          />
-          <label htmlFor="ltInvestor">
-            <span className="slider"></span>
-          </label>
-          <span className="toggle-label">
-            {ltInvestor ? "Long-Term Investor" : "Short-Term Investor"}
-          </span>
-        </div>
-
-        <button type="submit">Register</button>
-        <button type="button" onClick={() => navigate("/login")}>
-          Goto Login Page
-        </button>
-      </form>
+        </form>
+      </div>
     </div>
   );
 };

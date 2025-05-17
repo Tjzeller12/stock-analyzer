@@ -1,6 +1,7 @@
 import axios from "axios";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import "../main.css";
 import logo from "../resources/Stock_Market_Logo.png";
 import "./LoginPage.css";
 
@@ -37,36 +38,40 @@ const LoginPage: React.FC = () => {
       <h1>Stock Market Analyzer</h1>
       <img src={logo} alt="Stock Market Logo" />
       <h2>Login</h2>
-      <form onSubmit={handleLogin}>
-        <label htmlFor="username">Username:</label>
-        <input
-          type="text"
-          id="username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-        />
-        <label htmlFor="username">Password:</label>
-        <div className="password-container">
+      <div className="form-container">
+        <form className="user-form" onSubmit={handleLogin}>
+          <label htmlFor="username">Username:</label>
           <input
-            type={showPassword ? "text" : "password"}
-            id="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            className="input-field"
+            type="text"
+            id="username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
           />
-          <button
-            type="button"
-            onMouseDown={() => setShowPassword(true)}
-            onMouseUp={() => setShowPassword(false)}
-            onMouseLeave={() => setShowPassword(false)}
-          >
-            {showPassword ? "Hide Password" : "Show Password"}
+          <label htmlFor="username">Password:</label>
+          <div className="password-container">
+            <input
+              className="input-field"
+              type={showPassword ? "text" : "password"}
+              id="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <button
+              type="button"
+              onMouseDown={() => setShowPassword(true)}
+              onMouseUp={() => setShowPassword(false)}
+              onMouseLeave={() => setShowPassword(false)}
+            >
+              {showPassword ? "Hide" : "Show"}
+            </button>
+          </div>
+          <button type="submit">Login</button>
+          <button type="button" onClick={() => navigate("/register")}>
+            Goto Register Page
           </button>
-        </div>
-        <button type="submit">Login</button>
-        <button type="button" onClick={() => navigate("/register")}>
-          Goto Register Page
-        </button>
-      </form>
+        </form>
+      </div>
     </div>
   );
 };

@@ -34,7 +34,7 @@ dump.rdb
 # Logs
 *.log
 
-# Node.js dependencies (if not needed)
+# Node.js dependencies
 node_modules/
 .pnp
 .pnp.js
