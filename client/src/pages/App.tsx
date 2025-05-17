@@ -1,17 +1,17 @@
-import React from "react";
 import axios from "axios";
 import { useEffect } from "react";
 import {
-  BrowserRouter as Router,
-  Route,
-  Routes,
   Navigate,
+  Route,
+  BrowserRouter as Router,
+  Routes,
 } from "react-router-dom";
-import RegisterPage from "./RegisterPage";
+import "./App.css";
 import LoginPage from "./LoginPage";
 import MainPage from "./MainPage";
+import ProfilePage from "./Profile";
+import RegisterPage from "./RegisterPage";
 import StockPage from "./StockPage";
-import "./App.css";
 
 // App.tsx is the main component that renders the entire application.
 function App() {
@@ -34,6 +34,7 @@ function App() {
       <div className="App">
         <Routes>
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/main" element={<MainPage />} />
           <Route path="/stock/:symbol" element={<StockPage />} />

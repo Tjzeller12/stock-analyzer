@@ -27,7 +27,7 @@ def news_filter_selection():
         news_items = GeneralStockNews.query.filter_by(filter_id=filter_id).order_by(desc(GeneralStockNews.last_news_update)).all()
         return jsonify([news_item.to_dict() for news_item in news_items]), 200
     
-    data = get_news_data(filter, filter_id)
+    data = get_news_data(filter)
 
     #Return the news data
     if data and 'feed' in data:
@@ -35,7 +35,7 @@ def news_filter_selection():
         GeneralStockNews.query.filter_by(filter_id=filter_id).delete()   
         db.session.commit()
 
-        processed_news = process_news_data(data)
+        processed_news = process_news_data(data, filter_id)
         
         return jsonify(processed_news), 200
     else:
