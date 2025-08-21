@@ -33,7 +33,8 @@ def create_app(config_class=Config):
         db.create_all()  # Create database tables for all models
     migrate.init_app(app, db)
     redis_client.init_app(app)
-    CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
+    # Allow frontend origin from config
+    CORS(app, resources={r"/*": {"origins": app.config.get('FRONTEND_ORIGIN')}})
 
     cache.init_app(app, config={'CACHE_TYPE': 'simple'})
 

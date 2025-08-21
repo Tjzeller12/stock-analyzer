@@ -1,4 +1,6 @@
 import axios from "axios";
+import { AUTH_ENDPOINTS, PORTFOLIO_ENDPOINTS, DATA_ENDPOINTS } from '../constants/api';
+import { authPost } from '../utils/api';
 import React, { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import NewsFilterDropdown from "../NewsFilterDrop";
@@ -67,13 +69,8 @@ const MainPage: React.FC = () => {
     console.log("Refresh Stocks");
     // TODO: Implement actual search functionality
     try {
-      const response = await axios.post(
-        "http://127.0.0.1:5000/portfolio/refresh",
-        {},
-        { headers: getAuthHeaders() }
-      );
+      await authPost(PORTFOLIO_ENDPOINTS.REFRESH, {});
       fetchStocks();
-      console.log(response.data);
     } catch (error) {
       console.error("Refresh failed:", error);
     }
@@ -85,13 +82,8 @@ const MainPage: React.FC = () => {
     console.log("Search for:", searchSymbol);
     // TODO: Implement actual search functionality
     try {
-      const response = await axios.post(
-        "http://127.0.0.1:5000/portfolio/remove",
-        { symbol: searchSymbol },
-        { headers: getAuthHeaders() }
-      );
+      await authPost(PORTFOLIO_ENDPOINTS.REMOVE, { symbol: searchSymbol });
       fetchStocks();
-      console.log(response.data);
     } catch (error) {
       console.error("Remove failed:", error);
     }
@@ -103,13 +95,8 @@ const MainPage: React.FC = () => {
 
     // TODO: Implement actual search functionality
     try {
-      const response = await axios.post(
-        "http://127.0.0.1:5000/portfolio/add",
-        { symbol: searchSymbol },
-        { headers: getAuthHeaders() }
-      );
+      await authPost(PORTFOLIO_ENDPOINTS.ADD, { symbol: searchSymbol });
       fetchStocks();
-      console.log(response.data);
     } catch (error) {
       console.error("Add failed:", error);
     }
@@ -118,7 +105,7 @@ const MainPage: React.FC = () => {
   // Logout function
   const handleLogout = async () => {
     try {
-      const response = await axios.post("http://127.0.0.1:5000/auth/logout");
+      const response = await axios.post(AUTH_ENDPOINTS.LOGOUT);
       console.log(response.data);
       const token = localStorage.getItem("token");
       console.log("Token:", token);
@@ -137,7 +124,7 @@ const MainPage: React.FC = () => {
     setError(null);
     try {
       const response = await axios.post(
-        "http://127.0.0.1:5000/portfolio/stocks",
+        PORTFOLIO_ENDPOINTS.STOCKS,
         { sortBy: sortBy },
         {
           headers: {
@@ -169,7 +156,7 @@ const MainPage: React.FC = () => {
     setError(null);
     try {
       const response = await axios.post(
-        "http://127.0.0.1:5000/data/news",
+        DATA_ENDPOINTS.NEWS,
         { filter: filter },
         { headers: { "Content-Type": "application/json" } }
       );

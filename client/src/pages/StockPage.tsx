@@ -1,4 +1,6 @@
 import axios from "axios";
+import { DATA_ENDPOINTS, ALPHA_BOT_ENDPOINTS } from '../constants/api';
+import { authPost } from '../utils/api';
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import "../main.css";
@@ -61,13 +63,9 @@ const StockPage: React.FC = () => {
     setLoading(true);
     try {
       console.log("Fetching stock data for:", symbol); // Debug log
-      const response = await axios.post(
-        `http://127.0.0.1:5000/data/stock_data`,
-        { symbol: symbol },
-        { headers: getAuthHeaders() }
-      );
-      console.log("Received stock data:", response.data); // Debug log
-      setStock(response.data);
+      const stockData = await authPost<Stock>(DATA_ENDPOINTS.STOCK, { symbol });
+      console.log("Received stock data:", stockData); // Debug log
+      setStock(stockData);
     } catch (error) {
       console.error("Stock fetch failed:", error);
     } finally {
@@ -79,14 +77,10 @@ const StockPage: React.FC = () => {
     if (!symbol) return;
 
     try {
-      const response = await axios.post(
-        "http://127.0.0.1:5000/alphaBot/news_summary",
-        { stock_symbol: symbol }, // Make sure this matches exactly
-        { headers: getAuthHeaders() }
-      );
-      console.log("Response:", response.data); // Debug log
-      if (response.data.summary) {
-        setSummary(response.data.summary);
+      const response = await authPost<{ summary: string }>(ALPHA_BOT_ENDPOINTS.NEWS_SUMMARY, { stock_symbol: symbol });
+      console.log("Response:", response); // Debug log
+      if (response.summary) {
+        setSummary(response.summary);
       }
     } catch (error) {
       console.error("Error fetching summary:", error);
@@ -97,13 +91,9 @@ const StockPage: React.FC = () => {
     if (!summary) return;
     setLoading(true);
     try {
-      const response = await axios.post(
-        `http://127.0.0.1:5000/alphaBot/article_sentiment`,
-        { summary: summary },
-        { headers: getAuthHeaders() }
-      );
-      console.log("Received alpha bot article sentiment:", response.data); // Debug log
-      setSentiment(response.data);
+      const sentimentData = await authPost<Sentiment>(ALPHA_BOT_ENDPOINTS.SENTIMENT, { summary });
+      console.log("Received alpha bot article sentiment:", sentimentData); // Debug log
+      setSentiment(sentimentData);
     } catch (error) {
       console.error("Alpha bot article sentiment fetch failed:", error);
     } finally {
@@ -128,13 +118,9 @@ const StockPage: React.FC = () => {
     if (!symbol) return;
     setLoading(true);
     try {
-      const response = await axios.post(
-        `http://127.0.0.1:5000/data/in_depth_data`,
-        { symbol: symbol },
-        { headers: getAuthHeaders() }
-      );
-      console.log("Received in-depth data:", response.data); // Debug log
-      setStock(response.data);
+      const inDepthData = await authPost<Stock>(DATA_ENDPOINTS.IN_DEPTH, { symbol });
+      console.log("Received in-depth data:", inDepthData); 
+      setStock(inDepthData);
     } catch (error) {
       console.error("In-depth data fetch failed:", error);
     } finally {
@@ -242,7 +228,7 @@ const StockPage: React.FC = () => {
       </header>
 
       <div className="stock-data-container">
-        <div className="stock-info-container">
+        <div className="stock-info-container-first">
           <span className="stock-info-label">EV/EBITDA</span>
           <div>{stock?.ev_to_ebita}</div>
         </div>
@@ -275,7 +261,7 @@ const StockPage: React.FC = () => {
           <div>{formatPriceToFc(stock?.price_to_fc || 0)}</div>
         </div>
 
-        <div className="stock-info-container">
+        <div className="stock-info-container-last">
           <span className="stock-info-label">Cash and Cash Equivalents</span>
           <div>
             {formatCashAndCashEquivalents(stock?.cashAndCashEquivalents || 0)}

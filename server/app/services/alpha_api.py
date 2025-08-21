@@ -2,15 +2,14 @@ import datetime
 from app import db, cache
 from app.models import StockMaster
 import requests
-import os
-
-ALPHA_VANTAGE_KEY = os.getenv('ALPHA_VANTAGE_KEY')
+from app.constants import AlphaVantageFunction, FinancialModelingEndpoint
+from app.utils.api import build_alpha_vantage_url, build_financial_modeling_url
 
 # Retrieves stock data from Alpha Vantage API using the stocks symbol
 @cache.memoize(timeout=900)
 def get_stock_data(symbol):
-    #Update API URL with stocks symbol
-    url = "https://www.alphavantage.co/query?function=OVERVIEW&symbol=" + symbol + "&apikey=" + ALPHA_VANTAGE_KEY
+    # Build API URL using utility function
+    url = build_alpha_vantage_url(AlphaVantageFunction.OVERVIEW, symbol=symbol)
     # request data from API
     req = requests.get(url)
     #Convert it to JSON data
@@ -24,7 +23,7 @@ def get_stock_price(symbol):
     # Update API URL with symbol
     stock_master = StockMaster.query.filter_by(symbol=symbol).first()
     
-    url = "https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=" + symbol + "&interval=5min&apikey=" + ALPHA_VANTAGE_KEY
+    url = build_alpha_vantage_url(AlphaVantageFunction.TIME_SERIES_INTRADAY, symbol=symbol, interval="5min")
     # request data
     req = requests.get(url)
     # convert data tp JSON
@@ -57,12 +56,10 @@ def get_stock_price(symbol):
 def get_in_depth_financials(symbol):
     try:
         
-        api_key = "zHCoDbscJgZjgP0WIa1nO8wewFlCoK0H"
-        
-        # Get the URL for the API
-        cf_url = f"https://financialmodelingprep.com/api/v3/cash-flow-statement/{symbol}?limit=1&apikey={api_key}"
-        bs_url = f"https://financialmodelingprep.com/api/v3/balance-sheet-statement/{symbol}?limit=1&apikey={api_key}"
-        km_url = f"https://financialmodelingprep.com/api/v3/key-metrics/{symbol}?limit=1&apikey={api_key}"
+        # Build API URLs using utility functions
+        cf_url = build_financial_modeling_url(FinancialModelingEndpoint.CASH_FLOW_STATEMENT, symbol, limit=1)
+        bs_url = build_financial_modeling_url(FinancialModelingEndpoint.BALANCE_SHEET_STATEMENT, symbol, limit=1)
+        km_url = build_financial_modeling_url(FinancialModelingEndpoint.KEY_METRICS, symbol, limit=1)
 
         # Get the response from the API
         cf_response = requests.get(cf_url)
@@ -100,10 +97,10 @@ def get_in_depth_financials(symbol):
 @cache.memoize(timeout=900)
 def get_news_data(filter):
     # If the filter is all then get all news items
-    if(filter.lower() == "all"):
-        url = "https://www.alphavantage.co/query?function=NEWS_SENTIMENT&apikey=" + ALPHA_VANTAGE_KEY
+    if filter.lower() == "all":
+        url = build_alpha_vantage_url(AlphaVantageFunction.NEWS_SENTIMENT)
     else:
-        url = "https://www.alphavantage.co/query?function=NEWS_SENTIMENT&topics=" + filter + "&apikey=" + ALPHA_VANTAGE_KEY
+        url = build_alpha_vantage_url(AlphaVantageFunction.NEWS_SENTIMENT, topics=filter)
     # request data from API
     req = requests.get(url)
     #Convert it to JSON data

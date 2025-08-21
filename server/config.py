@@ -26,3 +26,6 @@ class Config:
 
     SESSION_COOKIE_SAMESITE = 'Strict'  # Set to 'Strict' or 'None' if required
     SESSION_COOKIE_SECURE = True  # Ensure this is True if using HTTPS
+
+    # Frontend origin for CORS
+    FRONTEND_ORIGIN = os.environ.get('FRONTEND_ORIGIN', 'http://localhost:3000')

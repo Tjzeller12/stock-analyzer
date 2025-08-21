@@ -1,4 +1,5 @@
 import axios from "axios";
+import { AUTH_ENDPOINTS } from "../constants/api";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../main.css";
@@ -20,7 +21,7 @@ const RegisterPage: React.FC = () => {
     e.preventDefault();
     console.log("Register attempt");
     try {
-      const response = await axios.post("http://127.0.0.1:5000/auth/register", {
+      const response = await axios.post(AUTH_ENDPOINTS.REGISTER, {
         username,
         password,
         email,

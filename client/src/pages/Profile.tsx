@@ -1,4 +1,5 @@
 import axios from "axios";
+import { PROFILE_ENDPOINTS } from "../constants/api";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../main.css";
@@ -31,7 +32,7 @@ const Profile: React.FC = () => {
     if (newPassword.value == confirmPassword.value) {
       try {
         await axios.post(
-          "http://127.0.0.1:5000/profile/reset",
+          PROFILE_ENDPOINTS.RESET_PASSWORD,
           {
             newPassword: newPassword.value,
           },
@@ -58,7 +59,7 @@ const Profile: React.FC = () => {
     console.log("Save attempt");
     try {
       await axios.post(
-        "http://127.0.0.1:5000/profile/save",
+        PROFILE_ENDPOINTS.SAVE,
         {
           username,
           longterm_investor: ltInvestor,
@@ -83,7 +84,7 @@ const Profile: React.FC = () => {
     const token = localStorage.getItem("token");
     try {
       const response = await axios.post(
-        "http://127.0.0.1:5000/profile/info",
+        PROFILE_ENDPOINTS.INFO,
         {},
         {
           headers: {
