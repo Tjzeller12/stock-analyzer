@@ -1,4 +1,5 @@
 import axios from "axios";
+import { AUTH_ENDPOINTS } from "../constants/api";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../main.css";
@@ -16,7 +17,7 @@ const LoginPage: React.FC = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await axios.post("http://127.0.0.1:5000/auth/login", {
+      const response = await axios.post(AUTH_ENDPOINTS.LOGIN, {
         username,
         password,
       });

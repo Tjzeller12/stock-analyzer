@@ -1,22 +1,21 @@
 from flask import Blueprint, request, jsonify, current_app
-# Use a pipeline as a high-level helper
 from app import cache
 from openai import OpenAI
 import requests
 import os
-
+from app.constants import GROK_BASE_URL, HUGGING_FACE_API_URL
+from app.utils.api import build_alpha_vantage_url, build_hugging_face_headers
+from app.constants import AlphaVantageFunction
 
 # Make alphaBot blueprint
 alphaBot_bp = Blueprint('alphaBot', __name__)
 
-# Replace the hardcoded token with an environment variable
+# Get API keys from environment
 GROK_KEY = os.getenv('GROK_KEY')
-ALPHA_VANTAGE_KEY = os.getenv('ALPHA_VANTAGE_KEY')
-HUGGING_FACE_TOKEN = os.getenv('HUGGING_FACE_TOKEN')
 
 client = OpenAI(
     api_key=GROK_KEY,
-    base_url="https://api.x.ai/v1"
+    base_url=GROK_BASE_URL
 )
 
 
@@ -28,8 +27,8 @@ def alphaBot_endpoint():
 @alphaBot_bp.route('/alphaBot/article_sentiment', methods=['POST'])
 def get_article_sentiment(summary):
     finbert_response = requests.post(
-        "https://api-inference.huggingface.co/models/ProsusAI/finbert",
-        headers={"Authorization": f"Bearer {HUGGING_FACE_TOKEN}"},
+        HUGGING_FACE_API_URL,
+        headers=build_hugging_face_headers(),
         json={"inputs": summary}
     )
     return finbert_response.json()
@@ -79,6 +78,6 @@ def get_news_summary():
         
 @cache.memoize(timeout=3600)
 def get_news_list(stock_symbol):
-    url = f"https://www.alphavantage.co/query?function=NEWS_SENTIMENT&tickers={stock_symbol}&apikey={ALPHA_VANTAGE_KEY}"
+    url = build_alpha_vantage_url(AlphaVantageFunction.NEWS_SENTIMENT, tickers=stock_symbol)
     response = requests.get(url)
     return response.json()
