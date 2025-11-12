@@ -17,7 +17,6 @@ migrate = Migrate()
 redis_client = FlaskRedis()
 server_session = Session()
 cache = Cache()
-from app.models import User, Portfolio, Stock
 
 # Creates a new flask app and uses config.py to configure it
 def create_app(config_class=Config):  
@@ -27,10 +26,12 @@ def create_app(config_class=Config):
     db.init_app(app)
     bcrypt.init_app(app)
     server_session.init_app(app)
+    
     with app.app_context():
-        # Import routes and models
+        # Import routes and models AFTER db is initialized
         from . import routes, models
         db.create_all()  # Create database tables for all models
+    
     migrate.init_app(app, db)
     redis_client.init_app(app)
     # Allow frontend origin from config
@@ -66,6 +67,7 @@ def create_app(config_class=Config):
     app.debug = True
     #Return fully configured app
     return app
+
 # detect db models. At bottom of file to prevent circular import
 from app import models 
 

@@ -7,7 +7,8 @@ def get_filter_id(filter):
     filter_object = Filter.query.filter(db.func.lower(Filter.filter_name) == filter.lower()).first()
     if not filter_object:
         return jsonify({"error": "Filter not found"}), 404
-    
+        #return None
+
     return filter_object.id
     
 def process_news_data(data, filter_id):
