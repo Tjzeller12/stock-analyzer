@@ -24,8 +24,8 @@ class Config:
     SESSION_USE_SIGNER = True
     SESSION_REDIS = redis.from_url(REDIS_URL)
 
-    SESSION_COOKIE_SAMESITE = 'Strict'  # Set to 'Strict' or 'None' if required
-    SESSION_COOKIE_SECURE = True  # Ensure this is True if using HTTPS
+    SESSION_COOKIE_SAMESITE = 'Lax'  # Set to 'Lax' for development
+    SESSION_COOKIE_SECURE = False  # Set to False for HTTP development
 
     # Frontend origin for CORS
     FRONTEND_ORIGIN = os.environ.get('FRONTEND_ORIGIN', 'http://localhost:3000')
