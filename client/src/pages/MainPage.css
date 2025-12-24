@@ -5,8 +5,6 @@
 .stock-list-name:hover {
   background-color: #007d36;
   border-radius: 5px;
-  margin-left: 10px;
-  margin-right: 10px;
 }
 
 /* Search form layout */
@@ -104,11 +102,11 @@
 }
 
 /* Individual nav button styling */
-.news-header {
+.news-list-header {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
+  padding-left: 10px;
+  align-items: left !important;
+  justify-content: left !important;
 }
 
 .news-filter-dropdown {
@@ -151,7 +149,7 @@ h2 {
 .stock-list-name {
   white-space: nowrap;
   color: #ffffff;
-  flex: 1;
+  flex: unset;
   padding: 0 5px;
   cursor: pointer;
 }
@@ -176,10 +174,105 @@ h2 {
   border-bottom: 1px solid var(--border-color);
   position: relative;
 }
+
+/* Compare bar styles */
+.compare-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+  background-color: var(--list-color);
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin: 6px;
+}
+
+.compare-count {
+  font-size: 12px;
+  color: var(--text-color);
+}
+
+.compare-error {
+  font-size: 12px;
+  color: #ff5c5c;
+}
+
+/* Action column (selection) */
+.action-col {
+  text-align: center;
+  min-width: 100px;
+}
+
+.stock-action-cell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-left: 2px dashed var(--stock-data-color);
+  min-width: 100px;
+}
+
+.action-checkbox {
+  transform: scale(2.5);
+}
+
+/* Compare result panel */
+.compare-result {
+  background-color: var(--list-color);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 12px;
+  margin-top: 16px;
+}
+
+.compare-ranking {
+  margin-bottom: 12px;
+}
+
+.ranking-list {
+  margin-left: 20px;
+}
+
+.analysis-body {
+  white-space: pre-wrap;
+  line-height: 1.4;
+}
+
+/* Align stock header and rows using a shared grid */
+.stock-container {
+  /* Adjust column widths easily by editing this variable */
+  --stock-grid-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 110px;
+}
+
+.list-header {
+  display: grid;
+  grid-template-columns: var(--stock-grid-columns);
+  align-items: center;
+  justify-items: center;
+  height: 38px;
+}
+
+.stocks-list .stock-row {
+  display: grid;
+  grid-template-columns: var(--stock-grid-columns);
+  align-items: center;
+  justify-items: center;
+}
+
+/* Center header labels and data cells to match user request */
+.stock-list-name,
+.stock-symbol,
+.stock-name,
+.stock-data,
+.stock-action-cell {
+  text-align: center;
+  justify-self: center;
+}
+
 .news-header-img {
   flex: 0 0 auto;
   margin-right: auto;
 }
+
 /* Article row style */
 .article-row {
   min-height: 80px;

@@ -38,3 +38,8 @@ export const PROFILE_ENDPOINTS = {
     SAVE: `${API_BASE_URL}/profile/save`,
     INFO: `${API_BASE_URL}/profile/info`,
 } as const;
+
+// Analysis endpoints
+export const ANALYSIS_ENDPOINTS = {
+    COMPARE: `${API_BASE_URL}/analysis/compare`,
+} as const;

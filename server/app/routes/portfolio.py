@@ -11,10 +11,7 @@ bp = Blueprint('portfolio', __name__)
 # Removes a stock from the users portfolio
 @bp.route('/remove', methods=['POST'])
 def remove_stock():
-    current_user = get_current_user()
-    if not current_user:
-        current_app.logger.info("User not logged in")
-        return jsonify({"error": "User not logged in"}), 401
+    current_user = get_user()
     # Get the symbol from the request
     symbol = request.json.get("symbol")
     if not symbol:
@@ -47,10 +44,7 @@ def remove_stock():
 @bp.route('/add', methods=['POST'])
 def add_stock_to_portfolio():
     # Get user
-    current_user = get_current_user()
-    if not current_user:
-        current_app.logger.info("User not logged in")
-        return jsonify({"error": "User not logged in"}), 401
+    current_user = get_user()
     # Get symbol from request
     symbol = request.json.get("symbol")
     if not symbol:
@@ -75,10 +69,7 @@ def add_stock_to_portfolio():
 @cache.memoize(timeout=900)
 def update_stocks():
     # Get current user
-    current_user = get_current_user()
-    if not current_user:
-        current_app.logger.info("User not logged in")
-        return jsonify({"error": "User not logged in"}), 401
+    current_user = get_user()
     # Get portfolio from user
     portfolio = current_user.portfolio
     if not portfolio:
@@ -119,10 +110,7 @@ def stock_sort_by():
     # Get sort by
     sort_by = request.json.get("sortBy")
     # Get current user
-    current_user = get_current_user()
-    if not current_user:
-        current_app.logger.info("User not logged in")
-        return jsonify({"error": "User not logged in"}), 401
+    current_user = get_user()
     
     portfolio = current_user.portfolio
     if not portfolio:
@@ -148,3 +136,10 @@ def stock_sort_by():
         # Return error
         return jsonify({"error": "An error occurred while fetching stocks."})
     
+    def get_user():
+        # Get current user
+        current_user = get_current_user()
+        if not current_user:
+            current_app.logger.info("User not logged in")
+            return jsonify({"error": "User not logged in"}), 401
+        return current_user
