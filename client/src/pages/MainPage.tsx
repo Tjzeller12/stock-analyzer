@@ -1,13 +1,13 @@
 import axios from "axios";
-import { AUTH_ENDPOINTS, PORTFOLIO_ENDPOINTS, DATA_ENDPOINTS, ANALYSIS_ENDPOINTS } from '../constants/api';
-import { authPost } from '../utils/api';
 import React, { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import NewsFilterDropdown from "../NewsFilterDrop";
 import { ThemeContext } from "../ThemeContext";
+import { ALPHA_BOT_ENDPOINTS, AUTH_ENDPOINTS, DATA_ENDPOINTS, PORTFOLIO_ENDPOINTS } from '../constants/api';
 import "../main.css";
 import logo from "../resources/Stock_Market_Logo.png";
 import refresh_icon from "../resources/refresh_icon.png";
+import { authPost } from '../utils/api';
 import "./MainPage.css";
 
 // Stock interface contains data about a stock
@@ -42,8 +42,7 @@ interface RankingItem {
 }
 
 interface CompareResponse {
-  ranking?: RankingItem[];
-  analysis: string;
+  response: string;
 }
 
 // MainPage component: Serves as the dashboard for the stock analyzer application
@@ -93,7 +92,7 @@ const MainPage: React.FC = () => {
     }
     try {
       setCompareLoading(true);
-      const result = await authPost<CompareResponse>(ANALYSIS_ENDPOINTS.COMPARE, { symbols });
+      const result = await authPost<CompareResponse>(ALPHA_BOT_ENDPOINTS.COMPARE, { stock_symbols: symbols });
       setCompareResult(result);
     } catch (err) {
       setCompareError("Comparison failed. Please try again.");
@@ -445,31 +444,19 @@ const MainPage: React.FC = () => {
               <span style={{ color: "red", fontSize: 12 }}>{compareError}</span>
             )}
           </div>
-        </div>
-        {/* Comparison result */}
-        {compareResult && (
-          <div style={{ marginTop: 16 }}>
-            {compareResult.ranking && compareResult.ranking.length > 0 && (
-              <div style={{ marginBottom: 12 }}>
-                <h3>Ranking</h3>
-                <ol>
-                  {compareResult.ranking
-                    .sort((a, b) => a.rank - b.rank)
-                    .map((item) => (
-                      <li key={item.symbol}>
-                        {item.rank}. {item.symbol}
-                        {typeof item.score === "number" ? ` (score: ${item.score.toFixed(2)})` : ""}
-                      </li>
-                    ))}
-                </ol>
+          {/* Comparison result */}
+          <div className="compare-result-container">
+            {compareResult && (
+              <div style={{ marginTop: 16 }}>
+                <div>
+                  <h3>Analysis</h3>
+                  <div style={{ whiteSpace: "pre-wrap" }}>{compareResult.response}</div>
+                </div>
               </div>
             )}
-            <div>
-              <h3>Analysis</h3>
-              <div style={{ whiteSpace: "pre-wrap" }}>{compareResult.analysis}</div>
-            </div>
           </div>
-        )}
+        </div>
+
         {/* news links for news that relates to the users stocks */}
         <div className="news-container">
           <h2 className="news-title">News</h2>

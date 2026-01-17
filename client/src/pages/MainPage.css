@@ -139,10 +139,14 @@ h2 {
   background-color: transparent !important;
   min-width: 60%;
   font-size: 14px;
+  display: flex;
+  flex-direction: column;
 }
+
 /* Stock header style */
 .list-header {
   min-width: 100%;
+  flex-shrink: 0;
 }
 
 /* Stock header symbols */
@@ -163,6 +167,7 @@ h2 {
   overflow-y: auto;
   flex-grow: 1;
   max-height: 450px;
+  min-height: 200px; /* Prevent disappearing */
   scrollbar-color: var(--scrollbar-color);
 }
 /* Stocks and news row style */
@@ -185,6 +190,7 @@ h2 {
   border-radius: 6px;
   padding: 8px 12px;
   margin: 6px;
+  flex-shrink: 0;
 }
 
 .compare-count {
@@ -214,14 +220,21 @@ h2 {
 .action-checkbox {
   transform: scale(2.5);
 }
-
+.compare-bar button {
+  background-color: #06a94d;
+}
 /* Compare result panel */
-.compare-result {
+.compare-result-container {
   background-color: var(--list-color);
   border: 1px solid var(--border-color);
   border-radius: 6px;
   padding: 12px;
   margin-top: 16px;
+  max-height: 800px;
+  width: 40%;
+  overflow-y: auto;
+  scrollbar-color: var(--scrollbar-color);
+  color: var(--text-color);
 }
 
 .compare-ranking {

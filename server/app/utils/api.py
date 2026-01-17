@@ -4,7 +4,6 @@ import requests
 import os
 from ..constants import (
     ALPHA_VANTAGE_BASE_URL,
-    HUGGING_FACE_API_URL,
     FINANCIAL_MODELING_PREP_BASE_URL
 )
 
@@ -25,16 +24,6 @@ def build_alpha_vantage_url(function: str, **params) -> str:
     
     query_params = '&'.join(f"{k}={v}" for k, v in params.items())
     return f"{ALPHA_VANTAGE_BASE_URL}?{query_params}"
-
-def build_hugging_face_headers() -> Dict[str, str]:
-    """
-    Build headers for Hugging Face API requests.
-    
-    Returns:
-        dict: Headers including authorization
-    """
-    token = os.getenv('HUGGING_FACE_TOKEN')
-    return {"Authorization": f"Bearer {token}"}
 
 def build_financial_modeling_url(endpoint: str, symbol: str, limit: Optional[int] = None) -> str:
     """

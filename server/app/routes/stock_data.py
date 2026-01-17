@@ -21,6 +21,10 @@ def news_filter_selection():
     
     filter_id = get_filter_id(filter)
     current_app.logger.info(f"Filter ID: {filter_id}")
+    
+    if filter_id is None:
+        return jsonify({"error": "Filter not found"}), 404
+        
     stock_news = GeneralStockNews.query.filter_by(filter_id=filter_id).order_by(desc(GeneralStockNews.last_news_update)).first()
     # If the stock was updated in the last 15 minutes then return the price from the database
     if stock_news and stock_news.last_news_update and stock_news.last_news_update > datetime.datetime.now() - timedelta(minutes=15):
@@ -76,6 +80,9 @@ def in_depth_data():
     
     in_depth_data = get_in_depth_financials(symbol)
     if isinstance(in_depth_data, dict) and "error" in in_depth_data:
-        return jsonify(in_depth_data), 404
+        # If it's an API error (likely 403), return 500 so frontend doesn't treat it as "not found"
+        # Or return 200 with error details so frontend can display "Data unavailable"
+        current_app.logger.error(f"FMP API Error: {in_depth_data['error']}")
+        return jsonify(in_depth_data), 500
     
     return jsonify(in_depth_data), 200

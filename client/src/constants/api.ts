@@ -1,6 +1,6 @@
 // Base URL for the backend API (overridable via environment)
 declare const process: any;
-export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://3.85.3.252:5001';
+export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5001';
 
 // Auth endpoints
 export const AUTH_ENDPOINTS = {
@@ -28,8 +28,9 @@ export const DATA_ENDPOINTS = {
 // AlphaBot endpoints
 export const ALPHA_BOT_ENDPOINTS = {
     BASE: `${API_BASE_URL}/alphaBot`,
-    SENTIMENT: `${API_BASE_URL}/alphaBot/article_sentiment`,
-    NEWS_SUMMARY: `${API_BASE_URL}/alphaBot/news_summary`,
+    COMPARE: `${API_BASE_URL}/alphaBot/compare_analysis`,
+    USER_QUERY: `${API_BASE_URL}/alphaBot/user_query`,
+    IN_DEPTH: `${API_BASE_URL}/alphaBot/in_depth_analysis`,
 } as const;
 
 // Profile endpoints
@@ -39,7 +40,3 @@ export const PROFILE_ENDPOINTS = {
     INFO: `${API_BASE_URL}/profile/info`,
 } as const;
 
-// Analysis endpoints
-export const ANALYSIS_ENDPOINTS = {
-    COMPARE: `${API_BASE_URL}/analysis/compare`,
-} as const;

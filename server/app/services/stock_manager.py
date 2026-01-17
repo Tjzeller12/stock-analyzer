@@ -69,6 +69,10 @@ def add_stock(symbol, portfolio_id):
             # if not in stock master
         if not stock_master:
             stock_master = add_to_master(symbol)
+            # Check if add_to_master returned an error dict
+            if isinstance(stock_master, dict):
+                return stock_master
+        
         # check if stock is in portfolio
         existing_stock = Stock.query.filter(Stock.portfolio_id == portfolio_id, Stock.stock_master_id == stock_master.id).first()
         if existing_stock:

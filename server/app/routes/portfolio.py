@@ -6,6 +6,13 @@ from app.routes.auth import get_current_user
 from app.services.stock_manager import add_stock
 from app.services.alpha_api import *
 
+from flask import abort
+
+def get_user():
+    user = get_current_user()
+    if not user:
+        abort(401, description="User not logged in")
+    return user
 
 bp = Blueprint('portfolio', __name__)
 # Removes a stock from the users portfolio
@@ -115,6 +122,7 @@ def stock_sort_by():
     portfolio = current_user.portfolio
     if not portfolio:
         return jsonify({"error": "User does not have a portfolio"}), 400
+    
     # Sort stocks by
     try:
         # Check if the sort by is descending
@@ -123,7 +131,9 @@ def stock_sort_by():
             stocks = Stock.query.join(StockMaster).filter(Stock.portfolio_id == portfolio.id).order_by(desc(getattr(StockMaster, sort_by[1:]))).all()
         else:
             stocks = Stock.query.join(StockMaster).filter(Stock.portfolio_id == portfolio.id).order_by(getattr(StockMaster, sort_by)).all()
-        print("Stocks returned.")
+        print(f"Stocks query executed. Found {len(stocks)} stocks for portfolio {portfolio.id}.")
+        for s in stocks:
+            print(f" - Found stock: {s.stock_master.symbol}")
         # Return the stocks
         return jsonify([stock.stock_master.to_dict() for stock in stocks])
     # Return error if invalid sort field
@@ -135,11 +145,3 @@ def stock_sort_by():
         current_app.logger.error(f"Error fetching stocks: {e}")
         # Return error
         return jsonify({"error": "An error occurred while fetching stocks."})
-    
-    def get_user():
-        # Get current user
-        current_user = get_current_user()
-        if not current_user:
-            current_app.logger.info("User not logged in")
-            return jsonify({"error": "User not logged in"}), 401
-        return current_user
