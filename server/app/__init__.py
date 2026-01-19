@@ -34,15 +34,8 @@ def create_app(config_class=Config):
     
     migrate.init_app(app, db)
     redis_client.init_app(app)
-    # Allow CORS from both primary and alternate frontend origins
-    origins = [o for o in [app.config.get('FRONTEND_ORIGIN'), app.config.get('FRONTEND_ORIGIN_ALT')] if o]
-    CORS(
-        app,
-        resources={r"/*": {"origins": origins if origins else "*"}},
-        supports_credentials=True,
-        methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-        allow_headers=["Content-Type", "Authorization"]
-    )
+    # Allow frontend origin from config
+    CORS(app, resources={r"/*": {"origins": app.config.get('FRONTEND_ORIGIN')}})
 
     cache.init_app(app, config={'CACHE_TYPE': 'simple'})
 

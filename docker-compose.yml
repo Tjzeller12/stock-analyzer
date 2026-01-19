@@ -12,7 +12,7 @@ services:
       - FLASK_ENV=development
       - SECRET_KEY=${SECRET_KEY}
       - FLASK_RUN_HOST=0.0.0.0
-      - FRONTEND_ORIGIN=http://localhost:3000
+      - FRONTEND_ORIGIN=http://3.85.3.252:3000
       - ALPHA_VANTAGE_KEY=${ALPHA_VANTAGE_KEY}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
     depends_on:
@@ -32,7 +32,7 @@ services:
     ports:
       - "3000:80"
     environment:
-      - REACT_APP_API_BASE_URL=http://localhost:5001
+      - REACT_APP_API_BASE_URL=http://3.85.3.252:5001
     depends_on:
       - backend
     dns:
