@@ -1,5 +1,6 @@
 import axios from "axios";
 import React, { useContext, useEffect, useState } from "react";
+import Markdown from 'react-markdown';
 import { useNavigate } from "react-router-dom";
 import NewsFilterDropdown from "../NewsFilterDrop";
 import { ThemeContext } from "../ThemeContext";
@@ -450,7 +451,7 @@ const MainPage: React.FC = () => {
               <div style={{ marginTop: 16 }}>
                 <div>
                   <h3>Analysis</h3>
-                  <div style={{ whiteSpace: "pre-wrap" }}>{compareResult.response}</div>
+                  <Markdown>{compareResult.response}</Markdown>
                 </div>
               </div>
             )}
