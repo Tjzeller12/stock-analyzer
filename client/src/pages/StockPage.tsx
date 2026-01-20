@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import Markdown from "react-markdown";
 import { useNavigate, useParams } from "react-router-dom";
 import { ALPHA_BOT_ENDPOINTS, DATA_ENDPOINTS } from '../constants/api';
 import "../main.css";
@@ -43,7 +44,7 @@ const StockPage: React.FC = () => {
   const { symbol } = useParams<{ symbol: string }>();
   const [stock, setStock] = useState<Stock | null>(null);
   const [summary, setSummary] = useState<string | null>(null);
-  const [sentiment, setSentiment] = useState<Sentiment | null>(null);
+  const [queryResult, setQueryResult] = useState<string | null>(null);
   const [graph_period, setGraphPeriod] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [llmSummarySentiment, setLlmSummarySentiment] = useState(false);
@@ -237,18 +238,20 @@ const StockPage: React.FC = () => {
         </div>
       </div>
       <div className="stock-graph-llm-container">
-        <div className="stock-graph-container">
-          <div className="stock-graph-header">
-            <span className="stock-graph-header-label">Stock Price</span>
+        <div className="stock-in-depth-analysis-container">
+          <div className="stock-llm-header">
+            <span className="stock-llm-header-label">In Depth Analysis</span>
           </div>
-          <div className="stock-graph-chart"></div>
+          <div className="analysis-container">
+            {summary ? <Markdown>{summary}</Markdown> : "Loading analysis..."}
+          </div>
         </div>
         <div className="stock-llm-container">
           <div className="stock-llm-header">
             <span className="stock-llm-header-label">Alpha Bot Summary</span>
           </div>
           <div className="stock-llm-text">
-            <div>{summary || "Loading summary..."}</div>
+            <div>{queryResult || "Loading response..."}</div>
           </div>
             <div className="prompt-container">
               <input
