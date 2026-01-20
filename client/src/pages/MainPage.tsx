@@ -1,14 +1,15 @@
 import axios from "axios";
-import { AUTH_ENDPOINTS, PORTFOLIO_ENDPOINTS, DATA_ENDPOINTS } from '../constants/api';
-import { authPost } from '../utils/api';
 import React, { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import NewsFilterDropdown from "../NewsFilterDrop";
 import { ThemeContext } from "../ThemeContext";
+import { ALPHA_BOT_ENDPOINTS, AUTH_ENDPOINTS, DATA_ENDPOINTS, PORTFOLIO_ENDPOINTS } from '../constants/api';
 import "../main.css";
 import logo from "../resources/Stock_Market_Logo.png";
 import refresh_icon from "../resources/refresh_icon.png";
+import { authPost } from '../utils/api';
 import "./MainPage.css";
+
 // Stock interface contains data about a stock
 interface Stock {
   symbol: string;
@@ -34,6 +35,16 @@ interface Article {
   summary: string;
 }
 
+interface RankingItem {
+  symbol: string;
+  rank: number;
+  score?: number;
+}
+
+interface CompareResponse {
+  response: string;
+}
+
 // MainPage component: Serves as the dashboard for the stock analyzer application
 const MainPage: React.FC = () => {
   const navigate = useNavigate();
@@ -44,11 +55,50 @@ const MainPage: React.FC = () => {
   const [articles, setArticles] = useState<Article[]>([]);
   const [sortBy, setSortBy] = useState("ev_to_ebita");
   const [stocks, setStocks] = useState<Stock[]>([]);
+  const [selectedSymbols, setSelectedSymbols] = useState<Set<string>>(new Set());
+  const [compareLoading, setCompareLoading] = useState(false);
+  const [compareError, setCompareError] = useState<string | null>(null);
+  const [compareResult, setCompareResult] = useState<CompareResponse | null>(null);
   const { theme, toggleTheme } = useContext(ThemeContext);
 
   // Unified navigation handler for all buttons
   const handleButtonClick = (path: string) => {
     navigate(path);
+  };
+
+  const toggleSelectSymbol = (symbol: string) => {
+    setSelectedSymbols((prev) => {
+      const next = new Set(prev);
+      if (next.has(symbol)) {
+        next.delete(symbol);
+      } else {
+        next.add(symbol);
+      }
+      return next;
+    });
+  };
+
+  const handleCompare = async () => {
+    setCompareError(null);
+    setCompareResult(null);
+    const symbols = Array.from(selectedSymbols);
+    if (symbols.length < 2) {
+      setCompareError("Select at least 2 stocks to compare.");
+      return;
+    }
+    if (symbols.length > 10) {
+      setCompareError("You can compare at most 10 stocks at once.");
+      return;
+    }
+    try {
+      setCompareLoading(true);
+      const result = await authPost<CompareResponse>(ALPHA_BOT_ENDPOINTS.COMPARE, { stock_symbols: symbols });
+      setCompareResult(result);
+    } catch (err) {
+      setCompareError("Comparison failed. Please try again.");
+    } finally {
+      setCompareLoading(false);
+    }
   };
 
   // Special handler for logo click to return to main page
@@ -351,31 +401,71 @@ const MainPage: React.FC = () => {
               <div
                 key={stock.symbol}
                 className={`stock-row ${index % 2 === 0 ? "even" : "odd"}`}
-                onClick={() => handleStockClick(stock.symbol)}
                 style={{ cursor: "pointer" }}
+                onClick={() => handleStockClick(stock.symbol)}
               >
                 <div className="stock-symbol">{stock.symbol}</div>
                 <div className="stock-name">{stock.name}</div>
                 <div className="stock-data">${stock.price.toFixed(2)}</div>
                 <div className="stock-data">{stock.ev_to_ebita.toFixed(2)}</div>
                 <div className="stock-data">{stock.pe_ratio.toFixed(2)}</div>
-                <div className="stock-data">
-                  {formatMarketCap(stock.market_cap)}
-                </div>
-                <div className="stock-data">
-                  {stock.dividend_yield.toFixed(2)}%
+                <div className="stock-data">{formatMarketCap(stock.market_cap)}</div>
+                <div className="stock-data">{stock.dividend_yield.toFixed(2)}%</div>
+                <div className="stock-action-cell">
+                  <input
+                    className="action-checkbox"
+                    type="checkbox"
+                    checked={selectedSymbols.has(stock.symbol)}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      toggleSelectSymbol(stock.symbol);
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    aria-label={`Select ${stock.symbol}`}
+                  />
                 </div>
               </div>
             ))}
           </div>
+          <div className="compare-bar">
+            <button
+              type="button"
+              onClick={handleCompare}
+              disabled={selectedSymbols.size < 2 || selectedSymbols.size > 10 || compareLoading}
+              className="nav-button"
+              title="Compare selected stocks"
+            >
+              {compareLoading ? "Comparing..." : "Compare Selected"}
+            </button>
+            <span style={{ fontSize: 12 }}>
+              Selected: {selectedSymbols.size} (min 2, max 10)
+            </span>
+            {compareError && (
+              <span style={{ color: "red", fontSize: 12 }}>{compareError}</span>
+            )}
+          </div>
+          {/* Comparison result */}
+          <div className="compare-result-container">
+            {compareResult && (
+              <div style={{ marginTop: 16 }}>
+                <div>
+                  <h3>Analysis</h3>
+                  <div style={{ whiteSpace: "pre-wrap" }}>{compareResult.response}</div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
+
         {/* news links for news that relates to the users stocks */}
         <div className="news-container">
           <h2 className="news-title">News</h2>
-          <NewsFilterDropdown
-            filter={newsFilter}
-            setFilter={handleFilterChange}
-          />
+          <div className="list-header news-list-header">
+            <NewsFilterDropdown
+              filter={newsFilter}
+              setFilter={handleFilterChange}
+            />
+          </div>
           <div className="news-list">
             {articles.map((article, index) => (
               <div

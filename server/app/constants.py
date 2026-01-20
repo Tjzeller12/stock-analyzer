@@ -1,10 +1,19 @@
+import os
+
 """Constants used throughout the application."""
 
 # External API URLs
-HUGGING_FACE_API_URL = "https://api-inference.huggingface.co/models/ProsusAI/finbert"
 ALPHA_VANTAGE_BASE_URL = "https://www.alphavantage.co/query"
 FINANCIAL_MODELING_PREP_BASE_URL = "https://financialmodelingprep.com/api/v3"
-GROK_BASE_URL = "https://api.x.ai/v1"
+ALPHA_VANTAGE_MCP_URL = "https://mcp.alphavantage.co/mcp"
+CLAUDE_MODEL = "claude-sonnet-4-5-20250929"
+
+# Prompt file paths
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+IN_DEPTH_PROMPT = os.path.join(BASE_DIR, "prompts/in_depth.md")
+COMPARE_PROMPT = os.path.join(BASE_DIR, "prompts/compare.md")
+USER_QUERY_PROMPT = os.path.join(BASE_DIR, "prompts/user_query.md")
+
 
 # Internal API Routes
 class Routes:
@@ -23,8 +32,9 @@ class Routes:
     
     # AlphaBot routes
     ALPHA_BOT = "/alphaBot"
-    ALPHA_BOT_SENTIMENT = "/alphaBot/article_sentiment"
-    ALPHA_BOT_NEWS_SUMMARY = "/alphaBot/news_summary"
+    ALPHA_BOT_COMPARE = "/alphaBot/compare_analysis"
+    ALPHA_BOT_IN_DEPTH = "/alphaBot/in_depth_analysis"
+    ALPHA_BOT_USER_QUERY = "/alphaBot/user_query"
 
 # Alpha Vantage API Functions
 class AlphaVantageFunction:

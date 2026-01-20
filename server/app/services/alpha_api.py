@@ -23,25 +23,31 @@ def get_stock_price(symbol):
     # Update API URL with symbol
     stock_master = StockMaster.query.filter_by(symbol=symbol).first()
     
-    url = build_alpha_vantage_url(AlphaVantageFunction.TIME_SERIES_INTRADAY, symbol=symbol, interval="5min")
+    # Use TIME_SERIES_DAILY as requested
+    url = build_alpha_vantage_url(AlphaVantageFunction.TIME_SERIES_DAILY, symbol=symbol)
+    
     # request data
     req = requests.get(url)
     # convert data tp JSON
     data = req.json()
-    # Get time_series data
-    time_series = data.get("Time Series (5min)", {})
+    
+    # Get Time Series Daily data
+    time_series = data.get("Time Series (Daily)", {})
+    
     # Check if the data exist
     if not time_series:
-        print("No time series")
+        print(f"No daily time series data. Full response: {data}")
         return None
-    # Git the most recent time in data
+        
+    # Get most recent date
     most_recent_date = next(iter(time_series))
-    #Get most recent data with most recent time
-    most_recent_data = time_series[most_recent_date]
-    # Return the high during the 5 min interval
-    price = most_recent_data.get("2. high", None)
+    daily_data = time_series[most_recent_date]
+    
+    # Get price "4. close"
+    price = safe_float(daily_data.get("4. close", None))
+    
     if price is None:
-        print("No high")
+        print("No price found in daily data")
 
     # Update the stock master with the new price
     if stock_master:

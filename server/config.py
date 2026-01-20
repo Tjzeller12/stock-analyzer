@@ -29,3 +29,5 @@ class Config:
 
     # Frontend origin for CORS
     FRONTEND_ORIGIN = os.environ.get('FRONTEND_ORIGIN', 'http://localhost:3000')
+    # Optional alternate frontend origin for CORS
+    FRONTEND_ORIGIN_ALT = os.environ.get('FRONTEND_ORIGIN_ALT')

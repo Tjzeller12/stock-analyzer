@@ -28,8 +28,9 @@ export const DATA_ENDPOINTS = {
 // AlphaBot endpoints
 export const ALPHA_BOT_ENDPOINTS = {
     BASE: `${API_BASE_URL}/alphaBot`,
-    SENTIMENT: `${API_BASE_URL}/alphaBot/article_sentiment`,
-    NEWS_SUMMARY: `${API_BASE_URL}/alphaBot/news_summary`,
+    COMPARE: `${API_BASE_URL}/alphaBot/compare_analysis`,
+    USER_QUERY: `${API_BASE_URL}/alphaBot/user_query`,
+    IN_DEPTH: `${API_BASE_URL}/alphaBot/in_depth_analysis`,
 } as const;
 
 // Profile endpoints
@@ -38,3 +39,4 @@ export const PROFILE_ENDPOINTS = {
     SAVE: `${API_BASE_URL}/profile/save`,
     INFO: `${API_BASE_URL}/profile/info`,
 } as const;
+

@@ -1,9 +1,8 @@
-import axios from "axios";
-import { DATA_ENDPOINTS, ALPHA_BOT_ENDPOINTS } from '../constants/api';
-import { authPost } from '../utils/api';
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { ALPHA_BOT_ENDPOINTS, DATA_ENDPOINTS } from '../constants/api';
 import "../main.css";
+import { authPost } from '../utils/api';
 import "./StockPage.css";
 
 import logo from "../resources/Stock_Market_Logo.png";
@@ -48,7 +47,6 @@ const StockPage: React.FC = () => {
   const [graph_period, setGraphPeriod] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [llmSummarySentiment, setLlmSummarySentiment] = useState(false);
-  const [useLlama, setUseLlama] = useState(false);
   const [llmPrompt, setLlmPrompt] = useState("");
 
   const getAuthHeaders = () => {
@@ -73,44 +71,17 @@ const StockPage: React.FC = () => {
     }
   };
 
-  const fetchAlphaBotSummary = async () => {
+  const fetchAlphaBotInDepthAnalysis = async () => {
     if (!symbol) return;
 
     try {
-      const response = await authPost<{ summary: string }>(ALPHA_BOT_ENDPOINTS.NEWS_SUMMARY, { stock_symbol: symbol });
+      const response = await authPost<{ response: string }>(ALPHA_BOT_ENDPOINTS.IN_DEPTH, { stock_symbol: symbol });
       console.log("Response:", response); // Debug log
-      if (response.summary) {
-        setSummary(response.summary);
+      if (response.response) {
+        setSummary(response.response);     
       }
     } catch (error) {
       console.error("Error fetching summary:", error);
-    }
-  };
-
-  const fetchAlphaBotSummarySentiment = async () => {
-    if (!summary) return;
-    setLoading(true);
-    try {
-      const sentimentData = await authPost<Sentiment>(ALPHA_BOT_ENDPOINTS.SENTIMENT, { summary });
-      console.log("Received alpha bot article sentiment:", sentimentData); // Debug log
-      setSentiment(sentimentData);
-    } catch (error) {
-      console.error("Alpha bot article sentiment fetch failed:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-  const handleSendRefresh = () => {
-    if (useLlama) {
-      handleLlamaPrompt();
-    } else {
-      fetchAlphaBotSummary();
-    }
-  };
-
-  const handleLlamaPrompt = () => {
-    if (llmPrompt) {
-      console.log("Sending prompt:", llmPrompt);
     }
   };
 
@@ -176,8 +147,7 @@ const StockPage: React.FC = () => {
   useEffect(() => {
     fetchStock();
     fetchInDepthData();
-    fetchAlphaBotSummary();
-    fetchAlphaBotSummarySentiment();
+    fetchAlphaBotInDepthAnalysis();
   }, [symbol]);
 
   const handleButtonClick = (path: string) => {
@@ -188,9 +158,7 @@ const StockPage: React.FC = () => {
     navigate("/main");
   };
 
-  const handleToggle = () => {
-    setLlmSummarySentiment((prev) => !prev);
-  };
+
 
   return (
     <div className="stock-container">
@@ -280,9 +248,8 @@ const StockPage: React.FC = () => {
             <span className="stock-llm-header-label">Alpha Bot Summary</span>
           </div>
           <div className="stock-llm-text">
-            <div>{stock?.news_summary || "Loading summary..."}</div>
+            <div>{summary || "Loading summary..."}</div>
           </div>
-          {useLlama && (
             <div className="prompt-container">
               <input
                 type="text"
@@ -292,29 +259,6 @@ const StockPage: React.FC = () => {
                 onChange={(e) => setLlmPrompt(e.target.value)}
               />
             </div>
-          )}
-          <div className="llm-buttons-container">
-            <div className="toggle-switch">
-              <input
-                type="checkbox"
-                id="llm-toggle"
-                checked={useLlama}
-                onChange={handleToggle}
-              />
-              <label htmlFor="llm-toggle">
-                <span className="slider"></span>
-              </label>
-              <span className="toggle-label">
-                {useLlama ? "Llama 3" : "Grok News"}
-              </span>
-            </div>
-            <button className="send-refresh-button" onClick={handleSendRefresh}>
-              {useLlama ? "Send" : "Refresh"}
-              <i
-                className={`fas ${useLlama ? "fa-paper-plane" : "fa-sync-alt"}`}
-              ></i>
-            </button>
-          </div>
           {stock?.news_sentiment && (
             <div className="stock-llm-summary-sentiment">
               <div>

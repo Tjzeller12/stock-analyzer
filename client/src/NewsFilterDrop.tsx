@@ -11,12 +11,13 @@ const NewsFilterDrop: React.FC<NewsFilterDropProps> = ({
   setFilter,
 }) => {
   return (
-    <div className="list-header">
+    <div className="news-filter">
       <label htmlFor="filter">Filter:</label>
       <select
+        id="filter"
         value={filter}
         onChange={(e) => setFilter(e.target.value)}
-        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+        className="news-filter-select"
       >
         <option value="all">All News</option>
         <option value="blockchain">Blockchain</option>
