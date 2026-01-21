@@ -197,45 +197,46 @@ const StockPage: React.FC = () => {
       </header>
 
       <div className="stock-data-container">
-        <div className="stock-info-container-first">
-          <span className="stock-info-label">EV/EBITDA</span>
-          <div>{stock?.ev_to_ebita}</div>
-        </div>
-        <div className="stock-info-container">
-          <span className="stock-info-label">PE Ratio</span>
-          <div>{stock?.pe_ratio}</div>
-        </div>
-        <div className="stock-info-container">
-          <span className="stock-info-label">Market Cap</span>
-          <div>{formatMarketCap(stock?.market_cap || 0)}</div>
-        </div>
-        <div className="stock-info-container">
-          <span className="stock-info-label">Dividend Yield</span>
-          <div>{stock?.dividend_yield}</div>
-        </div>
-        <div className="stock-info-container">
-          <span className="stock-info-label">Free Cash Flow</span>
-          <div>{formatFreeCashFlow(stock?.free_cash_flow || 0)}</div>
-        </div>
-        <div className="stock-info-container">
-          <span className="stock-info-label">Debt to Equity</span>
-          <div>{formatDebtToEquity(stock?.debt_to_equity || 0)}</div>
-        </div>
-        <div className="stock-info-container">
-          <span className="stock-info-label">ROIC</span>
-          <div>{formatRoic(stock?.roic || 0)}</div>
-        </div>
-        <div className="stock-info-container">
-          <span className="stock-info-label">Price to FC</span>
-          <div>{formatPriceToFc(stock?.price_to_fc || 0)}</div>
-        </div>
-
-        <div className="stock-info-container-last">
-          <span className="stock-info-label">Cash and Cash Equivalents</span>
-          <div>
-            {formatCashAndCashEquivalents(stock?.cashAndCashEquivalents || 0)}
-          </div>
-        </div>
+        <table className="stock-data-table">
+          <tbody>
+            <tr>
+              <td className="stock-info-label">EV/EBITDA</td>
+              <td className="stock-info-value">{stock?.ev_to_ebita}</td>
+            </tr>
+            <tr>
+              <td className="stock-info-label">PE Ratio</td>
+              <td className="stock-info-value">{stock?.pe_ratio}</td>
+            </tr>
+            <tr>
+              <td className="stock-info-label">Market Cap</td>
+              <td className="stock-info-value">{formatMarketCap(stock?.market_cap || 0)}</td>
+            </tr>
+            <tr>
+              <td className="stock-info-label">Dividend Yield</td>
+              <td className="stock-info-value">{stock?.dividend_yield}</td>
+            </tr>
+            <tr>
+              <td className="stock-info-label">Free Cash Flow</td>
+              <td className="stock-info-value">{formatFreeCashFlow(stock?.free_cash_flow || 0)}</td>
+            </tr>
+            <tr>
+              <td className="stock-info-label">Debt to Equity</td>
+              <td className="stock-info-value">{formatDebtToEquity(stock?.debt_to_equity || 0)}</td>
+            </tr>
+            <tr>
+              <td className="stock-info-label">ROIC</td>
+              <td className="stock-info-value">{formatRoic(stock?.roic || 0)}</td>
+            </tr>
+            <tr>
+              <td className="stock-info-label">Price to FC</td>
+              <td className="stock-info-value">{formatPriceToFc(stock?.price_to_fc || 0)}</td>
+            </tr>
+            <tr>
+              <td className="stock-info-label">Cash and Cash Equivalents</td>
+              <td className="stock-info-value">{formatCashAndCashEquivalents(stock?.cashAndCashEquivalents || 0)}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
       <div className="stock-graph-llm-container">
         <div className="stock-in-depth-analysis-container">

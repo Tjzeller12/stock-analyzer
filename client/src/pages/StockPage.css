@@ -29,49 +29,45 @@
 /* Container for all stock data items */
 .stock-data-container {
   display: flex;
-  flex-wrap: wrap; /* Allow wrapping for smaller screens */
   justify-content: center;
-  gap: 10px; /* Space between data items */
+  align-items: flex-start; /* Align to top */
   width: 100%;
-  max-width: 1400px; /* Limit width for readability */
-  height: 100%;
+  max-width: 800px; /* Reduced max-width for a cleaner list look */
   padding: 15px;
   background-color: var(--form-container-color);
-  border-radius: 100px;
-  margin-bottom: 10px;
+  border-radius: 20px; /* Rounded corners for the container */
+  margin-bottom: 20px;
 }
 
-/* Individual data containers */
-.stock-info-container,
-.stock-info-container-first,
-.stock-info-container-last {
-  background-color: var(
-    --list-color
-  ); /* Slightly lighter than background for contrast */
-  padding: 15px;
-  text-align: center;
-  border-radius: 8px;
-  min-width: 100px; /* Ensure consistent width */
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); /* Subtle shadow for depth */
+.stock-data-table {
+  width: 100%;
+  border-collapse: collapse;
 }
 
-.stock-info-container-first {
-  border-top-left-radius: 30px;
-  border-bottom-left-radius: 30px;
+.stock-data-table td {
+  padding: 12px 15px;
+  border-bottom: 1px solid var(--border-color, #444); /* Separator lines */
 }
 
-.stock-info-container-last {
-  border-top-right-radius: 30px;
-  border-bottom-right-radius: 30px;
+.stock-data-table tr:last-child td {
+  border-bottom: none; /* Remove border for the last row */
 }
 
 /* Labels for each data item */
 .stock-info-label {
-  display: block;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: bold;
-  color: #06a94d; /* Match header color for consistency */
-  margin-bottom: 1px;
+  color: #06a94d; /* Match header color */
+  text-align: left;
+  width: 50%;
+}
+
+.stock-info-value {
+  font-size: 16px;
+  color: var(--text-color);
+  text-align: right;
+  width: 50%;
+  font-weight: 500;
 }
 
 .stock-price-container {
