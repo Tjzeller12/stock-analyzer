@@ -206,24 +206,23 @@ const MainPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.post(
+      const data = await authPost<any>(
         DATA_ENDPOINTS.NEWS,
-        { filter: filter },
-        { headers: { "Content-Type": "application/json" } }
+        { filter: filter }
       );
       let extractedArticles: Article[] = [];
 
-      if (Array.isArray(response.data)) {
-        extractedArticles = response.data;
-      } else if (typeof response.data === "object" && response.data !== null) {
+      if (Array.isArray(data)) {
+        extractedArticles = data;
+      } else if (typeof data === "object" && data !== null) {
         // Check for common properties that might contain the articles array
-        if (Array.isArray(response.data.articles)) {
-          extractedArticles = response.data.articles;
-        } else if (Array.isArray(response.data.feed)) {
-          extractedArticles = response.data.feed;
+        if (Array.isArray(data.articles)) {
+          extractedArticles = data.articles;
+        } else if (Array.isArray(data.feed)) {
+          extractedArticles = data.feed;
         } else {
           // If we can't find an array, try to create an array from the object
-          extractedArticles = [response.data];
+          extractedArticles = [data];
         }
       }
       if (extractedArticles.length > 0) {
