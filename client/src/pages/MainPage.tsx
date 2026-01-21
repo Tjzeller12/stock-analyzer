@@ -1,7 +1,19 @@
 import axios from "axios";
+import {
+  Chart as ChartJS,
+  Filler,
+  Legend,
+  LineElement,
+  PointElement,
+  RadialLinearScale,
+  Title,
+  Tooltip,
+} from 'chart.js';
 import React, { useContext, useEffect, useState } from "react";
+import { Radar } from 'react-chartjs-2';
 import Markdown from 'react-markdown';
 import { useNavigate } from "react-router-dom";
+import remarkGfm from 'remark-gfm';
 import NewsFilterDropdown from "../NewsFilterDrop";
 import { ThemeContext } from "../ThemeContext";
 import { ALPHA_BOT_ENDPOINTS, AUTH_ENDPOINTS, DATA_ENDPOINTS, PORTFOLIO_ENDPOINTS } from '../constants/api';
@@ -36,15 +48,80 @@ interface Article {
   summary: string;
 }
 
-interface RankingItem {
-  symbol: string;
-  rank: number;
-  score?: number;
+interface CompareResponse {
+  analysis: string;
+  radarChartData: RadarChartData;
 }
 
-interface CompareResponse {
+interface AlphaBotResponse {
   response: string;
 }
+
+interface RadarChartData {
+  labels: string[];
+  datasets: {
+    label: string;
+    data: number[];
+    backgroundColor?: string;
+    borderColor?: string;
+    borderWidth?: number;
+    fill?: boolean;
+  }[];
+}
+
+// Chart colors expanded palette
+const CHART_COLORS = [
+  { bg: 'rgba(252, 26, 26, 0.1)', border: 'rgba(252, 26, 26, 1)' },
+  { bg: 'rgba(8, 137, 16, 0.1)', border: 'rgba(8, 137, 16, 1)' }, 
+  { bg: 'rgba(255, 206, 86, 0.1)', border: 'rgba(255, 206, 86, 1)' }, 
+  { bg: 'rgba(63, 207, 255, 0.1)', border: 'rgba(63, 207, 255, 1)' }, 
+  { bg: 'rgba(153, 102, 255, 0.1)', border: 'rgba(153, 102, 255, 1)' }, 
+  { bg: 'rgba(255, 159, 64, 0.1)', border: 'rgba(255, 159, 64, 1)' }, 
+  { bg: 'rgba(43, 0, 255, 0.1)', border: 'rgba(43, 0, 255, 1)' }, 
+  { bg: 'rgba(255, 99, 255, 0.1)', border: 'rgba(255, 99, 255, 1)' }, 
+  { bg: 'rgba(0, 255, 255, 0.1)', border: 'rgba(0, 255, 255, 1)' }, 
+  { bg: 'rgba(50, 205, 50, 0.1)', border: 'rgba(50, 205, 50, 1)' }, 
+];
+
+const parseCompareResponse = (response: string | undefined): CompareResponse | null => {
+  if (!response) return null;
+  try {
+    // Extract JSON substring if there's extra text
+    const jsonMatch = response.match(/\{[\s\S]*\}/);
+    let jsonString = jsonMatch ? jsonMatch[0] : response;
+    
+    // REMOVED SANITIZER: It was breaking valid structural newlines.
+    // We trust that the Regex above extracted just the JSON, and standard JSON.parse will work.
+
+    const parsedResponse = JSON.parse(jsonString);
+    
+    // Inject styling into Radar Chart datasets
+    if (parsedResponse.radarChartData && parsedResponse.radarChartData.datasets) {
+       parsedResponse.radarChartData.datasets.forEach((dataset: any, index: number) => {
+          const color = CHART_COLORS[index % CHART_COLORS.length];
+          dataset.backgroundColor = color.bg;
+          dataset.borderColor = color.border;
+          dataset.borderWidth = 2;
+          dataset.fill = true;
+       });
+    }
+
+    return parsedResponse;
+  } catch (error) {
+    console.error("Failed to parse compare response.", error);
+    return null;
+  }
+}
+
+ChartJS.register(
+  RadialLinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler,
+)
 
 // MainPage component: Serves as the dashboard for the stock analyzer application
 const MainPage: React.FC = () => {
@@ -66,6 +143,45 @@ const MainPage: React.FC = () => {
   const handleButtonClick = (path: string) => {
     navigate(path);
   };
+
+  // Determine Chart Colors based on Theme
+  const textColor = theme === 'light' ? '#666' : '#e0e0e0';
+  const gridColor = theme === 'light' ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.2)';
+
+  const radarOptions = {
+    scales: {
+      r: {
+        min: 0,
+        max: 100,
+        ticks: {
+          stepSize: 20,
+          backdropColor: 'transparent',
+          color: textColor,
+        },
+        pointLabels: {
+          color: textColor,
+          font: {
+            size: 12
+          }
+        },
+        grid: {
+          color: gridColor,
+        },
+        angleLines: {
+            color: gridColor
+        }
+      }
+    },
+    plugins: {
+      legend: {
+        position: 'top' as const,
+        labels: {
+            color: textColor
+        }
+      }
+    }
+  };
+
 
   const toggleSelectSymbol = (symbol: string) => {
     setSelectedSymbols((prev) => {
@@ -93,7 +209,8 @@ const MainPage: React.FC = () => {
     }
     try {
       setCompareLoading(true);
-      const result = await authPost<CompareResponse>(ALPHA_BOT_ENDPOINTS.COMPARE, { stock_symbols: symbols });
+      const alphaBotResponse: AlphaBotResponse | null = await authPost<AlphaBotResponse>(ALPHA_BOT_ENDPOINTS.COMPARE, { stock_symbols: symbols });
+      const result = parseCompareResponse(alphaBotResponse?.response);
       setCompareResult(result);
     } catch (err) {
       setCompareError("Comparison failed. Please try again.");
@@ -444,17 +561,6 @@ const MainPage: React.FC = () => {
               <span style={{ color: "red", fontSize: 12 }}>{compareError}</span>
             )}
           </div>
-          {/* Comparison result */}
-          <div className="compare-result-container">
-            {compareResult && (
-              <div style={{ marginTop: 16 }}>
-                <div>
-                  <h3>Analysis</h3>
-                  <Markdown>{compareResult.response}</Markdown>
-                </div>
-              </div>
-            )}
-          </div>
         </div>
 
         {/* news links for news that relates to the users stocks */}
@@ -486,6 +592,20 @@ const MainPage: React.FC = () => {
             ))}
           </div>
         </div>
+      </div>
+      {/* Comparison result */}
+      <div className="compare-result-container">
+        {compareResult && (
+          <div>
+            <div className="compare-radar-chart-container">
+              <h1>Stock Ranking Chart</h1>
+              <Radar data={compareResult.radarChartData} options={radarOptions} />
+            </div>
+            <div className="analysis-body">
+              <Markdown remarkPlugins={[remarkGfm]}>{compareResult.analysis}</Markdown>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
