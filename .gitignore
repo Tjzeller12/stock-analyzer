@@ -48,4 +48,6 @@ yarn-error.log*
 
 # Production builds
 /build
-/dist
+/distdocker-compose.override.yml
+server/flask_session/
+docker-compose.override.yml

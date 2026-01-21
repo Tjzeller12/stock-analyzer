@@ -5,16 +5,14 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_session import Session
 from flask_migrate import Migrate
-from flask_redis import FlaskRedis
 from flask_cors import CORS
 from config import Config
 import logging
 
-# create instances of SQLAlchemy, Migrate, and FlaskRedis
+# create instances of SQLAlchemy, Migrate
 db = SQLAlchemy()
 bcrypt = Bcrypt()
 migrate = Migrate()
-redis_client = FlaskRedis()
 server_session = Session()
 cache = Cache()
 
@@ -33,7 +31,6 @@ def create_app(config_class=Config):
         db.create_all()  # Create database tables for all models
     
     migrate.init_app(app, db)
-    redis_client.init_app(app)
     # Allow frontend origin from config
     CORS(app, resources={r"/*": {"origins": app.config.get('FRONTEND_ORIGIN')}})
 
