@@ -36,3 +36,19 @@ export const authGet = async <T>(url: string): Promise<T> => {
     const response = await axios.get(url, createAuthConfig());
     return response.data;
 };
+
+// Add a response interceptor to handle 401 Unauthorized errors globally
+axios.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      // If 401 Unauthorized, clear token and redirect to login
+      console.log("Session expired or unauthorized. Redirecting to login...");
+      localStorage.removeItem("token");
+      window.location.href = "/login";
+    }
+    return Promise.reject(error);
+  }
+);

@@ -13,6 +13,8 @@ import ProfilePage from "./Profile";
 import RegisterPage from "./RegisterPage";
 import StockPage from "./StockPage";
 
+import PrivateRoute from "../components/PrivateRoute";
+
 // App.tsx is the main component that renders the entire application.
 function App() {
   const testAPI = async () => {
@@ -34,10 +36,34 @@ function App() {
       <div className="App">
         <Routes>
           <Route path="/register" element={<RegisterPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/main" element={<MainPage />} />
-          <Route path="/stock/:symbol" element={<StockPage />} />
+          
+          {/* Protected Routes */}
+          <Route 
+            path="/profile" 
+            element={
+              <PrivateRoute>
+                <ProfilePage />
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/main" 
+            element={
+              <PrivateRoute>
+                <MainPage />
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/stock/:symbol" 
+            element={
+              <PrivateRoute>
+                <StockPage />
+              </PrivateRoute>
+            } 
+          />
+          
           <Route path="/" element={<Navigate replace to="/login" />} />
         </Routes>
       </div>

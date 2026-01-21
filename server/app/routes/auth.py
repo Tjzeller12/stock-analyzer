@@ -6,9 +6,19 @@ from app import db
 #from __init__ import app
 import jwt
 from datetime import datetime, timedelta
+from functools import wraps
 
 # Make auth blueprint
 auth = Blueprint('auth', __name__)
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        current_user = get_current_user()
+        if current_user is None:
+            return jsonify({"error": "Authentication required"}), 401
+        return f(*args, **kwargs)
+    return decorated_function
 
 def create_token(user_id):
     expiration = datetime.utcnow() + timedelta(hours=24)  # Token valid for 24 hours

@@ -7,13 +7,17 @@ from datetime import timedelta
 from app.services.alpha_api import *
 from app.services.news_manager import *
 from app.services.stock_manager import add_to_master
+from app.routes.auth import login_required
 
 bp = Blueprint('data', __name__)
 
 # Retrieves news data from Alpha Vantage API
 @bp.route('/news', methods=['POST'])
+@login_required
 @cache.memoize(timeout=900)
 def news_filter_selection():
+
+# ... (omitting body for brevity in tool call, but targeting the decorator lines)
     
     #Upate API url with selected filter string
     filter = request.json.get("filter")
@@ -47,6 +51,7 @@ def news_filter_selection():
     
 # Retrives stock data from the database given a symbol
 @bp.route('/stock_data', methods=['POST'])
+@login_required
 def stock_data():
     # Get symbol from request
     symbol = request.json.get("symbol")
@@ -73,6 +78,7 @@ def stock_data():
     return jsonify({"error": "Stock not found"}), 404
     
 @bp.route('/in_depth_data', methods=['POST'])
+@login_required
 def in_depth_data():
     symbol = request.json.get("symbol")
     if not symbol:
