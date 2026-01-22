@@ -87,8 +87,16 @@ const parseCompareResponse = (response: string | undefined): CompareResponse | n
   if (!response) return null;
   try {
     // Extract JSON substring if there's extra text
-    const jsonMatch = response.match(/\{[\s\S]*\}/);
-    let jsonString = jsonMatch ? jsonMatch[0] : response;
+    // Extract JSON substring manually to be robust against extra text
+    const firstBrace = response.indexOf('{');
+    const lastBrace = response.lastIndexOf('}');
+
+    if (firstBrace === -1 || lastBrace === -1 || firstBrace >= lastBrace) {
+        console.warn("No JSON found in response:", response.substring(0, 50) + "...");
+        return null;
+    }
+
+    const jsonString = response.substring(firstBrace, lastBrace + 1);
     
     // REMOVED SANITIZER: It was breaking valid structural newlines.
     // We trust that the Regex above extracted just the JSON, and standard JSON.parse will work.

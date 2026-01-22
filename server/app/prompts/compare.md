@@ -11,7 +11,7 @@ Perform a rigorous side-by-side comparison and ranking of the following stocks: 
     - **Radar Chart**: Assign a score (0-100) for each of the 5 axes: Valuation, Growth, Risk, Sentiment, Efficiency.
 
 # Output Format
-You MUST return ONLY a raw JSON object. Do not include markdown formatting like ```json or ``` around the output.
+You MUST return ONLY a raw JSON object. Do not include markdown formatting like ```json or ``` around the output. The JSON MUST look exactly like the structure provided below. You will not output any additional text or markdown formatting.
 Structure:
 {
   "analysis": "A markdown string containing the following headed sections:\n- **Executive Summary**: A concise winner declaration.\n- **Comparison Table**: A markdown table comparing key metrics (P/E, EV/EBITDA, ROE, Market Cap) side-by-side.\n- **In-Depth Reasoning**: Detailed analysis of business models and moats.\n- **Key Metrics Analysis**: Discuss the numbers in the table, focusing on Valuation, Efficiency, Momentum, and Sentiment.\n- **Key Risk Factors**: Identify primary headwinds for each.\n- **Portfolio Construction**: Recommendations on how to position these (e.g., core holding vs. speculative).\n\nKeep the overall response concise but substantive. **Ranking Analysis** Explain the reasons for each ranking.",
@@ -33,8 +33,8 @@ Structure:
 - **Risk Rank**: Stability and safety. 100 = SAFEST/LOWEST RISK, 0 = RISKIEST/LOWEST SAFETY.
 
 # Constraints
-- Output ONLY valid JSON.
-- Do NOT include any introductory text like "Here is the comparison" or "Based on the data".
+- Output ONLY valid JSON. The JSON MUST look exactly like the structure above with double quoted propertie names.
+- Do NOT include any introductory text like "Here is the comparison" or "Based on the data". IF THERE IS ANY INTRODUCTORY TEXT, THE JSON WILL NOT BE VALID.
 - No conversational filler.
 - Ensure all JSON keys and string values are properly escaped.
 - **radarChartData**: Must contain exactly 5 integer values (0-100) corresponding to the labels.
