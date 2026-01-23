@@ -206,7 +206,7 @@ def alphaBot_endpoint():
     return jsonify({"message": "AlphaBot is running"}), 200
 
 
-
+@cache.memoize(timeout=900)
 @alphaBot_bp.route('/alphaBot/in_depth_analysis', methods=['POST'])
 def get_in_depth_analysis():
     data = request.json
@@ -226,6 +226,7 @@ def get_in_depth_analysis():
         current_app.logger.error(f"Error generating getting in-depth analysis: {e}")
         return jsonify({"error": "Failed to generate in-depth analysis"}), 500
 
+@cache.memoize(timeout=900)
 @alphaBot_bp.route('/alphaBot/compare_analysis', methods=['POST'])
 def get_compare_analysis():
     data = request.json
@@ -247,7 +248,7 @@ def get_compare_analysis():
         current_app.logger.error(f"Error generating compare analysis: {e}")
         return jsonify({"error": "Failed to generate compare analysis"}), 500
 
-
+@cache.memoize(timeout=900)
 @alphaBot_bp.route('/alphaBot/user_query', methods=['POST'])
 def get_user_query():
     data = request.json

@@ -43,10 +43,11 @@
   align-items: stretch;
   margin-top: 20px;
   max-height: 800px;
-  height: 60vh;
+  /* Removed min-height to prevent gaps */
+  height: auto;
   gap: 20px;
   width: 100%;
-  padding-bottom: 20px;
+  padding-bottom: 5px;
 }
 
 /* Navigation buttons container */
@@ -161,11 +162,10 @@ h2 {
 .stocks-list,
 .news-list {
   width: 100%;
-
   background-color: var(--list-color);
   border-radius: 5px;
   overflow-y: auto;
-  flex-grow: 1;
+  flex-grow: 0; /* Don't force it to fill space if not needed */
   max-height: 450px;
   min-height: 200px; /* Prevent disappearing */
   scrollbar-color: var(--scrollbar-color);
@@ -185,7 +185,6 @@ h2 {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 8px;
   background-color: var(--list-color);
   border-radius: 6px;
   padding: 8px 12px;
@@ -229,12 +228,22 @@ h2 {
   border: 1px solid var(--border-color);
   border-radius: 6px;
   padding: 12px;
-  margin-top: 16px;
-  max-height: 800px;
-  width: 40%;
+  margin-top: 0px; 
+  max-height: 1400px;
+  width: 90%;
   overflow-y: auto;
   scrollbar-color: var(--scrollbar-color);
   color: var(--text-color);
+}
+.compare-radar-chart-container {
+  width: 80%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-height: 600px;
+  padding-bottom: 20px;
+  margin-top: 20px;
 }
 
 .compare-ranking {
@@ -246,14 +255,30 @@ h2 {
 }
 
 .analysis-body {
-  white-space: pre-wrap;
-  line-height: 1.4;
+  white-space: normal; /* Let Markdown handle the structure, don't force extra whitespace */
+  line-height: 1.5;
+  text-align: left !important;
+  width: 100%;
+}
+.analysis-body ul, .analysis-body p, .analysis-body table {
+    text-align: left;
+    margin-bottom: 8px; /* Tighter spacing between paragraphs */
+    margin-top: 0;
+}
+.analysis-body h1, .analysis-body h2, .analysis-body h3 {
+    margin-top: 16px;
+    margin-bottom: 8px;
 }
 
 /* Align stock header and rows using a shared grid */
 .stock-container {
   /* Adjust column widths easily by editing this variable */
   --stock-grid-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 110px;
+}
+
+.h3 {
+  color: var(--text-color);
+  font-size: large;
 }
 
 .list-header {
@@ -397,13 +422,15 @@ h2 {
     max-height: none;
   }
   /* My stocks and news button style */
-  .my-stocks-button,
-  .news-button {
+  .stock-container,
+  .news-container {
     width: 100%;
-    height: 300px;
-    min-height: 100px;
+    /* REMOVED FIXED HEIGHT to prevent overlap */
+    height: auto; 
+    min-height: 100px; /* Ensure at least some height */
     max-height: none;
     max-width: none;
+    margin-bottom: 10px; /* Add spacing between stacked items */
   }
   /* Button container style */
   .button-container {
