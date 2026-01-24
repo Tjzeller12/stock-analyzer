@@ -1,0 +1,28 @@
+@import url(../../main.css);
+
+.filter-dropdown {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+}
+
+.filter-dropdown label {
+  color: white;
+  font-size: 14px;
+  white-space: nowrap; /* Keep "Filter:" on one line */
+}
+
+.filter-dropdown select {
+  padding: 8px 12px;
+  min-width: 150px;
+  background-color: var(--button-bg-color);
+  color: white;
+  border-radius: 5px;
+  font-size: 14px;
+  border-color: rgba(40, 40, 40, 0.414);
+  cursor: pointer;
+  align-items: left;
+  justify-content: left;
+}

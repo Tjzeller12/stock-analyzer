@@ -1,0 +1,13 @@
+.control-panel {
+    display: flex;
+    flex-direction: column;
+
+}
+.controls {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+.control-panel-info {
+    font-size: 14px;
+}

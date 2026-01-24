@@ -1,0 +1,24 @@
+.action-input-bar button {
+    margin-left: 4px;
+    border: none;
+    height: 35px;
+}
+.action-input-bar input {
+
+    margin-right: 0px;
+    height: 35px;
+    border: none;
+}
+.action-input-bar {
+    background-color: rgba(173, 173, 173, 0.358);
+    border-radius: 6px;
+    padding-left: 8px;
+    padding-right: 8px;
+    margin-top: 2px;
+    margin-bottom: 2px;
+}
+
+[data-theme="dark"] .action-input-bar {
+    background-color: rgba(105, 105, 105, 0.358);
+}
+    

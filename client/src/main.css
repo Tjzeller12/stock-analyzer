@@ -4,7 +4,7 @@
   --header-button-txt-color: #1c1b1b;
   /* also odd row color */
   --list-color: #ebe9e9;
-  --even-row-color: #a5a5a5;
+  --even-row-color: rgba(255, 255, 255, 0.443);
   --scrollbar-color: rgb(92, 92, 92) rgb(180, 180, 182);
   --border-color: #9a9a9a;
   --form-container-color: #f0f0f0;
@@ -15,6 +15,9 @@
   --stock-graph-llm-color-bg: #d3d3d3;
   --llm-field-bg-color: #c8c8c8;
   --passwrd-reset-bg-color: #cccccc;
+  --primary-green: #069042;
+  --row-hover-color: rgba(157, 157, 157, 0.1);
+  --button-bg-color: #06a94d;
 }
 
 [data-theme="dark"] {
@@ -23,7 +26,7 @@
   --header-button-txt-color: #ffffff;
   /* also odd row color */
   --list-color: #1e1e1e;
-  --even-row-color: #363636;
+  --even-row-color: rgba(255, 255, 255, 0.02);
   --scrollbar-color: rgb(116, 116, 116) rgb(61, 61, 61);
   --border-color: #333;
   --form-container-color: #212121;
@@ -34,6 +37,7 @@
   --stock-graph-llm-color-bg: #474747;
   --llm-field-bg-color: #313131;
   --passwrd-reset-bg-color: #363636;
+    --row-hover-color: rgba(255, 255, 255, 0.05);
 }
 .input-field {
   background-color: var(--input-field-color);
@@ -68,28 +72,6 @@
   color: #ffffff;
 }
 
-.main-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  margin-bottom: 20px;
-}
-
-/* Main heading style */
-h1 {
-  font-size: 24px;
-  color: #06a94d;
-}
-
-/* Interactive logo styling */
-
-.main-header img {
-  max-height: 75px;
-  width: auto;
-  cursor: pointer;
-  transition: transform 0.3s;
-}
 
 /* Logo hover effect */
 .main-page-header img:hover {
@@ -97,6 +79,7 @@ h1 {
 }
 
 .header-button {
+
   background-color: transparent;
   color: var(--text-color);
   border: none;
@@ -119,6 +102,8 @@ button {
   color: #141414;
   margin-bottom: 10px;
   margin-top: 10px;
+  margin-left: 4px;
+  margin-right: 4px;
   border: none;
   border-radius: 5px;
   cursor: pointer;

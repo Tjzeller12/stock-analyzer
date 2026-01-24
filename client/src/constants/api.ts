@@ -1,6 +1,6 @@
 // Base URL for the backend API (overridable via environment)
 declare const process: any;
-export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://3.85.3.252:5001';
+export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5001';
 
 // Auth endpoints
 export const AUTH_ENDPOINTS = {
