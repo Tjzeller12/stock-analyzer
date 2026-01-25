@@ -61,3 +61,9 @@ header.main-header .toggle-switch input:checked + label .slider:before {
     transform: translateX(26px);
     background-color: #333; /* Dark background for contrast on green track */
 }
+
+header img:hover {
+    cursor: pointer;
+    transform: scale(1.1);
+    transition: transform 0.3s ease;
+}

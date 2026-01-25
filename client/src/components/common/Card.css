@@ -22,6 +22,7 @@
   margin-bottom: 16px;
   border-bottom: 1px solid rgba(40, 40, 40, 0.1);
   padding-bottom: 12px;
+  width: 100%; /* Ensure header spans full width even if parent aligns center */
 }
 
 .start-card-title {
@@ -46,6 +47,7 @@
 
 .start-card-content {
   flex: 1;
+  width: 100%; /* Ensure content spans full width */
 }
 
 [data-theme='dark'] .start-card {

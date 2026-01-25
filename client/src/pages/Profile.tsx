@@ -1,9 +1,10 @@
 import axios from "axios";
-import { PROFILE_ENDPOINTS } from "../constants/api";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import Card from "../components/common/Card";
+import Header from "../components/common/Header";
+import { PROFILE_ENDPOINTS } from "../constants/api";
 import "../main.css";
-import logo from "../resources/Stock_Market_Logo.png";
 import "./Profile.css";
 type PasswordField = {
   value: string;
@@ -113,7 +114,6 @@ const Profile: React.FC = () => {
     setter((prev) => ({ ...prev, show: !prev.show }));
   };
 
-  const handleToggleLtInvestor = () => toggleState(setLtInvestor);
 
   const handleToggleNewPassword = () =>
     togglePasswordVisibility(setNewPassword);
@@ -129,18 +129,10 @@ const Profile: React.FC = () => {
   }, []);
   return (
     <div className="profile-container">
-      <header className="main-header">
-        <h1>Stock Analyzer</h1>
-        <img
-          src={logo}
-          alt="Stock Market Logo"
-          onClick={handleLogoClick}
-          style={{ cursor: "pointer" }}
-        />
-      </header>
-      <h2>Profile</h2>
+      <Header title="AlphaBot Profile Settings" />
       <div className="blank-space">
-        <div className="form-container">
+        <Card title="Profile" variant="glass" className="profile-card">
+          <div className="profile-form"></div>
           <form className="user-form" onSubmit={handleSave}>
             <div className="form-row">
               <label>Username: </label>
@@ -161,23 +153,10 @@ const Profile: React.FC = () => {
                 className="non-editable"
               />
             </div>
-            <div className="toggle-switch">
-              <input
-                type="checkbox"
-                id="ltInvestor"
-                checked={ltInvestor}
-                onChange={handleToggleLtInvestor}
-              />
-              <label htmlFor="ltInvestor">
-                <span className="slider"></span>
-              </label>
-              <span className="toggle-label">
-                {ltInvestor ? "Long-Term Investor" : "Short-Term Investor"}
-              </span>
-            </div>
+            
             {resetPassword && (
               <>
-                <div className="reset-password-container">
+                <Card className="reset-password-container">
                   <div className="form-row">
                     <label>New Password:</label>
                     <input
@@ -217,7 +196,7 @@ const Profile: React.FC = () => {
                   <button type="button" onClick={handlePasswordReset}>
                     Submit New Password
                   </button>
-                </div>
+                </Card>
               </>
             )}
             <span
@@ -235,7 +214,7 @@ const Profile: React.FC = () => {
               Save
             </button>
           </form>
-        </div>
+        </Card>
       </div>
     </div>
   );

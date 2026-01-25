@@ -3,12 +3,12 @@
 /* Main container for the login page */
 .login-container {
   display: flex;
-  flex-direction: column; /* Stacks child elements vertically */
-  justify-content: center; /* Centers content vertically */
-  align-items: center; /* Centers content horizontally */
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
   padding: 20px;
   font-family: Arial, Helvetica, sans-serif;
-  min-height: 100vh; /* Ensures full viewport height */
+  min-height: 100vh;
   background-color: var(--background-color);
   color: #ffffff;
 }
@@ -27,11 +27,33 @@
   width: 100%;
   margin-bottom: 20px;
 }
-/* Styling for the password input field */
+
+/* Make password input flexible to fill space next to button */
 .password-container input {
-  flex-grow: 1;
+  flex: 1; /* Take remaining space */
   padding: 10px;
   font-size: 16px;
   border: 1px solid #333;
   border-radius: 5px;
+  min-width: 0; /* Allow shrinking if needed */
+}
+
+.password-container button {
+  margin-left: 10px;
+  white-space: nowrap; /* Prevent button text wrapping */
+}
+
+/* Form container constraints */
+.form-container {
+    width: 100%; /* Let it fill the card container */
+    max-width: 400px;
+    padding: 20px;
+    display: flex; /* Ensure flex context for children */
+    flex-direction: column;
+}
+
+/* Restore generic input field class for Username and consistency */
+.input-field {
+    width: 100%; /* Fill the form width */
+    box-sizing: border-box; /* Include padding in width */
 }
