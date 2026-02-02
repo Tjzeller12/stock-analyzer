@@ -1,11 +1,11 @@
 import axios from "axios";
-import { AUTH_ENDPOINTS } from "../constants/api";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import Card from "../components/common/Card";
+import { AUTH_ENDPOINTS } from "../constants/api";
 import "../main.css";
-import logo from "../resources/Stock_Market_Logo.png";
+import logo from "../resources/alphaBotLogo.png";
 import "./RegisterPage.css";
-
 // RegisterPage component for user authentication
 const RegisterPage: React.FC = () => {
   const [username, setUsername] = useState("");
@@ -49,10 +49,10 @@ const RegisterPage: React.FC = () => {
 
   return (
     <div className="register-container">
-      <h1>Stock Market Analyzer</h1>
+      <h1>AlphaBot</h1>
       <img src={logo} alt="Stock Market Logo" />
-      <h2>Register</h2>
-      <div className="form-container">
+
+      <Card title="Register" className="form-container">
         <form className="user-form" onSubmit={handleRegister}>
           <label htmlFor="email">Email:</label>
           <input
@@ -86,22 +86,8 @@ const RegisterPage: React.FC = () => {
               onMouseUp={() => setShowPassword(false)}
               onMouseLeave={() => setShowPassword(false)}
             >
-              {showPassword ? "Hide Password" : "Show Password"}
+              {showPassword ? "Hide" : "Show"}
             </button>
-          </div>
-          <div className="toggle-switch">
-            <input
-              type="checkbox"
-              id="ltInvestor"
-              checked={ltInvestor}
-              onChange={handleToggle}
-            />
-            <label htmlFor="ltInvestor">
-              <span className="slider"></span>
-            </label>
-            <span className="toggle-label">
-              {ltInvestor ? "Long-Term Investor" : "Short-Term Investor"}
-            </span>
           </div>
 
           <button type="submit">Register</button>
@@ -109,7 +95,7 @@ const RegisterPage: React.FC = () => {
             Goto Login Page
           </button>
         </form>
-      </div>
+      </Card>
     </div>
   );
 };

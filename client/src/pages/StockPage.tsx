@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { ALPHA_BOT_ENDPOINTS, DATA_ENDPOINTS } from '../constants/api';
 import "../main.css";
 import { authPost } from '../utils/api';
+import { formatCashAndCashEquivalents, formatDebtToEquity, formatFreeCashFlow, formatMarketCap, formatPriceToFc, formatRoic } from "../utils/formatters";
 import "./StockPage.css";
 
 import logo from "../resources/Stock_Market_Logo.png";
@@ -98,51 +99,6 @@ const StockPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const formatMarketCap = (value: number) => {
-    if (value >= 1e12) {
-      return (value / 1e12).toFixed(1) + "T";
-    } else if (value >= 1e9) {
-      return (value / 1e9).toFixed(1) + "B";
-    } else if (value >= 1e6) {
-      return (value / 1e6).toFixed(1) + "M";
-    } else if (value >= 1e3) {
-      return (value / 1e3).toFixed(1) + "K";
-    } else {
-      return value.toString();
-    }
-  };
-
-  const formatFreeCashFlow = (value: number) => {
-    if (value >= 1e12) {
-      return (value / 1e12).toFixed(1) + "T";
-    } else if (value >= 1e9) {
-      return (value / 1e9).toFixed(1) + "B";
-    }
-  };
-
-  const formatDebtToEquity = (value: number) => {
-    return value.toFixed(2);
-  };
-
-  const formatRoic = (value: number) => {
-    return value.toFixed(2);
-  };
-
-  const formatPriceToFc = (value: number) => {
-    return value.toFixed(2);
-  };
-
-  const formatCashAndCashEquivalents = (value: number) => {
-    if (value >= 1e12) {
-      return (value / 1e12).toFixed(1) + "T";
-    } else if (value >= 1e9) {
-      return (value / 1e9).toFixed(1) + "B";
-    } else if (value >= 1e6) {
-      return (value / 1e6).toFixed(1) + "M";
-    }
-    return value.toFixed(2);
   };
 
   useEffect(() => {

@@ -1,0 +1,67 @@
+@import url("../../main.css");
+
+.start-card {
+  background: rgba(229, 229, 229, 0.955);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  scrollbar-color: var(--scrollbar-color);
+  margin: 0; /* Let Grid handle spacing */
+  width: 100%; /* Fill the grid cell */
+  color: var(--text-color);
+}
+
+.start-card-header {
+  margin-bottom: 16px;
+  border-bottom: 1px solid rgba(40, 40, 40, 0.1);
+  padding-bottom: 12px;
+  width: 100%; /* Ensure header spans full width even if parent aligns center */
+}
+
+.start-card-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-color); /* Fallback to white if var not set */
+}
+
+/* Variant: Glass (More pronounced glassmorphism) */
+.start-card.variant-glass {
+  background: rgba(160, 160, 160, 0.145);
+  border: 1px solid rgba(45, 45, 45, 0.259);
+}
+
+/* Variant: Outline (Minimalist) */
+.start-card.variant-outline {
+  background: transparent;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  box-shadow: none;
+}
+
+.start-card-content {
+  flex: 1;
+  width: 100%; /* Ensure content spans full width */
+}
+
+[data-theme='dark'] .start-card {
+    background: rgba(112, 112, 112, 0.955);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+/* Dark mode overrides if needed, though opacity usually handles it */
+[data-theme='dark'] .start-card {
+  background: rgba(40, 40, 40, 0.6);
+  border-color: rgba(167, 167, 167, 0.05);
+}
+
+[data-theme='dark'] .start-card-header {
+    border-color: rgba(255, 255, 255, 0.1);
+}

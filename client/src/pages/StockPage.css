@@ -29,11 +29,11 @@
 /* Container for all stock data items */
 .stock-data-container {
   display: flex;
-  flex-wrap: wrap; /* Allow wrapping for smaller screens */
+  flex-wrap: wrap;
   justify-content: center;
-  gap: 10px; /* Space between data items */
+  gap: 10px;
   width: 100%;
-  max-width: 1400px; /* Limit width for readability */
+  max-width: 1400px;
   height: 100%;
   padding: 15px;
   background-color: var(--form-container-color);
@@ -45,14 +45,12 @@
 .stock-info-container,
 .stock-info-container-first,
 .stock-info-container-last {
-  background-color: var(
-    --list-color
-  ); /* Slightly lighter than background for contrast */
+  background-color: var(--list-color);
   padding: 15px;
   text-align: center;
   border-radius: 8px;
-  min-width: 100px; /* Ensure consistent width */
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); /* Subtle shadow for depth */
+  min-width: 100px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
 }
 
 .stock-info-container-first {
@@ -70,7 +68,7 @@
   display: block;
   font-size: 14px;
   font-weight: bold;
-  color: #06a94d; /* Match header color for consistency */
+  color: #06a94d;
   margin-bottom: 1px;
 }
 
@@ -95,7 +93,7 @@
   border-radius: 8px;
   text-align: center;
   min-width: 100px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); /* Subtle shadow for depth */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
 }
 
 .stock-buy-rating-container {
@@ -109,6 +107,7 @@
   border-radius: 8px;
   padding: 5px;
 }
+
 .stock-hold-rating-container {
   display: flex;
   justify-content: center;
@@ -120,6 +119,7 @@
   border-radius: 8px;
   padding: 5px;
 }
+
 .stock-sell-rating-container {
   display: flex;
   justify-content: center;
@@ -154,9 +154,9 @@
   height: 100%;
   background-color: var(--stock-graph-llm-color-bg);
   padding: 15px;
-
   border-radius: 8px;
 }
+
 .stock-in-depth-analysis-container {
   display: flex;
   flex-direction: column;
@@ -166,12 +166,11 @@
   padding: 15px;
   border-radius: 8px;
   width: 60%;
-
   text-align: center;
-  min-width: 100px; /* Ensure consistent width */
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); /* Subtle shadow for depth */
+  min-width: 100px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
 }
-/*Make the llm container 30% wide and graph container 70% wide*/
+
 .stock-llm-container {
   display: flex;
   flex-direction: column;
@@ -182,8 +181,8 @@
   width: 40%;
   border-radius: 8px;
   text-align: center;
-  min-width: 100px; /* Ensure consistent width */
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); /* Subtle shadow for depth */
+  min-width: 100px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
 }
 
 .stock-llm-header {
@@ -202,6 +201,7 @@
   font-size: 20px;
   font-weight: bold;
 }
+
 .stock-llm-text {
   display: flex;
   flex-direction: column;
@@ -214,51 +214,33 @@
   min-height: 300px;
   height: 100%;
 }
-.stock-llm-summary {
+
+.analysis-container {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: left;
   gap: 10px;
+  background-color: var(--llm-field-bg-color);
+  padding: 15px;
+  border-radius: 8px;
+  width: 95%;
+  min-height: 300px;
+  height: 100%;
+  text-align: left;
 }
 
-.stock-llm-summary-label {
-  font-size: 14px;
-  font-weight: bold;
-  color: #06a94d;
-}
-
-.stock-llm-summary-text {
-  font-size: 14px;
-  font-weight: bold;
-  color: #b2b2b2;
-}
-
-.stock-llm-chat-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-}
-
-.stock-llm-chat-header {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-}
-
-.llm-buttons-container {
+.stock-llm-summary-sentiment {
   display: flex;
   flex-direction: row;
+  justify-content: space-around;
   align-items: center;
-  gap: 100px;
-}
-.toggle-switch {
-  margin-left: 20px;
-  display: flex;
-  align-items: left;
-  gap: 5px;
+  gap: 10px;
+  background-color: var(--list-color);
+  padding: 10px;
+  border-radius: 8px;
   margin-top: 10px;
+  font-size: 14px;
+  font-weight: bold;
 }
 
 .prompt-container {

@@ -1,0 +1,33 @@
+.remove-button {
+    width: 30px;
+    height: 30px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 10px;
+    border-radius: 5px;
+    background-color: hsla(0, 0%, 37%, 0.137);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.remove-button:hover {
+    background-color: #f90000 !important;
+}
+
+.remove-button img {
+    width: 20px;
+    height: 20px;
+}
+
+/* Style for the select checkbox */
+.stock-action-cell input[type="checkbox"] {
+    width: 25px; /* Slightly larger but reasonable, user asked for "bit bigger" not giant */
+    height: 25px;
+    cursor: pointer;
+    accent-color: var(--primary-green, #069042); /* Match theme color */
+}
+
+[data-theme='dark'] .remove-button {
+    background-color: #494949e6;
+}
+
