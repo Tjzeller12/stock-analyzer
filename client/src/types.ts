@@ -1,5 +1,3 @@
-import { RadarChartData } from "./components/common/RadarGraph";
-
 export interface Stock {
   symbol: string;
   name: string;
@@ -29,6 +27,17 @@ export interface AlphaBotResponse {
 // Used for after alpha bot response is parsed
 export interface CompareResponse {
   analysis: string;
-  radarChartData: RadarChartData;
+  radarChartData: ChartData;
+  doughnutChartData: ChartData;
 }
 
+export interface ChartData {
+    labels: string[],
+    datasets: {
+        label: string,
+        data: number[]
+    }[],
+    backgroundColor?: string[],
+    borderColor?: string[],
+    borderWidth?: number,
+}

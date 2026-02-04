@@ -7,6 +7,7 @@ import "../utils/formatters";
 // Stock interface contains data about a stock
 import { AlphaBotResponseCard } from "../components/common/AlphaBotResponseCard";
 import Card from '../components/common/Card';
+import { DoughnutChart } from "../components/common/DoughnutChart";
 import Header from '../components/common/Header';
 import List from '../components/common/List';
 import NewsListItem from '../components/common/NewsListItem';
@@ -21,7 +22,7 @@ import "./MainPage.css";
 // MainPage component: Serves as the dashboard for the stock analyzer application
 const MainPage: React.FC = () => {
 
-  const { stocks, sortBy, fetchStocks, addStock, removeStock, refreshStocks, navigateToStockPage, setSortBy } = useStockTableManager();
+  const { stocks, sortBy, fetchStocks, addStock, removeStock, refreshStocks, navigateToStockPage, setSortBy, error } = useStockTableManager();
   const { articles, newsFilter, handleFilterChange } = useNewsListManager();
   const { selectedSymbols, compareLoading, compareError, compareResult, compareStocks, toggleSelectSymbol } = useCompareAlphaBotManager();
 
@@ -61,6 +62,7 @@ const MainPage: React.FC = () => {
             onRefresh={refreshStocks}
             compareLoading={compareLoading}
             compareError={compareError}
+            error={error}
             onSort={setSortBy}
           />
         
@@ -87,7 +89,7 @@ const MainPage: React.FC = () => {
       <Card title="Compare Radar Graph" variant="glass" className="compare-radar-chart-container">
         {(compareResult || compareLoading) && (
             <AlphaBotResponseCard isLoading={compareLoading}>
-                 {compareResult && (
+            {compareResult && compareResult.radarChartData && (
                     <>
                         <div className="compare-radar-chart-container">
                         <RadarGraph data={compareResult.radarChartData}/>
@@ -96,6 +98,19 @@ const MainPage: React.FC = () => {
                     </>
                  )}
             </AlphaBotResponseCard>
+        )}
+      </Card>
+      <Card title="Portfolio Distribution Chart" variant="glass" className="compare-doughnut-chart-container">
+        {(compareResult || compareLoading) && (
+          <AlphaBotResponseCard isLoading={compareLoading}>
+            {compareResult && compareResult.doughnutChartData && (
+              <>
+                <div className="chart-container" style={{ width: '100%', height: '100%' }}>
+                  <DoughnutChart data={compareResult.doughnutChartData}/>
+                </div>
+              </>
+            )}
+          </AlphaBotResponseCard>
         )}
       </Card>
       </div>

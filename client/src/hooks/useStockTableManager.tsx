@@ -30,12 +30,18 @@ export const useStockTableManager = (initialSortBy: string = "ev_to_ebita") => {
     }, [sortBy]);
 
     const addStock = async (symbol: string) => {
+        setError(null);
         try {
             await authPost(PORTFOLIO_ENDPOINTS.ADD, { symbol });
             await fetchStocks(); // Refresh list after add
-        } catch (err) {
+        } catch (err: any) {
             console.error("Add failed:", err);
-            throw err; // Re-throw to let UI handle specific errors if needed
+            // Handle 400 Bad Request specifically if possible, or just general error
+             if (err.response && err.response.status === 400) {
+                setError(`Invalid stock symbol: ${symbol}`);
+            } else {
+                setError("Failed to add stock. Please try again.");
+            }
         }
     };
 

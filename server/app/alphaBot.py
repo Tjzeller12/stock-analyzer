@@ -226,7 +226,7 @@ def get_in_depth_analysis():
         current_app.logger.error(f"Error generating getting in-depth analysis: {e}")
         return jsonify({"error": "Failed to generate in-depth analysis"}), 500
 
-@cache.memoize(timeout=900)
+# @cache.memoize(timeout=900)
 @alphaBot_bp.route('/alphaBot/compare_analysis', methods=['POST'])
 def get_compare_analysis():
     data = request.json
