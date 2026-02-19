@@ -1,14 +1,32 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ALPHA_BOT_ENDPOINTS } from "../constants/api";
 import { CHART_COLORS } from "../constants/chartColors";
 import { AlphaBotResponse, ChartData, CompareResponse } from "../types";
 import { authPost } from "../utils/api";
 
 export const useCompareAlphaBotManager = () => {
-    const [selectedSymbols, setSelectedSymbols] = useState<Set<string>>(new Set());
+    const [selectedSymbols, setSelectedSymbols] = useState<Set<string>>(() => {
+        const saved = localStorage.getItem("selectedSymbols");
+        return saved ? new Set(JSON.parse(saved)) : new Set();
+    });
     const [compareLoading, setCompareLoading] = useState(false);
     const [compareError, setCompareError] = useState<string | null>(null);
-    const [compareResult, setCompareResult] = useState<CompareResponse | null>(null);
+    const [compareResult, setCompareResult] = useState<CompareResponse | null>(() => {
+        const saved = localStorage.getItem("compareResult");
+        return saved ? JSON.parse(saved) : null;
+    });
+
+    // Persist selectedSymbols whenever it changes
+    useEffect(() => {
+        localStorage.setItem("selectedSymbols", JSON.stringify(Array.from(selectedSymbols)));
+    }, [selectedSymbols]);
+
+    // Persist compareResult whenever it changes
+    useEffect(() => {
+        if (compareResult) {
+            localStorage.setItem("compareResult", JSON.stringify(compareResult));
+        }
+    }, [compareResult]);
 
     const parseCompareResponse = (response: string | undefined): CompareResponse | null => {
       if (!response) return null;
@@ -75,7 +93,7 @@ export const useCompareAlphaBotManager = () => {
 
                 dataset.backgroundColor = backgroundColors;
                 dataset.borderColor = borderColors;
-                dataset.borderWidth = 1;
+                dataset.borderWidth = 2.3;
             });
         }
     }
@@ -96,6 +114,9 @@ export const useCompareAlphaBotManager = () => {
     const compareStocks = async () => {
         setCompareError(null);
         setCompareResult(null);
+        // Clear previous result from storage when starting new comparison
+        localStorage.removeItem("compareResult");
+        
         const symbols = Array.from(selectedSymbols);
         if (symbols.length < 2) {
             setCompareError("Select at least 2 stocks to compare.");

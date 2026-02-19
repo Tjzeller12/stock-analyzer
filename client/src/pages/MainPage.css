@@ -23,6 +23,21 @@
     width: 100%;
 }
 
+.compare-alpha-bot-card {
+    max-height: 1350px;
+}
+
+.d_chart_container {
+    width: 100%;
+    height: 100%;
+    max-height: 500px;
+    max-width: 500px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 auto;
+}
+
 /* 1/3 of 6 is 2 columns */
 .news-container {
     grid-column: 5 / 7; /* Spans cols 5,6 */
@@ -46,6 +61,9 @@
     grid-column: 4 / 7; /* Spans cols 4,5,6 (Right Half) */
     grid-row: 2; /* Top Right */
     width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 /* Row 3: Doughnut Chart (Bottom Right) */
@@ -53,6 +71,9 @@
     grid-column: 4 / 7; /* Spans cols 4,5,6 (Right Half) */
     grid-row: 3; /* Bottom Right */
     width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 /* Responsive: stack vertically on small screens */

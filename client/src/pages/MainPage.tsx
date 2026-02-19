@@ -75,7 +75,7 @@ const MainPage: React.FC = () => {
       {/* Comparison result */}
       <Card title="Comparison Analysis" variant="glass" className="compare-result-container">
         {(compareResult || compareLoading) && (
-            <AlphaBotResponseCard isLoading={compareLoading}>
+            <AlphaBotResponseCard isLoading={compareLoading} classNamePrefix="compare-">
                  {compareResult && (
                     <>
                         <div className="analysis-body">
@@ -88,7 +88,7 @@ const MainPage: React.FC = () => {
       </Card>
       <Card title="Compare Radar Graph" variant="glass" className="compare-radar-chart-container">
         {(compareResult || compareLoading) && (
-            <AlphaBotResponseCard isLoading={compareLoading}>
+            <AlphaBotResponseCard isLoading={compareLoading} classNamePrefix="chart-">
             {compareResult && compareResult.radarChartData && (
                     <>
                         <div className="compare-radar-chart-container">
@@ -105,7 +105,7 @@ const MainPage: React.FC = () => {
           <AlphaBotResponseCard isLoading={compareLoading}>
             {compareResult && compareResult.doughnutChartData && (
               <>
-                <div className="chart-container" style={{ width: '100%', height: '100%' }}>
+                <div className="d_chart_container">
                   <DoughnutChart data={compareResult.doughnutChartData}/>
                 </div>
               </>
