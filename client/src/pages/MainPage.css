@@ -23,6 +23,21 @@
     width: 100%;
 }
 
+.compare-alpha-bot-card {
+    max-height: 1350px;
+}
+
+.d_chart_container {
+    width: 100%;
+    height: 100%;
+    max-height: 500px;
+    max-width: 500px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 auto;
+}
+
 /* 1/3 of 6 is 2 columns */
 .news-container {
     grid-column: 5 / 7; /* Spans cols 5,6 */
@@ -33,8 +48,8 @@
 /* Row 2: Analysis (1/2) + Radar Graph (1/2) */
 /* 1/2 of 6 is 3 columns */
 .compare-result-container {
-    grid-column: 1 / 4; /* Spans cols 1,2,3 */
-    grid-row: 2;
+    grid-column: 1 / 4; /* Spans cols 1,2,3 (Left Half) */
+    grid-row: 2 / 4; /* Spans Row 2 AND Row 3 */
     width: 100%;
 }
 
@@ -43,9 +58,22 @@
 }
 
 .compare-radar-chart-container {
-    grid-column: 4 / 7; /* Spans cols 4,5,6 */
-    grid-row: 2;
+    grid-column: 4 / 7; /* Spans cols 4,5,6 (Right Half) */
+    grid-row: 2; /* Top Right */
     width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Row 3: Doughnut Chart (Bottom Right) */
+.compare-doughnut-chart-container {
+    grid-column: 4 / 7; /* Spans cols 4,5,6 (Right Half) */
+    grid-row: 3; /* Bottom Right */
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 /* Responsive: stack vertically on small screens */
@@ -57,7 +85,8 @@
     .stock-table-container,
     .news-container,
     .compare-result-container,
-    .compare-radar-chart-container {
+    .compare-radar-chart-container,
+    .compare-doughnut-chart-container {
         grid-column: 1; /* All items take full width */
     }
     
@@ -65,4 +94,5 @@
     .news-container { grid-row: 2; }
     .compare-result-container { grid-row: 3; }
     .compare-radar-chart-container { grid-row: 4; }
+    .compare-doughnut-chart-container { grid-row: 5; }
 }

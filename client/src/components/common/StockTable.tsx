@@ -17,6 +17,7 @@ export interface StockTableProps {
     onRefresh: () => Promise<void>;
     compareLoading: boolean;
     compareError: string | null;
+    error: string | null;
     onSort: (field: string) => void;
 }
 
@@ -31,6 +32,7 @@ const StockTable: React.FC<StockTableProps> = ({
     onRefresh,
     compareLoading,
     compareError,
+    error,
     onSort
 }) => {
 
@@ -124,7 +126,7 @@ const StockTable: React.FC<StockTableProps> = ({
                 onClick: onCompare,
                 disabled: selectedSymbols.size < 2 || selectedSymbols.size > 10 || compareLoading
             }]}
-            info={`Selected: ${selectedSymbols.size} (min 2, max 10) ${compareError ? ` - ${compareError}` : ''}`}
+            info={`Selected: ${selectedSymbols.size} (min 2, max 10) ${compareError ? ` - ${compareError}` : ''}${error ? ` - ${error}` : ''}`}
         >
             <Table 
                 columns={columns} 

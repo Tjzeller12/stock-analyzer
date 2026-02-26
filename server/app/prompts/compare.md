@@ -9,6 +9,8 @@ Perform a rigorous side-by-side comparison and ranking of the following stocks: 
 3. **Rankings**: Calculate scores (0-100) for Long-term, Growth Potential, and Risk categories.
 4. **Graph Data Calculation**:
     - **Radar Chart**: Assign a score (0-100) for each of the 5 axes: Valuation, Growth, Risk, Sentiment, Efficiency.
+    - **Doughnut Chart**: Portfolio distribution of each stock. We will have a 70/30 rule, where about 70% of the portfolio is allocated to great long-term investments that are safe and about 30% to high growth stocks. Suggest a percentage allocation for each stock.
+
 
 # Output Format
 You MUST return ONLY a raw JSON object. Do not include markdown formatting like ```json or ``` around the output. The JSON MUST look exactly like the structure provided below. You will not output any additional text or markdown formatting.
@@ -22,6 +24,15 @@ Structure:
         {
             "label": "SYMBOL",
             "data": [80, 90, 70, 85, 95]
+        }
+    ]
+  }, 
+  "doughnutChartData": {
+    "labels": ["SYMBOL1", "SYMBOL2"],
+    "datasets": [
+        {
+            "label": "Portfolio Allocation",
+            "data": [60, 40]
         }
     ]
   }

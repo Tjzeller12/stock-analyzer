@@ -1,14 +1,32 @@
-import { useState } from "react";
-import { CHART_COLORS } from "../components/common/RadarGraph";
+import { useEffect, useState } from "react";
 import { ALPHA_BOT_ENDPOINTS } from "../constants/api";
-import { AlphaBotResponse, CompareResponse } from "../types";
+import { CHART_COLORS } from "../constants/chartColors";
+import { AlphaBotResponse, ChartData, CompareResponse } from "../types";
 import { authPost } from "../utils/api";
 
 export const useCompareAlphaBotManager = () => {
-    const [selectedSymbols, setSelectedSymbols] = useState<Set<string>>(new Set());
+    const [selectedSymbols, setSelectedSymbols] = useState<Set<string>>(() => {
+        const saved = localStorage.getItem("selectedSymbols");
+        return saved ? new Set(JSON.parse(saved)) : new Set();
+    });
     const [compareLoading, setCompareLoading] = useState(false);
     const [compareError, setCompareError] = useState<string | null>(null);
-    const [compareResult, setCompareResult] = useState<CompareResponse | null>(null);
+    const [compareResult, setCompareResult] = useState<CompareResponse | null>(() => {
+        const saved = localStorage.getItem("compareResult");
+        return saved ? JSON.parse(saved) : null;
+    });
+
+    // Persist selectedSymbols whenever it changes
+    useEffect(() => {
+        localStorage.setItem("selectedSymbols", JSON.stringify(Array.from(selectedSymbols)));
+    }, [selectedSymbols]);
+
+    // Persist compareResult whenever it changes
+    useEffect(() => {
+        if (compareResult) {
+            localStorage.setItem("compareResult", JSON.stringify(compareResult));
+        }
+    }, [compareResult]);
 
     const parseCompareResponse = (response: string | undefined): CompareResponse | null => {
       if (!response) return null;
@@ -31,14 +49,13 @@ export const useCompareAlphaBotManager = () => {
         const parsedResponse = JSON.parse(jsonString);
         
         // Inject styling into Radar Chart datasets
-        if (parsedResponse.radarChartData && parsedResponse.radarChartData.datasets) {
-           parsedResponse.radarChartData.datasets.forEach((dataset: any, index: number) => {
-              const color = CHART_COLORS[index % CHART_COLORS.length];
-              dataset.backgroundColor = color.bg;
-              dataset.borderColor = color.border;
-              dataset.borderWidth = 2;
-              dataset.fill = true;
-           });
+        if (parsedResponse.radarChartData) {
+           injectChartStyling(parsedResponse.radarChartData);
+        }
+
+        // Inject styling into Doughnut Chart datasets
+        if (parsedResponse.doughnutChartData) {
+           injectDoughnutStyling(parsedResponse.doughnutChartData);
         }
     
         return parsedResponse;
@@ -46,6 +63,39 @@ export const useCompareAlphaBotManager = () => {
         console.error("Failed to parse compare response.", error);
         return null;
       }
+    }
+
+    const injectChartStyling = (chartData: ChartData) => {
+        if (chartData.datasets) {
+            chartData.datasets.forEach((dataset: any, index: number) => {
+                const color = CHART_COLORS[index % CHART_COLORS.length];
+                dataset.backgroundColor = color.bg;
+                dataset.borderColor = color.border;
+                dataset.borderWidth = 2;
+                dataset.fill = true;
+            });
+        }
+    }
+
+    const injectDoughnutStyling = (chartData: ChartData) => {
+        if (chartData.datasets) {
+            chartData.datasets.forEach((dataset: any) => {
+                // For doughnut charts, we want an array of colors corresponding to the data points
+                const count = dataset.data.length;
+                const backgroundColors = [];
+                const borderColors = [];
+
+                for (let i = 0; i < count; i++) {
+                     const color = CHART_COLORS[i % CHART_COLORS.length];
+                     backgroundColors.push(color.bg);
+                     borderColors.push(color.border);
+                }
+
+                dataset.backgroundColor = backgroundColors;
+                dataset.borderColor = borderColors;
+                dataset.borderWidth = 2.3;
+            });
+        }
     }
 
     
@@ -64,6 +114,9 @@ export const useCompareAlphaBotManager = () => {
     const compareStocks = async () => {
         setCompareError(null);
         setCompareResult(null);
+        // Clear previous result from storage when starting new comparison
+        localStorage.removeItem("compareResult");
+        
         const symbols = Array.from(selectedSymbols);
         if (symbols.length < 2) {
             setCompareError("Select at least 2 stocks to compare.");
