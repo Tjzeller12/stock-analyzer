@@ -51,6 +51,13 @@ export const CHART_COLORS = [
   { bg: 'rgba(50, 205, 50, 0.1)', border: 'rgba(50, 205, 50, 1)' }, 
 ];
 
+/**
+ * RadarGraph Component
+ * 
+ * A wrapper for the `react-chartjs-2` Radar chart designed for multivariate stock comparisons.
+ * Hooks into the global `ThemeContext` to dynamically flip text colors, grid lines, and 
+ * radial angle lines to maintain high contrast whether the user is in dark or light mode.
+ */
 export const RadarGraph = ( {data}: RadarGraphProps) => {
     const { theme } = useContext(ThemeContext);
     // Determine Chart Colors based on Theme

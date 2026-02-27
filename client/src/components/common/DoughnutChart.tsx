@@ -10,6 +10,14 @@ interface DoughnutChartProps {
 
 ChartJS.register(ArcElement, Tooltip, Legend)
 
+/**
+ * DoughnutChart Component
+ * 
+ * A wrapper around the `react-chartjs-2` Doughnut chart.
+ * This component specifically hooks into the global `ThemeContext` to dynamically 
+ * update the Chart.js legend text color to match the user's active light/dark mode preference,
+ * ensuring readability regardless of the current theme.
+ */
 export const DoughnutChart = ({data}: DoughnutChartProps) => {
     const { theme } = useContext(ThemeContext);
     // Determine Chart Colors based on Theme

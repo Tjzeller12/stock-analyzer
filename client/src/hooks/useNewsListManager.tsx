@@ -3,12 +3,26 @@ import { DATA_ENDPOINTS } from "../constants/api";
 import { Article } from "../types";
 import { authPost } from "../utils/api";
 
+/**
+ * Custom hook to manage the state and fetching logic for the news feed.
+ * Handles filtering articles based on selected categories and parsing 
+ * different potential response formats from the backend.
+ * 
+ * @returns {Object} Object containing news state (articles, filter, loading, error) and control functions.
+ */
 export const useNewsListManager = () => {
       const [newsFilter, setNewsFilter] = useState("All");
       const [articles, setArticles] = useState<Article[]>([]);
       const [loading, setLoading] = useState(false);
       const [error, setError] = useState<string | null>(null);
 
+      /**
+       * Fetches news articles from the backend based on the provided filter string.
+       * Handles normalizing the data structure since the API sometimes returns 
+       * flat arrays, nested 'articles' arrays, or nested 'feed' arrays.
+       * 
+       * @param {string} filter - The category or keyword to filter news by (e.g. "All", "Technology").
+       */
       const handleFilterChange = async (filter: string) => {
         setNewsFilter(filter);
         setLoading(true);

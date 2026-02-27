@@ -1,3 +1,7 @@
+/**
+ * StockPage component
+ * Detailed view for a specific stock, displaying metrics, charts, news sentiment, and AI analysis.
+ */
 import React, { useEffect, useState } from "react";
 import Markdown from "react-markdown";
 import { useNavigate, useParams } from "react-router-dom";
@@ -45,16 +49,9 @@ const StockPage: React.FC = () => {
   const { symbol } = useParams<{ symbol: string }>();
   const [stock, setStock] = useState<Stock | null>(null);
   const [summary, setSummary] = useState<string | null>(null);
-  const [queryResult, setQueryResult] = useState<string | null>(null);
-  const [graph_period, setGraphPeriod] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [llmSummarySentiment, setLlmSummarySentiment] = useState(false);
+  const [queryResult] = useState<string | null>(null);
+  const [, setLoading] = useState(false);
   const [llmPrompt, setLlmPrompt] = useState("");
-
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem("token");
-    return { Authorization: `Bearer ${token}` };
-  };
 
   // Fetch stock data from the API
   const fetchStock = async () => {
@@ -105,11 +102,8 @@ const StockPage: React.FC = () => {
     fetchStock();
     fetchInDepthData();
     fetchAlphaBotInDepthAnalysis();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [symbol]);
-
-  const handleButtonClick = (path: string) => {
-    navigate(path);
-  };
 
   const handleLogoClick = () => {
     navigate("/main");

@@ -9,6 +9,13 @@ interface HeaderProps {
     title: string;
 }
 
+/**
+ * Header Component
+ * 
+ * The main application navigation bar displayed at the top of the interface.
+ * Contains the logo, dynamic title, access to the user Profile page, a global 
+ * light/dark mode theme toggle switch, and handles user logout logic (clearing JWT tokens).
+ */
 const Header = (props: HeaderProps) => {
     const { theme, toggleTheme } = useContext(ThemeContext);
     const navigate = useNavigate();

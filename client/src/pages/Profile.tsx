@@ -1,6 +1,9 @@
+/**
+ * Profile component
+ * Allows users to view and update their profile settings, including password resets.
+ */
 import axios from "axios";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import Card from "../components/common/Card";
 import Header from "../components/common/Header";
 import { PROFILE_ENDPOINTS } from "../constants/api";
@@ -24,13 +27,12 @@ const Profile: React.FC = () => {
     show: false,
   });
   const [resetPassword, setResetPassword] = useState(false);
-  const navigate = useNavigate();
 
   const handlePasswordReset = async (e: React.FormEvent) => {
     const token = localStorage.getItem("token");
     e.preventDefault();
     console.log("Reset Password attempt");
-    if (newPassword.value == confirmPassword.value) {
+    if (newPassword.value === confirmPassword.value) {
       try {
         await axios.post(
           PROFILE_ENDPOINTS.RESET_PASSWORD,
@@ -120,9 +122,6 @@ const Profile: React.FC = () => {
   const handleToggleConfirmPassword = () =>
     togglePasswordVisibility(setConfirmPassword);
   const handleToggleResetPassword = () => toggleState(setResetPassword);
-  const handleLogoClick = () => {
-    navigate("/main");
-  };
 
   useEffect(() => {
     fetchUserInfo();

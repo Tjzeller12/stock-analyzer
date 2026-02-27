@@ -21,6 +21,14 @@ export interface StockTableProps {
     onSort: (field: string) => void;
 }
 
+/**
+ * StockTable Component
+ * 
+ * A complex composite component specifically designed to display a portfolio of stocks.
+ * It combines the generic `Table` component with the `ControlPanel` UI to provide an 
+ * integrated interface for searching/adding stocks, selecting multiple stocks via checkboxes
+ * for LLM comparison, deleting stocks, and sorting columns by financial metrics.
+ */
 const StockTable: React.FC<StockTableProps> = ({
     stocks,
     selectedSymbols,

@@ -14,6 +14,14 @@ export interface ControlPanelProps {
     info?: string;
 }
 
+/**
+ * ControlPanel Component
+ * 
+ * A versatile layout component designed to sit above lists, tables, or complex visualizations.
+ * It can render an `ActionInputBar` (for things like searching or adding items by ID), 
+ * a row of customizable `buttons` (for sorting, filtering, reloading), and an optional 
+ * `info` text block, all positioned nicely within a flex container.
+ */
 const ControlPanel = (props: ControlPanelProps) => {
     return (
         <div className="control-panel">

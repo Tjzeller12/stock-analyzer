@@ -6,6 +6,17 @@ interface ListProps<T> {
     renderItem: (item: T) => React.ReactNode;
 }
 
+/**
+ * List Component
+ * 
+ * A generic, highly reusable list container component.
+ * It loops over an array of `items` of type `T` and conditionally renders an even/odd 
+ * CSS class for zebra-striping. It also accepts an optional `filterDropProp` object 
+ * to render a `FilterDropdown` above the list items.
+ * 
+ * @param {T[]} items - The array of data objects to render.
+ * @param {function} renderItem - A render prop function that defines how each item `T` should look.
+ */
 const List = <T,>(props: ListProps<T>) => {
     return (
         <div>

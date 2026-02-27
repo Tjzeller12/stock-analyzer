@@ -1,3 +1,7 @@
+/**
+ * RegisterPage component
+ * Handles new user registration, capturing username, email, password, and investor preferences.
+ */
 import axios from "axios";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -11,7 +15,6 @@ const RegisterPage: React.FC = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [email, setEmail] = useState("");
-  const [ltInvestor, setLtInvestor] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
@@ -25,7 +28,7 @@ const RegisterPage: React.FC = () => {
         username,
         password,
         email,
-        longterm_investor: ltInvestor,
+        longterm_investor: false,
       });
       // Set token in local storage
       const token = response.data.token;
@@ -40,11 +43,6 @@ const RegisterPage: React.FC = () => {
         console.error("Response status:", error.response?.status);
       }
     }
-  };
-
-  // Toggle long-term investor checkbox
-  const handleToggle = () => {
-    setLtInvestor((prevState) => !prevState);
   };
 
   return (

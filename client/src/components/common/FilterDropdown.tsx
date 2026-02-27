@@ -10,6 +10,12 @@ export interface FilterDropProps {
   options: Option[];
 }
 
+/**
+ * FilterDropdown Component
+ * 
+ * A simple, styled `<select>` element wrapper. Used to switch between predefined options,
+ * triggering a `setFilter` state update function whenever the user changes the selection.
+ */
 const FilterDropdown: React.FC<FilterDropProps> = ({
   filter,
   setFilter,

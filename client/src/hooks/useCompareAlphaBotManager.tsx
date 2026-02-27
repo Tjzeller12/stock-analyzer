@@ -4,7 +4,15 @@ import { CHART_COLORS } from "../constants/chartColors";
 import { AlphaBotResponse, ChartData, CompareResponse } from "../types";
 import { authPost } from "../utils/api";
 
+/**
+ * Custom hook to manage the "Compare" functionality using the AlphaBot LLM.
+ * Handles tracking which symbols are selected for comparison, persisting that state across reloads,
+ * parsing complex LLM JSON outputs, and injecting UI theme colors into the resulting Chart.js datasets.
+ * 
+ * @returns {Object} Object containing selected symbols, loading/error states, parsed results, and control functions.
+ */
 export const useCompareAlphaBotManager = () => {
+    // Initialize selectedSymbols from localStorage to persist selections across page refreshes
     const [selectedSymbols, setSelectedSymbols] = useState<Set<string>>(() => {
         const saved = localStorage.getItem("selectedSymbols");
         return saved ? new Set(JSON.parse(saved)) : new Set();
@@ -28,6 +36,14 @@ export const useCompareAlphaBotManager = () => {
         }
     }, [compareResult]);
 
+    /**
+     * Parses the raw text response from the AlphaBot LLM.
+     * Specifically designed to handle "chatty" LLMs that might output conversational text 
+     * before or after the actual JSON payload. It finds the first `{` and last `}` to extract the JSON.
+     * 
+     * @param {string | undefined} response - The raw text output from the LLM.
+     * @returns {CompareResponse | null} The structured JSON data or null if parsing fails.
+     */
     const parseCompareResponse = (response: string | undefined): CompareResponse | null => {
       if (!response) return null;
       try {
@@ -65,6 +81,11 @@ export const useCompareAlphaBotManager = () => {
       }
     }
 
+    /**
+     * Helper function to inject theme colors into Radar Chart datasets.
+     * Radar charts use the same color for the background fill and the border stroke 
+     * for a single dataset (representing one stock).
+     */
     const injectChartStyling = (chartData: ChartData) => {
         if (chartData.datasets) {
             chartData.datasets.forEach((dataset: any, index: number) => {
@@ -77,6 +98,11 @@ export const useCompareAlphaBotManager = () => {
         }
     }
 
+    /**
+     * Helper function to inject theme colors into Doughnut Chart datasets.
+     * Doughnut charts represent data differently: a single dataset might represent multiple 
+     * stocks, so each slice (data point) within the dataset needs a unique color.
+     */
     const injectDoughnutStyling = (chartData: ChartData) => {
         if (chartData.datasets) {
             chartData.datasets.forEach((dataset: any) => {
@@ -98,7 +124,11 @@ export const useCompareAlphaBotManager = () => {
         }
     }
 
-    
+    /**
+     * Toggles a stock symbol's presence in the selected symbols Set.
+     * 
+     * @param {string} symbol - The ticker symbol to toggle selection for.
+     */
     const toggleSelectSymbol = (symbol: string) => {
         setSelectedSymbols((prev) => {
             const next = new Set(prev);
@@ -111,6 +141,10 @@ export const useCompareAlphaBotManager = () => {
         });
     };
     
+    /**
+     * Triggers the AlphaBot comparison analysis on all currently selected symbols.
+     * Enforces limits (min 2, max 10 symbols) before making the API call.
+     */
     const compareStocks = async () => {
         setCompareError(null);
         setCompareResult(null);

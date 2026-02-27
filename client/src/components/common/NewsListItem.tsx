@@ -1,3 +1,7 @@
+/**
+ * NewsListItem component
+ * Renders a single news article card with image, title, company, and publish time.
+ */
 import { Article } from "../../types";
 import { formatDate } from "../../utils/formatters";
 import "./NewsListItem.css";
@@ -10,7 +14,7 @@ const NewsListItem = (props: NewsListItemProps) => {
 
     return (
         <div className="news-list-item">
-            <img className="news-header-img" src={props.article.image_link}></img>
+            <img className="news-header-img" src={props.article.image_link} alt={props.article.title || "News article decoration"}></img>
             <p className="article-summary"></p>
             <div className="article-meta">
                 <div className="article-title">{props.article.title} </div>

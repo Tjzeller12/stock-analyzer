@@ -20,8 +20,10 @@ export interface TableProps<T> {
 }
 
 /**
- * A highly reusable Table component.
- * Uses a configuration object (columns) to define how data is displayed.
+ * A highly reusable Table component strongly typed with a generic `<T>`.
+ * Uses a configuration object array (`columns`) to map object properties to table cells.
+ * Features built-in support for custom cell renderers, row click handlers, sorting affordances,
+ * and standard empty/loading states.
  */
 function Table<T>({ 
   columns, 

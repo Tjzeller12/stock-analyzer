@@ -1,3 +1,7 @@
+/**
+ * MainPage component
+ * Main dashboard for the application, displaying user's stocks, news feed, and comparison charts.
+ */
 import React, { useEffect } from "react";
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -31,14 +35,17 @@ const MainPage: React.FC = () => {
   useEffect(() => {
     fetchStocks();
     handleFilterChange("All");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   useEffect(() => {
     // Called whenever sortBy changes
     fetchStocks();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sortBy]);
   useEffect(() => {
     // Called whenever newsFilter changes
     handleFilterChange(newsFilter);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [newsFilter]);
 
   // Main page
