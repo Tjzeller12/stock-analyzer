@@ -63,7 +63,7 @@ const handleNavButtonClick = (path: string) => {
                         {button.label}
                     </button>
                 ))}
-                <button className="nav-button" onClick={() => handleLogout()}>
+                <button className="nav-button" onClick={() => { void handleLogout(); }}>
                     Logout
                 </button>
                 <div className="toggle-switch">

@@ -15,13 +15,13 @@ export const useCompareAlphaBotManager = () => {
     // Initialize selectedSymbols from localStorage to persist selections across page refreshes
     const [selectedSymbols, setSelectedSymbols] = useState<Set<string>>(() => {
         const saved = localStorage.getItem("selectedSymbols");
-        return saved ? new Set(JSON.parse(saved)) : new Set();
+        return saved ? new Set<string>(JSON.parse(saved) as string[]) : new Set<string>();
     });
     const [compareLoading, setCompareLoading] = useState(false);
     const [compareError, setCompareError] = useState<string | null>(null);
     const [compareResult, setCompareResult] = useState<CompareResponse | null>(() => {
         const saved = localStorage.getItem("compareResult");
-        return saved ? JSON.parse(saved) : null;
+        return saved ? (JSON.parse(saved) as CompareResponse) : null;
     });
 
     // Persist selectedSymbols whenever it changes
@@ -62,7 +62,7 @@ export const useCompareAlphaBotManager = () => {
         // REMOVED SANITIZER: It was breaking valid structural newlines.
         // We trust that the Regex above extracted just the JSON, and standard JSON.parse will work.
     
-        const parsedResponse = JSON.parse(jsonString);
+        const parsedResponse = JSON.parse(jsonString) as CompareResponse;
         
         // Inject styling into Radar Chart datasets
         if (parsedResponse.radarChartData) {
@@ -88,7 +88,7 @@ export const useCompareAlphaBotManager = () => {
      */
     const injectChartStyling = (chartData: ChartData) => {
         if (chartData.datasets) {
-            chartData.datasets.forEach((dataset: any, index: number) => {
+            chartData.datasets.forEach((dataset: ChartData['datasets'][0], index: number) => {
                 const color = CHART_COLORS[index % CHART_COLORS.length];
                 dataset.backgroundColor = color.bg;
                 dataset.borderColor = color.border;
@@ -105,7 +105,7 @@ export const useCompareAlphaBotManager = () => {
      */
     const injectDoughnutStyling = (chartData: ChartData) => {
         if (chartData.datasets) {
-            chartData.datasets.forEach((dataset: any) => {
+            chartData.datasets.forEach((dataset: ChartData['datasets'][0]) => {
                 // For doughnut charts, we want an array of colors corresponding to the data points
                 const count = dataset.data.length;
                 const backgroundColors = [];
@@ -165,7 +165,8 @@ export const useCompareAlphaBotManager = () => {
             const alphaBotResponse: AlphaBotResponse | null = await authPost<AlphaBotResponse>(ALPHA_BOT_ENDPOINTS.COMPARE, { stock_symbols: symbols });
             const result = parseCompareResponse(alphaBotResponse?.response);
             setCompareResult(result);
-        } catch (err) {
+        } catch (err: unknown) {
+            console.error("Comparison failed:", err);
             setCompareError("Comparison failed. Please try again.");
         } finally {
             setCompareLoading(false);

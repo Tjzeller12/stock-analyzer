@@ -18,7 +18,7 @@ const LoginPage: React.FC = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await axios.post(AUTH_ENDPOINTS.LOGIN, {
+      const response = await axios.post<{ token: string }>(AUTH_ENDPOINTS.LOGIN, {
         username,
         password,
       });
@@ -41,7 +41,7 @@ const LoginPage: React.FC = () => {
       <img src={logo} alt="Stock Market Logo" />
 
       <Card title="Login" className="form-container" variant="glass">
-        <form className="user-form" onSubmit={handleLogin}>
+        <form className="user-form" onSubmit={(e) => { void handleLogin(e); }}>
           <label htmlFor="username">Username:</label>
           <input
             className="input-field"

@@ -86,7 +86,7 @@ const Profile: React.FC = () => {
   const fetchUserInfo = async () => {
     const token = localStorage.getItem("token");
     try {
-      const response = await axios.post(
+      const response = await axios.post<{username: string, email: string, longterm_investor: boolean}>(
         PROFILE_ENDPOINTS.INFO,
         {},
         {
@@ -124,7 +124,8 @@ const Profile: React.FC = () => {
   const handleToggleResetPassword = () => toggleState(setResetPassword);
 
   useEffect(() => {
-    fetchUserInfo();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchUserInfo();
   }, []);
   return (
     <div className="profile-container">
@@ -132,7 +133,7 @@ const Profile: React.FC = () => {
       <div className="blank-space">
         <Card title="Profile" variant="glass" className="profile-card">
           <div className="profile-form"></div>
-          <form className="user-form" onSubmit={handleSave}>
+          <form className="user-form" onSubmit={(e) => { void handleSave(e); }}>
             <div className="form-row">
               <label>Username: </label>
               <input
@@ -192,7 +193,7 @@ const Profile: React.FC = () => {
                       {confirmPassword.show ? "Hide" : "Show"}
                     </button>
                   </div>
-                  <button type="button" onClick={handlePasswordReset}>
+                  <button type="button" onClick={(e) => { void handlePasswordReset(e); }}>
                     Submit New Password
                   </button>
                 </Card>
@@ -209,7 +210,7 @@ const Profile: React.FC = () => {
             >
               {resetPassword ? "Cancel Reset Password" : "Reset Password"}
             </span>
-            <button type="button" onClick={handleSave}>
+            <button type="button" onClick={(e) => { void handleSave(e); }}>
               Save
             </button>
           </form>

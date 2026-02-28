@@ -28,23 +28,24 @@ export const useNewsListManager = () => {
         setLoading(true);
         setError(null);
         try {
-            const data = await authPost<any>(
+            const data = await authPost<unknown>(
                 DATA_ENDPOINTS.NEWS,
                 { filter: filter }
             );
             let extractedArticles: Article[] = [];
 
             if (Array.isArray(data)) {
-                extractedArticles = data;
+                extractedArticles = data as Article[];
             } else if (typeof data === "object" && data !== null) {
                 // Check for common properties that might contain the articles array
-                if (Array.isArray(data.articles)) {
-                extractedArticles = data.articles;
-                } else if (Array.isArray(data.feed)) {
-                extractedArticles = data.feed;
+                const recordData = data as Record<string, unknown>;
+                if (Array.isArray(recordData.articles)) {
+                extractedArticles = recordData.articles as Article[];
+                } else if (Array.isArray(recordData.feed)) {
+                extractedArticles = recordData.feed as Article[];
                 } else {
                 // If we can't find an array, try to create an array from the object
-                extractedArticles = [data];
+                extractedArticles = [recordData as unknown as Article];
                 }
             }
             if (extractedArticles.length > 0) {

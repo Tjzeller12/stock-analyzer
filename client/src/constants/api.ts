@@ -1,9 +1,7 @@
 // Base URL for the backend API (overridable via environment)
-// @ts-ignore - Vite uses import.meta.env while Jest/Node might use process.env
-export const API_BASE_URL = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE_URL) 
-    ? import.meta.env.VITE_API_BASE_URL 
+export const API_BASE_URL: string = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE_URL) 
+    ? String(import.meta.env.VITE_API_BASE_URL) 
     : 'http://localhost:5001';
-
 // Auth endpoints
 export const AUTH_ENDPOINTS = {
     LOGIN: `${API_BASE_URL}/auth/login`,
