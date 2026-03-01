@@ -79,7 +79,7 @@ const StockTable: React.FC<StockTableProps> = ({
             header: "Dividend", 
             accessor: "dividend_yield", 
             className: "stock-data",
-            render: (stock) => `${stock.dividend_yield.toFixed(2)}%`,
+            render: (stock) => (stock.dividend_yield === 0.0)? "None" : `${(stock.dividend_yield * 100).toFixed(2)}%`,
             onHeaderClick: () => onSort("dividend_yield")
         },
         {
