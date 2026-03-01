@@ -33,18 +33,18 @@ const MainPage: React.FC = () => {
 
 
   useEffect(() => {
-    fetchStocks();
-    handleFilterChange("All");
+    void fetchStocks();
+    void handleFilterChange("All");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   useEffect(() => {
     // Called whenever sortBy changes
-    fetchStocks();
+    void fetchStocks();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sortBy]);
   useEffect(() => {
     // Called whenever newsFilter changes
-    handleFilterChange(newsFilter);
+    void handleFilterChange(newsFilter);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [newsFilter]);
 
@@ -63,7 +63,7 @@ const MainPage: React.FC = () => {
             selectedSymbols={selectedSymbols}
             toggleSelectSymbol={toggleSelectSymbol}
             onRowClick={navigateToStockPage}
-            onCompare={compareStocks}
+            onCompare={() => { void compareStocks(); }}
             onRemove={removeStock}
             onAdd={addStock}
             onRefresh={refreshStocks}
@@ -77,7 +77,7 @@ const MainPage: React.FC = () => {
       </Card>
       <Card title="News" variant="glass" className="news-container">
           <List<Article> items={articles} renderItem={(article) => <NewsListItem article={article} />} 
-        filterDropProp={{filter: newsFilter, setFilter: handleFilterChange, options: NEWS_FILTER_OPTIONS}}/>
+        filterDropProp={{filter: newsFilter, setFilter: (f: string) => { void handleFilterChange(f); }, options: NEWS_FILTER_OPTIONS}}/>
       </Card>
       {/* Comparison result */}
       <Card title="Comparison Analysis" variant="glass" className="compare-result-container">

@@ -24,7 +24,7 @@ const RegisterPage: React.FC = () => {
     e.preventDefault();
     console.log("Register attempt");
     try {
-      const response = await axios.post(AUTH_ENDPOINTS.REGISTER, {
+      const response = await axios.post<{ token: string }>(AUTH_ENDPOINTS.REGISTER, {
         username,
         password,
         email,
@@ -51,7 +51,7 @@ const RegisterPage: React.FC = () => {
       <img src={logo} alt="Stock Market Logo" />
 
       <Card title="Register" className="form-container">
-        <form className="user-form" onSubmit={handleRegister}>
+        <form className="user-form" onSubmit={(e) => { void handleRegister(e); }}>
           <label htmlFor="email">Email:</label>
           <input
             className="input-field"

@@ -99,9 +99,9 @@ const StockPage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchStock();
-    fetchInDepthData();
-    fetchAlphaBotInDepthAnalysis();
+    void fetchStock();
+    void fetchInDepthData();
+    void fetchAlphaBotInDepthAnalysis();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [symbol]);
 

@@ -107,7 +107,7 @@ const StockTable: React.FC<StockTableProps> = ({
                     className="remove-button"
                     onClick={(e) => {
                         e.stopPropagation();
-                        onRemove(stock.symbol);
+                        void onRemove(stock.symbol);
                     }}
                     aria-label={`Remove ${stock.symbol}`}
                 >
@@ -120,14 +120,14 @@ const StockTable: React.FC<StockTableProps> = ({
     return (
         <ControlPanel
             actionInputBar={{
-                onClick: onAdd,
+                onClick: (symbol: string) => { void onAdd(symbol); },
                 disabled: false,
                 placeholder: "Symbol i.e. NVDA",
                 buttonLabel: "Add"
             }}
             buttons={[{
                 label: "Refresh",
-                onClick: onRefresh,
+                onClick: () => { void onRefresh(); },
                 disabled: compareLoading
             }, {
                 label: compareLoading ? "Comparing..." : "Compare Selected",

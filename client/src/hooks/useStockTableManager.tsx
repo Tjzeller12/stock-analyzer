@@ -1,3 +1,4 @@
+import axios from "axios";
 import { useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { PORTFOLIO_ENDPOINTS } from "../constants/api";
@@ -52,10 +53,10 @@ export const useStockTableManager = (initialSortBy: string = "ev_to_ebita") => {
         try {
             await authPost(PORTFOLIO_ENDPOINTS.ADD, { symbol });
             await fetchStocks(); // Refresh list after add
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("Add failed:", err);
             // Handle 400 Bad Request specifically if possible, or just general error
-             if (err.response && err.response.status === 400) {
+             if (axios.isAxiosError(err) && err.response && err.response.status === 400) {
                 setError(`Invalid stock symbol: ${symbol}`);
             } else {
                 setError("Failed to add stock. Please try again.");

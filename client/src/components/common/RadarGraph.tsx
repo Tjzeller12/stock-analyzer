@@ -1,30 +1,21 @@
+/* eslint-disable react-refresh/only-export-components */
 import {
-    Chart as ChartJS,
-    Filler,
-    Legend,
-    LineElement,
-    PointElement,
-    RadialLinearScale,
-    Title,
-    Tooltip,
+  Chart as ChartJS,
+  Filler,
+  Legend,
+  LineElement,
+  PointElement,
+  RadialLinearScale,
+  Title,
+  Tooltip,
 } from 'chart.js';
 import { useContext } from 'react';
 import { Radar } from 'react-chartjs-2';
 import { ThemeContext } from '../../ThemeContext';
+import { ChartData } from '../../types';
 
 export interface RadarGraphProps {
-    data: RadarChartData;
-}
-export interface RadarChartData {
-  labels: string[];
-  datasets: {
-    label: string;
-    data: number[];
-    backgroundColor?: string;
-    borderColor?: string;
-    borderWidth?: number;
-    fill?: boolean;
-  }[];
+    data: ChartData;
 }
 
 ChartJS.register(
