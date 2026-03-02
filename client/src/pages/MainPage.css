@@ -1,448 +1,98 @@
-@import url(../main.css);
-
-/* Header layout with logo and title */
-
-.stock-list-name:hover {
-  background-color: #007d36;
-  border-radius: 5px;
+.main-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 0;
 }
 
-/* Search form layout */
-
-.search-container form {
-  margin-top: 20px;
-  display: flex;
-}
-/* Search input field */
-.search-container input {
-  flex-grow: 1;
-  padding: 10px;
-  font-size: 16px;
-  border: 1px solid -var(--border-color);
-  border-top-right-radius: 0px;
-  border-bottom-right-radius: 0px;
-  height: 35px;
-}
-/* Search button */
-.search-container button {
-  padding: 10px 20px;
-  background-color: #06a94d;
-  color: #141414;
-  cursor: pointer;
+.main-content {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr); /* 6 columns allows for 2/3, 1/3 AND 1/2, 1/2 splits */
+    gap: 20px;
+    padding: 20px;
+    max-width: 1800px;
+    margin: 0 auto;
+    width: 100%;
 }
 
+/* Row 1: Stock Table (2/3) + News (1/3) */
+/* 2/3 of 6 is 4 columns */
+.stock-table-container {
+    grid-column: 1 / 5; /* Spans cols 1,2,3,4 */
+    grid-row: 1;
+    width: 100%;
+}
+
+.compare-alpha-bot-card {
+    max-height: 1350px;
+}
+
+.d_chart_container {
+    width: 100%;
+    height: 100%;
+    max-height: 500px;
+    max-width: 500px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 auto;
+}
+
+/* 1/3 of 6 is 2 columns */
 .news-container {
-  margin-top: 20px;
+    grid-column: 5 / 7; /* Spans cols 5,6 */
+    grid-row: 1;
+    width: 100%;
 }
 
-/* Layout for my-stocks and news buttons */
-
-.my-stocks-news-container {
-  display: flex;
-  justify-content: center;
-  align-items: stretch;
-  margin-top: 20px;
-  max-height: 800px;
-  /* Removed min-height to prevent gaps */
-  height: auto;
-  gap: 20px;
-  width: 100%;
-  padding-bottom: 5px;
-}
-
-/* Navigation buttons container */
-
-.button-container {
-  display: flex;
-  justify-content: right;
-  width: 100%;
-  gap: 20px;
-  padding-top: 5px;
-  padding-bottom: 5px;
-  margin-top: 20px;
-  border-radius: 5px;
-  background-color: #007031;
-}
-
-.toggle-switch {
-  margin-right: 150px;
-  margin-top: 14px !important;
-  margin-bottom: 13px !important;
-  font-size: 13px;
-}
-.remove-button {
-  border-bottom-left-radius: 0px;
-  border-top-left-radius: 0px;
-}
-.refresh-button {
-  margin-left: 2px;
-}
-.remove-button {
-  margin-left: 1px;
-}
-.refresh-button img {
-  max-width: 15px;
-  max-height: 25px;
-}
-.add-button {
-  border-radius: 0px;
-}
-
-.add-button,
-.remove-button,
-.refresh-button {
-  font-size: 30px;
-  border: black;
-  border-width: 2px;
-  transition: background-color 0.3s, transform 0.2s; /* Adds smooth hover effects */
-}
-.add-button:hover,
-.remove-button:hover,
-.refresh-button:hover {
-  background-color: #048d41;
-}
-
-/* Individual nav button styling */
-.news-list-header {
-  display: flex;
-  padding-left: 10px;
-  align-items: left !important;
-  justify-content: left !important;
-}
-
-.news-filter-dropdown {
-  width: 150px;
-}
-.nav-button {
-  background-color: transparent;
-  color: #ffffff;
-  border: none;
-  border-radius: 5px;
-  padding: 10px 20px;
-
-  cursor: pointer;
-  font-size: 16px;
-  transition: transform 0.3s;
-}
-/* Nav button hover effect */
-.nav-button:hover {
-  transform: scale(1.025);
-  background-color: #048d41;
-}
-/* Main heading style */
-h2 {
-  margin-bottom: 15px;
-  font-size: 20px;
-  color: #06a94d;
-}
-/* Stock container style */
-.stock-container {
-  background-color: transparent !important;
-  min-width: 60%;
-  font-size: 14px;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Stock header style */
-.list-header {
-  min-width: 100%;
-  flex-shrink: 0;
-}
-
-/* Stock header symbols */
-.stock-list-name {
-  white-space: nowrap;
-  color: #ffffff;
-  flex: unset;
-  padding: 0 5px;
-  cursor: pointer;
-}
-/* Stocks and news list style */
-.stocks-list,
-.news-list {
-  width: 100%;
-  background-color: var(--list-color);
-  border-radius: 5px;
-  overflow-y: auto;
-  flex-grow: 0; /* Don't force it to fill space if not needed */
-  max-height: 450px;
-  min-height: 200px; /* Prevent disappearing */
-  scrollbar-color: var(--scrollbar-color);
-}
-/* Stocks and news row style */
-.stock-row,
-.article-row {
-  display: flex;
-  align-items: center;
-  padding: 15px;
-  border-bottom: 1px solid var(--border-color);
-  position: relative;
-}
-
-/* Compare bar styles */
-.compare-bar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background-color: var(--list-color);
-  border-radius: 6px;
-  padding: 8px 12px;
-  margin: 6px;
-  flex-shrink: 0;
-}
-
-.compare-count {
-  font-size: 12px;
-  color: var(--text-color);
-}
-
-.compare-error {
-  font-size: 12px;
-  color: #ff5c5c;
-}
-
-/* Action column (selection) */
-.action-col {
-  text-align: center;
-  min-width: 100px;
-}
-
-.stock-action-cell {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border-left: 2px dashed var(--stock-data-color);
-  min-width: 100px;
-}
-
-.action-checkbox {
-  transform: scale(2.5);
-}
-.compare-bar button {
-  background-color: #06a94d;
-}
-/* Compare result panel */
+/* Row 2: Analysis (1/2) + Radar Graph (1/2) */
+/* 1/2 of 6 is 3 columns */
 .compare-result-container {
-  background-color: var(--list-color);
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  padding: 12px;
-  margin-top: 0px; 
-  max-height: 1400px;
-  width: 90%;
-  overflow-y: auto;
-  scrollbar-color: var(--scrollbar-color);
-  color: var(--text-color);
-}
-.compare-radar-chart-container {
-  width: 80%;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  max-height: 600px;
-  padding-bottom: 20px;
-  margin-top: 20px;
-}
-
-.compare-ranking {
-  margin-bottom: 12px;
-}
-
-.ranking-list {
-  margin-left: 20px;
+    grid-column: 1 / 4; /* Spans cols 1,2,3 (Left Half) */
+    grid-row: 2 / 4; /* Spans Row 2 AND Row 3 */
+    width: 100%;
 }
 
 .analysis-body {
-  white-space: normal; /* Let Markdown handle the structure, don't force extra whitespace */
-  line-height: 1.5;
-  text-align: left !important;
-  width: 100%;
-}
-.analysis-body ul, .analysis-body p, .analysis-body table {
-    text-align: left;
-    margin-bottom: 8px; /* Tighter spacing between paragraphs */
-    margin-top: 0;
-}
-.analysis-body h1, .analysis-body h2, .analysis-body h3 {
-    margin-top: 16px;
-    margin-bottom: 8px;
+    text-align: left !important;
 }
 
-/* Align stock header and rows using a shared grid */
-.stock-container {
-  /* Adjust column widths easily by editing this variable */
-  --stock-grid-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 110px;
-}
-
-.h3 {
-  color: var(--text-color);
-  font-size: large;
-}
-
-.list-header {
-  display: grid;
-  grid-template-columns: var(--stock-grid-columns);
-  align-items: center;
-  justify-items: center;
-  height: 38px;
-}
-
-.stocks-list .stock-row {
-  display: grid;
-  grid-template-columns: var(--stock-grid-columns);
-  align-items: center;
-  justify-items: center;
-}
-
-/* Center header labels and data cells to match user request */
-.stock-list-name,
-.stock-symbol,
-.stock-name,
-.stock-data,
-.stock-action-cell {
-  text-align: center;
-  justify-self: center;
-}
-
-.news-header-img {
-  flex: 0 0 auto;
-  margin-right: auto;
-}
-
-/* Article row style */
-.article-row {
-  min-height: 80px;
-  transition: filter 0.3s ease;
-}
-/* Last child style */
-.stock-row:last-child,
-.article-row:last-child {
-  border-bottom: none;
-}
-/* Even row style */
-.stock-row.even,
-.article-row.even {
-  background-color: var(--even-row-color);
-}
-/* Odd row style */
-.stock-row.odd,
-.article-row.odd {
-  background-color: var(--list-color);
-}
-/* Article row hover effect */
-.article-row:hover {
-  filter: brightness(120%);
-}
-/* Stock and article data */
-.stock-symbol,
-.stock-name,
-.stock-data,
-.article-title {
-  color: var(--stock-data-color);
-  flex: 1;
-  padding: 0 5px;
-}
-/* Article title style */
-.article-title {
-  font-weight: bold;
-}
-/* Article meta style */
-.article-meta {
-  display: flex;
-  justify-content: center;
-  font-size: 12px;
-  flex-direction: column;
-  align-items: center;
-  flex: 1;
-}
-
-.time-published {
-  color: var(--text-color);
-}
-/* News company style */
-.news-company {
-  font-size: 12px;
-  color: #077938;
-}
-/* News header image style */
-.news-header-img {
-  max-height: 80px;
-  max-width: 80px;
-  height: auto;
-  width: auto;
-}
-/* Stock symbol style */
-.stock-symbol {
-  font-weight: bold;
-}
-/* Stock name style */
-.stock-name {
-  flex: 4px;
-}
-.stock-data {
-  text-align: center;
-}
-/* Responsive layout for smaller screens */
-@media (max-width: 768px) {
-  .article-row {
-    flex-wrap: wrap;
-  }
-
-  .article-title,
-  .news-company {
+.compare-radar-chart-container {
+    grid-column: 4 / 7; /* Spans cols 4,5,6 (Right Half) */
+    grid-row: 2; /* Top Right */
     width: 100%;
-    text-align: left;
-    margin-bottom: 5px;
-  }
-}
-/* Responsive layout for smaller screens */
-
-@media (max-width: 768px) {
-  .stock-row {
-    flex-wrap: wrap;
-  }
-  /* Stock symbol, name, ev to ebitda, pe ratio, price, and market cap style */
-  .stock-symbol,
-  .stock-name,
-  .stock-data {
-    width: 100%;
-    text-align: left;
-    margin-bottom: 5px;
-  }
-}
-
-/* Responsive layout for smaller screens */
-
-@media (max-width: 768px) {
-  .my-stocks-news-container {
-    flex-direction: column;
-    height: auto;
-    max-height: none;
-  }
-  /* My stocks and news button style */
-  .stock-container,
-  .news-container {
-    width: 100%;
-    /* REMOVED FIXED HEIGHT to prevent overlap */
-    height: auto; 
-    min-height: 100px; /* Ensure at least some height */
-    max-height: none;
-    max-width: none;
-    margin-bottom: 10px; /* Add spacing between stacked items */
-  }
-  /* Button container style */
-  .button-container {
-    flex-direction: column;
+    display: flex;
+    justify-content: center;
     align-items: center;
-    background-color: transparent;
-  }
-  /* Nav button style */
-  .nav-button {
-    background-color: #007d36;
+}
+
+/* Row 3: Doughnut Chart (Bottom Right) */
+.compare-doughnut-chart-container {
+    grid-column: 4 / 7; /* Spans cols 4,5,6 (Right Half) */
+    grid-row: 3; /* Bottom Right */
     width: 100%;
-    max-width: 300px;
-    margin-bottom: 10px;
-  }
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Responsive: stack vertically on small screens */
+@media (max-width: 1024px) {
+    .main-content {
+        grid-template-columns: 1fr; /* Single column on small screens */
+    }
+    
+    .stock-table-container,
+    .news-container,
+    .compare-result-container,
+    .compare-radar-chart-container,
+    .compare-doughnut-chart-container {
+        grid-column: 1; /* All items take full width */
+    }
+    
+    .stock-table-container { grid-row: 1; }
+    .news-container { grid-row: 2; }
+    .compare-result-container { grid-row: 3; }
+    .compare-radar-chart-container { grid-row: 4; }
+    .compare-doughnut-chart-container { grid-row: 5; }
 }

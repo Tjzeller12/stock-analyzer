@@ -1,9 +1,13 @@
+/**
+ * Profile component
+ * Allows users to view and update their profile settings, including password resets.
+ */
 import axios from "axios";
-import { PROFILE_ENDPOINTS } from "../constants/api";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import Card from "../components/common/Card";
+import Header from "../components/common/Header";
+import { PROFILE_ENDPOINTS } from "../constants/api";
 import "../main.css";
-import logo from "../resources/Stock_Market_Logo.png";
 import "./Profile.css";
 type PasswordField = {
   value: string;
@@ -23,13 +27,12 @@ const Profile: React.FC = () => {
     show: false,
   });
   const [resetPassword, setResetPassword] = useState(false);
-  const navigate = useNavigate();
 
   const handlePasswordReset = async (e: React.FormEvent) => {
     const token = localStorage.getItem("token");
     e.preventDefault();
     console.log("Reset Password attempt");
-    if (newPassword.value == confirmPassword.value) {
+    if (newPassword.value === confirmPassword.value) {
       try {
         await axios.post(
           PROFILE_ENDPOINTS.RESET_PASSWORD,
@@ -83,7 +86,7 @@ const Profile: React.FC = () => {
   const fetchUserInfo = async () => {
     const token = localStorage.getItem("token");
     try {
-      const response = await axios.post(
+      const response = await axios.post<{username: string, email: string, longterm_investor: boolean}>(
         PROFILE_ENDPOINTS.INFO,
         {},
         {
@@ -113,35 +116,24 @@ const Profile: React.FC = () => {
     setter((prev) => ({ ...prev, show: !prev.show }));
   };
 
-  const handleToggleLtInvestor = () => toggleState(setLtInvestor);
 
   const handleToggleNewPassword = () =>
     togglePasswordVisibility(setNewPassword);
   const handleToggleConfirmPassword = () =>
     togglePasswordVisibility(setConfirmPassword);
   const handleToggleResetPassword = () => toggleState(setResetPassword);
-  const handleLogoClick = () => {
-    navigate("/main");
-  };
 
   useEffect(() => {
-    fetchUserInfo();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchUserInfo();
   }, []);
   return (
     <div className="profile-container">
-      <header className="main-header">
-        <h1>Stock Analyzer</h1>
-        <img
-          src={logo}
-          alt="Stock Market Logo"
-          onClick={handleLogoClick}
-          style={{ cursor: "pointer" }}
-        />
-      </header>
-      <h2>Profile</h2>
+      <Header title="AlphaBot Profile Settings" />
       <div className="blank-space">
-        <div className="form-container">
-          <form className="user-form" onSubmit={handleSave}>
+        <Card title="Profile" variant="glass" className="profile-card">
+          <div className="profile-form"></div>
+          <form className="user-form" onSubmit={(e) => { void handleSave(e); }}>
             <div className="form-row">
               <label>Username: </label>
               <input
@@ -161,23 +153,10 @@ const Profile: React.FC = () => {
                 className="non-editable"
               />
             </div>
-            <div className="toggle-switch">
-              <input
-                type="checkbox"
-                id="ltInvestor"
-                checked={ltInvestor}
-                onChange={handleToggleLtInvestor}
-              />
-              <label htmlFor="ltInvestor">
-                <span className="slider"></span>
-              </label>
-              <span className="toggle-label">
-                {ltInvestor ? "Long-Term Investor" : "Short-Term Investor"}
-              </span>
-            </div>
+            
             {resetPassword && (
               <>
-                <div className="reset-password-container">
+                <Card className="reset-password-container">
                   <div className="form-row">
                     <label>New Password:</label>
                     <input
@@ -214,10 +193,10 @@ const Profile: React.FC = () => {
                       {confirmPassword.show ? "Hide" : "Show"}
                     </button>
                   </div>
-                  <button type="button" onClick={handlePasswordReset}>
+                  <button type="button" onClick={(e) => { void handlePasswordReset(e); }}>
                     Submit New Password
                   </button>
-                </div>
+                </Card>
               </>
             )}
             <span
@@ -231,11 +210,11 @@ const Profile: React.FC = () => {
             >
               {resetPassword ? "Cancel Reset Password" : "Reset Password"}
             </span>
-            <button type="button" onClick={handleSave}>
+            <button type="button" onClick={(e) => { void handleSave(e); }}>
               Save
             </button>
           </form>
-        </div>
+        </Card>
       </div>
     </div>
   );

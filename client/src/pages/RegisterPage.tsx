@@ -1,17 +1,20 @@
+/**
+ * RegisterPage component
+ * Handles new user registration, capturing username, email, password, and investor preferences.
+ */
 import axios from "axios";
-import { AUTH_ENDPOINTS } from "../constants/api";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import Card from "../components/common/Card";
+import { AUTH_ENDPOINTS } from "../constants/api";
 import "../main.css";
-import logo from "../resources/Stock_Market_Logo.png";
+import logo from "../resources/alphaBotLogo.png";
 import "./RegisterPage.css";
-
 // RegisterPage component for user authentication
 const RegisterPage: React.FC = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [email, setEmail] = useState("");
-  const [ltInvestor, setLtInvestor] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
@@ -21,11 +24,11 @@ const RegisterPage: React.FC = () => {
     e.preventDefault();
     console.log("Register attempt");
     try {
-      const response = await axios.post(AUTH_ENDPOINTS.REGISTER, {
+      const response = await axios.post<{ token: string }>(AUTH_ENDPOINTS.REGISTER, {
         username,
         password,
         email,
-        longterm_investor: ltInvestor,
+        longterm_investor: false,
       });
       // Set token in local storage
       const token = response.data.token;
@@ -42,18 +45,13 @@ const RegisterPage: React.FC = () => {
     }
   };
 
-  // Toggle long-term investor checkbox
-  const handleToggle = () => {
-    setLtInvestor((prevState) => !prevState);
-  };
-
   return (
     <div className="register-container">
-      <h1>Stock Market Analyzer</h1>
+      <h1>AlphaBot</h1>
       <img src={logo} alt="Stock Market Logo" />
-      <h2>Register</h2>
-      <div className="form-container">
-        <form className="user-form" onSubmit={handleRegister}>
+
+      <Card title="Register" className="form-container">
+        <form className="user-form" onSubmit={(e) => { void handleRegister(e); }}>
           <label htmlFor="email">Email:</label>
           <input
             className="input-field"
@@ -86,22 +84,8 @@ const RegisterPage: React.FC = () => {
               onMouseUp={() => setShowPassword(false)}
               onMouseLeave={() => setShowPassword(false)}
             >
-              {showPassword ? "Hide Password" : "Show Password"}
+              {showPassword ? "Hide" : "Show"}
             </button>
-          </div>
-          <div className="toggle-switch">
-            <input
-              type="checkbox"
-              id="ltInvestor"
-              checked={ltInvestor}
-              onChange={handleToggle}
-            />
-            <label htmlFor="ltInvestor">
-              <span className="slider"></span>
-            </label>
-            <span className="toggle-label">
-              {ltInvestor ? "Long-Term Investor" : "Short-Term Investor"}
-            </span>
           </div>
 
           <button type="submit">Register</button>
@@ -109,7 +93,7 @@ const RegisterPage: React.FC = () => {
             Goto Login Page
           </button>
         </form>
-      </div>
+      </Card>
     </div>
   );
 };

@@ -1,9 +1,10 @@
 import axios from "axios";
-import { AUTH_ENDPOINTS } from "../constants/api";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import Card from "../components/common/Card";
+import { AUTH_ENDPOINTS } from "../constants/api";
 import "../main.css";
-import logo from "../resources/Stock_Market_Logo.png";
+import logo from "../resources/alphaBotLogo.png";
 import "./LoginPage.css";
 
 // LoginPage component for user authentication
@@ -17,7 +18,7 @@ const LoginPage: React.FC = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await axios.post(AUTH_ENDPOINTS.LOGIN, {
+      const response = await axios.post<{ token: string }>(AUTH_ENDPOINTS.LOGIN, {
         username,
         password,
       });
@@ -36,11 +37,11 @@ const LoginPage: React.FC = () => {
   // Login page
   return (
     <div className="login-container">
-      <h1>Stock Market Analyzer</h1>
+      <h1>AlphaBot</h1>
       <img src={logo} alt="Stock Market Logo" />
-      <h2>Login</h2>
-      <div className="form-container">
-        <form className="user-form" onSubmit={handleLogin}>
+
+      <Card title="Login" className="form-container" variant="glass">
+        <form className="user-form" onSubmit={(e) => { void handleLogin(e); }}>
           <label htmlFor="username">Username:</label>
           <input
             className="input-field"
@@ -72,7 +73,7 @@ const LoginPage: React.FC = () => {
             Goto Register Page
           </button>
         </form>
-      </div>
+      </Card>
     </div>
   );
 };

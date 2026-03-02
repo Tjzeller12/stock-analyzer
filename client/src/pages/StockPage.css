@@ -4,7 +4,7 @@
   flex-direction: column;
   align-items: center;
   min-height: 100vh;
-  padding: 20px;
+  padding: 0px;
   font-family: Arial, sans-serif;
   background-color: var(--background-color) !important;
   color: var(--text-color);
@@ -30,15 +30,16 @@
 .stock-data-container {
   display: flex;
   justify-content: center;
-  align-items: flex-start; /* Align to top */
+  align-items: flex-start;
   width: 100%;
-  max-width: 800px; /* Reduced max-width for a cleaner list look */
+  max-width: 800px;
   padding: 15px;
   background-color: var(--form-container-color);
-  border-radius: 20px; /* Rounded corners for the container */
+  border-radius: 20px;
   margin-bottom: 20px;
 }
 
+/* Table layout (used by StockMetricsTable component) */
 .stock-data-table {
   width: 100%;
   border-collapse: collapse;
@@ -46,18 +47,30 @@
 
 .stock-data-table td {
   padding: 12px 15px;
-  border-bottom: 1px solid var(--border-color, #444); /* Separator lines */
+  border-bottom: 1px solid var(--border-color, #444);
 }
 
 .stock-data-table tr:last-child td {
-  border-bottom: none; /* Remove border for the last row */
+  border-bottom: none;
+}
+
+/* Individual data containers (legacy / fallback) */
+.stock-info-container,
+.stock-info-container-first,
+.stock-info-container-last {
+  background-color: var(--list-color);
+  padding: 15px;
+  text-align: center;
+  border-radius: 8px;
+  min-width: 100px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
 }
 
 /* Labels for each data item */
 .stock-info-label {
   font-size: 16px;
   font-weight: bold;
-  color: #06a94d; /* Match header color */
+  color: #06a94d;
   text-align: left;
   width: 50%;
 }
@@ -91,7 +104,7 @@
   border-radius: 8px;
   text-align: center;
   min-width: 100px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); /* Subtle shadow for depth */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
 }
 
 .stock-buy-rating-container {
@@ -105,6 +118,7 @@
   border-radius: 8px;
   padding: 5px;
 }
+
 .stock-hold-rating-container {
   display: flex;
   justify-content: center;
@@ -116,6 +130,7 @@
   border-radius: 8px;
   padding: 5px;
 }
+
 .stock-sell-rating-container {
   display: flex;
   justify-content: center;
@@ -150,9 +165,9 @@
   height: 100%;
   background-color: var(--stock-graph-llm-color-bg);
   padding: 15px;
-
   border-radius: 8px;
 }
+
 .stock-in-depth-analysis-container {
   display: flex;
   flex-direction: column;
@@ -162,12 +177,11 @@
   padding: 15px;
   border-radius: 8px;
   width: 60%;
-
   text-align: center;
-  min-width: 100px; /* Ensure consistent width */
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); /* Subtle shadow for depth */
+  min-width: 100px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
 }
-/*Make the llm container 30% wide and graph container 70% wide*/
+
 .stock-llm-container {
   display: flex;
   flex-direction: column;
@@ -178,8 +192,8 @@
   width: 40%;
   border-radius: 8px;
   text-align: center;
-  min-width: 100px; /* Ensure consistent width */
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); /* Subtle shadow for depth */
+  min-width: 100px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
 }
 
 .stock-llm-header {
@@ -198,6 +212,7 @@
   font-size: 20px;
   font-weight: bold;
 }
+
 .stock-llm-text {
   display: flex;
   flex-direction: column;
@@ -210,51 +225,33 @@
   min-height: 300px;
   height: 100%;
 }
-.stock-llm-summary {
+
+.analysis-container {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: left;
   gap: 10px;
+  background-color: var(--llm-field-bg-color);
+  padding: 15px;
+  border-radius: 8px;
+  width: 95%;
+  min-height: 300px;
+  height: 100%;
+  text-align: left;
 }
 
-.stock-llm-summary-label {
-  font-size: 14px;
-  font-weight: bold;
-  color: #06a94d;
-}
-
-.stock-llm-summary-text {
-  font-size: 14px;
-  font-weight: bold;
-  color: #b2b2b2;
-}
-
-.stock-llm-chat-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-}
-
-.stock-llm-chat-header {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-}
-
-.llm-buttons-container {
+.stock-llm-summary-sentiment {
   display: flex;
   flex-direction: row;
+  justify-content: space-around;
   align-items: center;
-  gap: 100px;
-}
-.toggle-switch {
-  margin-left: 20px;
-  display: flex;
-  align-items: left;
-  gap: 5px;
+  gap: 10px;
+  background-color: var(--list-color);
+  padding: 10px;
+  border-radius: 8px;
   margin-top: 10px;
+  font-size: 14px;
+  font-weight: bold;
 }
 
 .prompt-container {

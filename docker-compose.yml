@@ -11,7 +11,7 @@ services:
       - FLASK_ENV=development
       - SECRET_KEY=${SECRET_KEY}
       - FLASK_RUN_HOST=0.0.0.0
-      - FRONTEND_ORIGIN=http://3.85.3.252:3000
+      - FRONTEND_ORIGIN=http://${APP_HOST}:5173
       - ALPHA_VANTAGE_KEY=${ALPHA_VANTAGE_KEY}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
     depends_on:
@@ -25,11 +25,14 @@ services:
     command: sh -c "sleep 10 && python run.py"
 
   frontend:
-    build: ./client
+    build: 
+      context: ./client
+      args:
+        - VITE_API_BASE_URL=http://${APP_HOST}:5001
     ports:
-      - "3000:80"
+      - "5173:80"
     environment:
-      - REACT_APP_API_BASE_URL=http://3.85.3.252:5001
+      - VITE_API_BASE_URL=http://${APP_HOST}:5001 
     depends_on:
       - backend
     dns:

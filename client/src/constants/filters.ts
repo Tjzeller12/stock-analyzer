@@ -1,0 +1,18 @@
+export const NEWS_FILTER_OPTIONS = [
+    { label: "All News", value: "all" },
+    { label: "Blockchain", value: "blockchain" },
+    { label: "Earnings", value: "earnings" },
+    { label: "IPO", value: "ipo" },
+    { label: "Mergers & Acquisitions", value: "mergers_and_acquisitions" },
+    { label: "Financial Markets", value: "financial_markets" },
+    { label: "Economy - Fiscal Policy", value: "economy_fiscal" },
+    { label: "Economy - Monetary Policy", value: "economy_monetary" },
+    { label: "Economy - Macro/Overall", value: "economy_macro" },
+    { label: "Energy & Transportation", value: "energy_transportation" },
+    { label: "Finance", value: "finance" },
+    { label: "Life Sciences", value: "life_sciences" },
+    { label: "Manufacturing", value: "manufacturing" },
+    { label: "Real Estate & Construction", value: "real_estate" },
+    { label: "Retail & Wholesale", value: "retail_wholesale" },
+    { label: "Technology", value: "technology" },
+];

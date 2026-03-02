@@ -89,48 +89,51 @@ async def _discover_tools(av_client):
 
 async def _execute_tool_calls(av_client, tool_calls):
     """
-    Iterates through Claude's response content, executes any requested tools,
+    Iterates through Claude's response content, executes any requested tools PARALLEL,
     and returns the results formatted as a list of user messages.
-    
-    Args:
-        av_client (HttpMCPClient): The initialized MCP client.
-        tool_calls (list): The 'content' list from Claude's response.
-        
-    Returns:
-        list: A list of result messages to append to the conversation history.
     """
     tool_results = []
-    for content in tool_calls:
-        if content.type == "tool_use":
-            tool_name = content.name
-            tool_args = content.input
-            
-            try:
-                # 3. Execute the tool via our custom MCP client
-                tool_result_content = await av_client.call_tool(tool_name, tool_args)
-                
-                # 4. Format the result text
-                tool_output = ""
-                for block in tool_result_content:
-                    if block.get("type") == "text":
-                        tool_output += block.get("text", "")
-                    else:
-                        tool_output += str(block)
-                
-            except Exception as e:
-                # Log error but don't crash - let Claude know the tool failed
-                print(f"ERROR: Tool execution failed: {e}", flush=True)
-                tool_output = f"Error executing tool {tool_name}: {str(e)}"
-                
-            # 5. Pack the result into a 'tool_result' block for Claude
-            tool_results.append({
-                "role": "user",
-                "content": [{
-                    "type": "tool_result",
-                    "tool_use_id": content.id,
-                    "content": tool_output
-                }]
-            })
+    
+    # Identify which items are actually tool uses
+    tool_use_items = [c for c in tool_calls if c.type == "tool_use"]
+    
+    if not tool_use_items:
+        return []
+
+    # Create a coroutine for each tool call
+    tasks = []
+    for item in tool_use_items:
+        tasks.append(av_client.call_tool(item.name, item.input))
+
+    # Execute all tools in parallel
+    # return_exceptions=True so one failure doesn't crash the whole batch
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+
+    # Process results back into the format Claude expects
+    for i, item in enumerate(tool_use_items):
+        raw_result = results[i]
+        tool_output = ""
+
+        if isinstance(raw_result, Exception):
+            print(f"ERROR: Tool execution failed for {item.name}: {raw_result}", flush=True)
+            tool_output = f"Error executing tool {item.name}: {str(raw_result)}"
+        else:
+            # Result is a list of content blocks (text or image)
+            for block in raw_result:
+                if block.get("type") == "text":
+                    tool_output += block.get("text", "")
+                else:
+                    tool_output += str(block)
+
+        tool_results.append({
+            "role": "user",
+            "content": [{
+                "type": "tool_result",
+                "tool_use_id": item.id,
+                "content": tool_output
+            }]
+        })
+
     return tool_results
 
 async def _run_tool_loop(client, anthropic_tools, messages, av_client):
@@ -226,7 +229,7 @@ def get_in_depth_analysis():
         current_app.logger.error(f"Error generating getting in-depth analysis: {e}")
         return jsonify({"error": "Failed to generate in-depth analysis"}), 500
 
-@cache.memoize(timeout=900)
+# @cache.memoize(timeout=900)
 @alphaBot_bp.route('/alphaBot/compare_analysis', methods=['POST'])
 def get_compare_analysis():
     data = request.json

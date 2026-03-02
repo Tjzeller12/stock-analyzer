@@ -5,6 +5,12 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
+  box-sizing: border-box; /* Include padding/border in width */
+}
+
+*, *::before, *::after {
+  box-sizing: inherit; /* Apply box-sizing to all elements */
 }
 
 code {

@@ -29,7 +29,7 @@ function App() {
 
   // UseEffect is used to call the testAPI function when the component is mounted.
   useEffect(() => {
-    testAPI();
+    void testAPI();
   }, []);
   return (
     <Router>
