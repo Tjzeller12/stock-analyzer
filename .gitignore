@@ -47,7 +47,7 @@ yarn-error.log*
 .pytest_cache/
 
 # Production builds
-/build
-/distdocker-compose.override.yml
+/dist
+client/build/
 server/flask_session/
 docker-compose.override.yml
