@@ -1,3 +1,9 @@
+export interface Sentiment {
+  positive: number;
+  neutral: number;
+  negative: number;
+}
+
 export interface Stock {
   symbol: string;
   name: string;
@@ -10,6 +16,16 @@ export interface Stock {
   buy_rating: number;
   hold_rating: number;
   sell_rating: number;
+  news_summary?: string;
+  news_sentiment?: Sentiment;
+  free_cash_flow?: number;
+  debt_to_equity?: number;
+  roic?: number;
+  price_to_fc?: number;
+  cashAndCashEquivalents?: number;
+  article_sentiment_positive?: number;
+  article_sentiment_neutral?: number;
+  article_sentiment_negative?: number;
 }
 export interface Article {
   image_link: string;

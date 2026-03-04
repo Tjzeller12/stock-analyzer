@@ -7,8 +7,6 @@ import { useEffect, useState } from "react";
 import Card from "../components/common/Card";
 import Header from "../components/common/Header";
 import { PROFILE_ENDPOINTS } from "../constants/api";
-import "../main.css";
-import "./Profile.css";
 type PasswordField = {
   value: string;
   show: boolean;
@@ -46,11 +44,11 @@ const Profile: React.FC = () => {
             },
           }
         );
-      } catch (error) {
-        console.error("Password Reset failed:", error);
+      } catch (error: unknown) {
         if (axios.isAxiosError(error)) {
-          console.error("Response data:", error.response?.data);
-          console.error("Response status:", error.response?.status);
+          console.error("Password string response:", error.response?.data);
+        } else {
+          console.error("Password local Reset failed:", error);
         }
       }
     }
@@ -74,11 +72,11 @@ const Profile: React.FC = () => {
           },
         }
       );
-    } catch (error) {
-      console.error("Save failed:", error);
+    } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
-        console.error("Response data:", error.response?.data);
-        console.error("Response status:", error.response?.status);
+        console.error("Profile Save status response:", error.response?.data);
+      } else {
+        console.error("Save local failed:", error);
       }
     }
   };
@@ -99,8 +97,12 @@ const Profile: React.FC = () => {
       setUsername(response.data.username);
       setEmail(response.data.email);
       setLtInvestor(response.data.longterm_investor);
-    } catch (error) {
-      console.error("Fetching user info failed", error);
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+         console.error("Fetching Profile Error:", error.response?.data)
+      } else {
+          console.error("Fetching profile locally failed", error);
+      }
     }
   };
 
@@ -124,95 +126,110 @@ const Profile: React.FC = () => {
   const handleToggleResetPassword = () => toggleState(setResetPassword);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    // eslint-disable-next-line
     void fetchUserInfo();
   }, []);
+
   return (
-    <div className="profile-container">
+    <div className="flex flex-col p-0 font-sans bg-background text-white min-h-screen w-full">
       <Header title="AlphaBot Profile Settings" />
-      <div className="blank-space">
-        <Card title="Profile" variant="glass" className="profile-card">
-          <div className="profile-form"></div>
-          <form className="user-form" onSubmit={(e) => { void handleSave(e); }}>
-            <div className="form-row">
-              <label>Username: </label>
+      <div className="flex justify-center items-start pt-[20px] flex-1 w-full">
+        <Card title="Profile" variant="glass" className="!w-[20%] min-w-[450px] max-w-[600px] mx-auto flex flex-col items-center justify-center">
+          <form className="flex flex-col items-center w-full mx-auto" onSubmit={(e: React.FormEvent<HTMLFormElement>) => { void handleSave(e); }}>
+            <div className="flex items-center mb-[15px] w-full">
+              <label className="flex-none w-[100px] text-left mr-[10px] font-semibold text-sm">Username: </label>
               <input
                 type="text"
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="input-field"
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUsername(e.target.value)}
+                className="w-full box-border p-3 text-base border border-border-main rounded-lg bg-input-bg text-text-main focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all shadow-inner"
               />
             </div>
-            <div className="form-row">
-              <label>Email: </label>
+            <div className="flex items-center mb-[20px] w-full">
+              <label className="flex-none w-[100px] text-left mr-[10px] font-semibold text-sm">Email: </label>
               <input
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
                 readOnly
-                className="non-editable"
+                className="w-full box-border p-3 text-base border border-border-main/50 rounded-lg bg-non-editable text-text-main/70 cursor-not-allowed shadow-inner"
               />
             </div>
             
             {resetPassword && (
               <>
-                <Card className="reset-password-container">
-                  <div className="form-row">
-                    <label>New Password:</label>
+                <Card className="bg-password-bg dark:bg-[#1a1a1a] p-[15px] rounded-xl w-full border border-border-main/20">
+                  <div className="flex items-center mb-[15px] relative">
+                    <label className="flex-none w-[120px] text-left mr-[10px] font-semibold text-sm">New Password:</label>
                     <input
-                      className="input-field"
+                      className="w-full p-3 text-base border border-border-main rounded-lg bg-input-bg text-text-main focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all shadow-inner pl-3 pr-12"
                       type={newPassword.show ? "text" : "password"}
                       id="password"
                       value={newPassword.value}
-                      onChange={(e) =>
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                         setNewPassword((prev) => ({
                           ...prev,
                           value: e.target.value,
                         }))
                       }
                     />
-                    <button type="button" onClick={handleToggleNewPassword}>
+                    <button 
+                      type="button" 
+                      onClick={handleToggleNewPassword}
+                      className="absolute right-3 text-sm font-medium text-text-main/70 hover:text-primary transition-colors cursor-pointer"
+                    >
                       {newPassword.show ? "Hide" : "Show"}
                     </button>
                   </div>
-                  <div className="form-row">
-                    <label>Confirm Password:</label>
+                  <div className="flex items-center mb-[20px] relative">
+                    <label className="flex-none w-[120px] text-left mr-[10px] font-semibold text-sm">Confirm Password:</label>
                     <input
-                      className="input-field"
+                      className="w-full p-3 text-base border border-border-main rounded-lg bg-input-bg text-text-main focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all shadow-inner pl-3 pr-12"
                       type={confirmPassword.show ? "text" : "password"}
                       id="confirmPassword"
                       value={confirmPassword.value}
-                      onChange={(e) =>
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                         setConfirmPassword((prev) => ({
                           ...prev,
                           value: e.target.value,
                         }))
                       }
                     />
-                    <button type="button" onClick={handleToggleConfirmPassword}>
+                    <button 
+                      type="button" 
+                      onClick={handleToggleConfirmPassword}
+                      className="absolute right-3 text-sm font-medium text-text-main/70 hover:text-primary transition-colors cursor-pointer"
+                    >
                       {confirmPassword.show ? "Hide" : "Show"}
                     </button>
                   </div>
-                  <button type="button" onClick={(e) => { void handlePasswordReset(e); }}>
+                  <button 
+                    type="button" 
+                    onClick={(e: React.MouseEvent<HTMLButtonElement>) => { void handlePasswordReset(e as unknown as React.FormEvent); }}
+                    className="w-full bg-linear-to-r from-primary to-[#057a37] text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:shadow-primary/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
+                  >
                     Submit New Password
                   </button>
                 </Card>
               </>
             )}
-            <span
-              className="link"
-              onClick={handleToggleResetPassword}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) =>
-                e.key === "Enter" && handleToggleResetPassword()
-              }
-            >
-              {resetPassword ? "Cancel Reset Password" : "Reset Password"}
-            </span>
-            <button type="button" onClick={(e) => { void handleSave(e); }}>
-              Save
-            </button>
+            
+            <div className="flex flex-col gap-4 mt-8 w-full">
+              <button 
+                type="button" 
+                onClick={(e: React.MouseEvent<HTMLButtonElement>) => { void handleSave(e as unknown as React.FormEvent); }}
+                className="w-full bg-linear-to-r from-primary to-[#057a37] text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:shadow-primary/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
+              >
+                Save Profile
+              </button>
+              <button
+                type="button"
+                className="w-full bg-transparent border border-border-main text-text-main font-semibold py-3 px-4 rounded-lg hover:bg-row-hover hover:border-text-main/30 active:scale-[0.98] transition-all duration-200"
+                onClick={handleToggleResetPassword}
+              >
+                {resetPassword ? "Cancel Reset Password" : "Reset Password"}
+              </button>
+            </div>
           </form>
         </Card>
       </div>

@@ -3,7 +3,6 @@ import removeIcon from '../../resources/x-close-delete-svgrepo-com.svg';
 import { Stock } from '../../types';
 import { formatMarketCap } from '../../utils/formatters';
 import ControlPanel from './ControlPanel';
-import './StockTable.css';
 import Table, { Column } from './Table';
 
 export interface StockTableProps {
@@ -87,7 +86,7 @@ const StockTable: React.FC<StockTableProps> = ({
             className: "stock-action-cell",
             render: (stock) => (
                 <input
-                    className="action-checkbox"
+                    className="w-[25px] h-[25px] cursor-pointer accent-[#069042]"
                     type="checkbox"
                     checked={selectedSymbols.has(stock.symbol)}
                     onClick={(e) => e.stopPropagation()}
@@ -104,14 +103,14 @@ const StockTable: React.FC<StockTableProps> = ({
             className: "stock-remove-cell",
             render: (stock) => (
                 <button
-                    className="remove-button"
+                    className="w-8 h-8 flex items-center justify-center rounded-md bg-red-500/10 border border-red-500/30 text-red-500 hover:bg-red-500 hover:text-white transition-all duration-200 hover:shadow-md hover:shadow-red-500/20 active:scale-95 mx-auto"
                     onClick={(e) => {
                         e.stopPropagation();
                         void onRemove(stock.symbol);
                     }}
                     aria-label={`Remove ${stock.symbol}`}
                 >
-                    <img src={removeIcon} alt="Remove" />
+                    <img src={removeIcon} alt="Remove" className="w-[20px] h-[20px]" />
                 </button>
             )
         }

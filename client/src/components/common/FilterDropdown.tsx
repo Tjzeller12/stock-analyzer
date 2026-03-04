@@ -1,5 +1,4 @@
 import React from "react";
-import "./FilterDropdown.css";
 export interface Option {
     value: string;
     label: string;
@@ -22,21 +21,21 @@ const FilterDropdown: React.FC<FilterDropProps> = ({
   options,
 }) => {
   return (
-    <div className="filter-dropdown">
-      <label htmlFor="filter">Filter:</label>
-      <select
-        id="filter"
-        value={filter}
-        onChange={(e) => setFilter(e.target.value)}
-        className="filter-dropdown-select"
-      >
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    </div>
+      <div className="flex flex-wrap items-center gap-2.5">
+        <label htmlFor="filter" className="text-text-main text-sm whitespace-nowrap font-medium">Filter:</label>
+        <select
+          id="filter"
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          className="px-3 py-2 min-w-[150px] bg-input-bg text-text-main rounded-lg text-sm border border-border-main/20 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all shadow-inner"
+        >
+          {options.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </div>
   );
 };
 export default FilterDropdown;

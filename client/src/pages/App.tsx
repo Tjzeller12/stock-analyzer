@@ -1,12 +1,11 @@
 import axios from "axios";
 import { useEffect } from "react";
 import {
-  Navigate,
-  Route,
-  BrowserRouter as Router,
-  Routes,
+    Navigate,
+    Route,
+    BrowserRouter as Router,
+    Routes,
 } from "react-router-dom";
-import "./App.css";
 import LoginPage from "./LoginPage";
 import MainPage from "./MainPage";
 import ProfilePage from "./Profile";
@@ -33,7 +32,7 @@ function App() {
   }, []);
   return (
     <Router>
-      <div className="App">
+      <div className="text-center bg-background text-text-main min-h-screen">
         <Routes>
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/login" element={<LoginPage />} />

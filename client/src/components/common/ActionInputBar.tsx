@@ -1,5 +1,4 @@
 import { useState } from "react";
-import "./ActionInputBar.css";
 
 /**
  * Props for the ActionInputBar component.
@@ -34,9 +33,25 @@ const ActionInputBar = ({ onClick, disabled, placeholder, buttonLabel }: ActionI
         }
     }
     return (
-        <div className="action-input-bar">
-            <input type="text" placeholder={placeholder} onChange={(e) => setInput(e.target.value)} onKeyDown={handleKeyDown} />
-            <button onClick={handleAction} disabled={disabled}>{buttonLabel}</button>
+        <div className="bg-input-bg border border-border-main/40 rounded-lg px-2 py-1 my-0.5 flex items-center shadow-inner transition-all hover:border-primary/50 focus-within:ring-2 focus-within:ring-primary/50 focus-within:border-primary">
+            <input 
+                className="mr-0 h-10 border-none bg-transparent outline-none flex-1 text-base text-text-main placeholder-text-main/50 px-2"
+                type="text" 
+                placeholder={placeholder} 
+                onChange={(e) => setInput(e.target.value)} 
+                onKeyDown={handleKeyDown} 
+            />
+            <button 
+                className={`ml-2 h-10 px-4 font-semibold text-sm rounded-md transition-all duration-200 shrink-0 ${
+                    disabled
+                    ? 'bg-list-bg text-text-main/50 cursor-not-allowed shadow-none border border-transparent'
+                    : 'bg-primary text-white hover:bg-btn-bg hover:shadow-md hover:shadow-primary/20 active:scale-95 border border-primary/20'
+                }`}
+                onClick={handleAction} 
+                disabled={disabled}
+            >
+                {buttonLabel}
+            </button>
         </div>
     )
 }

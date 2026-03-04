@@ -1,42 +1,43 @@
 import React from 'react';
+import { Stock } from '../types';
 
 interface StockHeaderProps {
-    stock: any;
+    stock: Stock | null;
     onLogoClick: () => void;
     logo: string;
 }
 
 const StockHeader: React.FC<StockHeaderProps> = ({ stock, onLogoClick, logo}) => {
     return (
-        <header className="main-header">
-            <div className="stock-page-header-left">
-                <h1 className="stock-page-header">
+        <header className="flex justify-between items-center w-full min-h-[90px] bg-primary text-white font-bold px-6 py-4 box-border shadow-md">
+            <div className="flex items-center gap-4">
+                <h1 className="text-4xl text-white m-0 whitespace-nowrap tracking-tight drop-shadow-sm font-extrabold">
                     {stock ? `${stock.symbol} - ${stock.name}` : "Loading..."}
                 </h1>
-                <div className="stock-price-container">
+                <div className="flex justify-center items-center flex-row text-white text-3xl font-bold gap-2 ml-4">
                     <div>${stock?.price.toFixed(2)}</div>
                 </div>
             </div>
-            <div className="stock-page-header-right">
-                <div className="buy-hold-sell-container">
-                    <div className="stock-buy-rating-container">
-                        <span className="stock-buy-rating-label">Buy Rating</span>
-                        <div>{stock?.buy_rating}</div>
+            <div className="flex items-center gap-6">
+                <div className="flex justify-between items-center gap-3 bg-list-bg p-3 rounded-xl text-center shadow-lg border border-border-main/20 backdrop-blur-md">
+                    <div className="flex justify-center items-center flex-row gap-2 bg-primary text-white rounded-lg px-3 py-1.5 shadow-inner">
+                        <span className="flex justify-center items-center text-sm font-bold text-white mb-px">Buy Rating</span>
+                        <div className="font-extrabold">{stock?.buy_rating}</div>
                     </div>
-                    <div className="stock-hold-rating-container">
-                        <span className="stock-hold-rating-label">Hold Rating</span>
-                        <div>{stock?.hold_rating}</div>
+                    <div className="flex justify-center items-center flex-row gap-2 bg-yellow-500 text-white rounded-lg px-3 py-1.5 shadow-inner">
+                        <span className="flex justify-center items-center text-sm font-bold text-white mb-px">Hold Rating</span>
+                        <div className="font-extrabold">{stock?.hold_rating}</div>
                     </div>
-                    <div className="stock-sell-rating-container">
-                        <span className="stock-sell-rating-label">Sell Rating</span>
-                        <div>{stock?.sell_rating}</div>
+                    <div className="flex justify-center items-center flex-row gap-2 bg-red-500 text-white rounded-lg px-3 py-1.5 shadow-inner">
+                        <span className="flex justify-center items-center text-sm font-bold text-white mb-px">Sell Rating</span>
+                        <div className="font-extrabold">{stock?.sell_rating}</div>
                     </div>
                 </div>
                 <img
                     src={logo}
                     alt="Stock Market Logo"
                     onClick={onLogoClick}
-                    style={{ cursor: "pointer" }}
+                    className="cursor-pointer max-h-[70px] w-auto hover:scale-110 transition-transform duration-300 ease-in-out"
                 />
             </div>
         </header>

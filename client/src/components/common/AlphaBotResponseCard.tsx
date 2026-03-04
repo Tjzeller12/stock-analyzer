@@ -1,5 +1,4 @@
 import React from 'react';
-import './AlphaBotResponseCard.css';
 import Card from './Card';
 
 export interface AlphaBotResponseCardProps {
@@ -18,7 +17,7 @@ export interface AlphaBotResponseCardProps {
  */
 export const AlphaBotResponseCard: React.FC<AlphaBotResponseCardProps> = (props) => {
     return (
-        <Card title={props.title} className={`${props.classNamePrefix ? props.classNamePrefix : ""}alpha-bot-card`}>
+        <Card title={props.title} className={`${props.classNamePrefix ? props.classNamePrefix : ""} overflow-y-auto [scrollbar-color:var(--scrollbar-color)]`}>
             {props.isLoading ?
             ( <div>
             <span className='alpha-bot-spinner'></span>

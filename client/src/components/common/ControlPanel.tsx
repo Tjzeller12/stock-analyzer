@@ -1,6 +1,5 @@
 import React from "react";
 import ActionInputBar, { ActionInputBarProps } from "./ActionInputBar";
-import "./ControlPanel.css";
 interface ButtonProps {
     label: string;
     onClick: () => void;
@@ -24,9 +23,9 @@ export interface ControlPanelProps {
  */
 const ControlPanel = (props: ControlPanelProps) => {
     return (
-        <div className="control-panel">
-            <div className="controls">
-                <div className="action-bar">
+        <div className="flex flex-col gap-4 w-full">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4 w-full bg-form-bg p-4 rounded-xl shadow-inner border border-border-main/10">
+                <div className="flex-1 w-full md:max-w-[400px]">
                 {props.actionInputBar && (
                     <ActionInputBar
                         {...props.actionInputBar}
@@ -34,14 +33,18 @@ const ControlPanel = (props: ControlPanelProps) => {
                 )}
                 </div>
                 {props.buttons && (
-                    <div className="control-panel-buttons">
+                    <div className="flex items-center gap-3 flex-wrap justify-center">
                         {
                             props.buttons.map(button => (
                                 <button 
                                     key={button.label} 
                                     onClick={button.onClick}
                                     disabled={button.disabled}
-                                    className={button.disabled ? 'disabled' : ''}
+                                    className={`px-4 py-2 font-semibold text-sm rounded-lg transition-all duration-200 ${
+                                        button.disabled 
+                                        ? 'bg-list-bg text-text-main/50 cursor-not-allowed border border-white/5 shadow-none' 
+                                        : 'bg-gradient-to-r from-primary to-[#057a37] text-white hover:shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5 active:scale-95 border border-primary/30 shadow-md'
+                                    }`}
                                 >
                                     {button.label}
                                 </button>
@@ -49,11 +52,11 @@ const ControlPanel = (props: ControlPanelProps) => {
                         }
                     </div>
                 )}
-                {props.info && (
-                    <div className="control-panel-info">
-                        {props.info}
-                    </div>
-                )}
+            {props.info && (
+                <div className="text-sm font-medium text-text-main/70 px-2 flex justify-end">
+                    {props.info}
+                </div>
+            )}
             </div>
 
             {props.children}
