@@ -1,5 +1,4 @@
 import FilterDropdown, { FilterDropProps } from "./FilterDropdown";
-import "./List.css";
 interface ListProps<T> {
     items: T[];
     filterDropProp?: FilterDropProps;
@@ -20,19 +19,23 @@ interface ListProps<T> {
 const List = <T,>(props: ListProps<T>) => {
     return (
         <div>
-            {props.filterDropProp && <div className="list-header">
-                <FilterDropdown
-                    filter={props.filterDropProp?.filter}
-                    setFilter={props.filterDropProp?.setFilter}
-                    options={props.filterDropProp?.options}
-                />
-            </div>}
-            <div className="list-body">
-                {props.items.map((item, index) => (
-                    <div key={index} className={`list-item-${index % 2 ? "odd" : "even" }` }>
-                        {props.renderItem(item)}
-                    </div>
-                ))}
+            {props.filterDropProp && (
+                <div className="flex flex-col md:flex-row items-center justify-start gap-4 w-full bg-form-bg p-4 rounded-xl shadow-inner border border-border-main/10 mb-4">
+                    <FilterDropdown
+                        filter={props.filterDropProp?.filter}
+                        setFilter={props.filterDropProp?.setFilter}
+                        options={props.filterDropProp?.options}
+                    />
+                </div>
+            )}
+            <div className="w-full rounded-lg overflow-hidden border border-border-main/10">
+                <div className="overflow-y-auto max-h-[600px] [scrollbar-color:var(--scrollbar-thumb)_transparent]">
+                    {props.items.map((item, index) => (
+                        <div key={index} className={index % 2 === 0 ? "bg-even-row" : "bg-transparent"}>
+                            {props.renderItem(item)}
+                        </div>
+                    ))}
+                </div>
             </div>
         </div>
     )

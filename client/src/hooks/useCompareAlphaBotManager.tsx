@@ -163,8 +163,20 @@ export const useCompareAlphaBotManager = () => {
         try {
             setCompareLoading(true);
             const alphaBotResponse: AlphaBotResponse | null = await authPost<AlphaBotResponse>(ALPHA_BOT_ENDPOINTS.COMPARE, { stock_symbols: symbols });
-            const result = parseCompareResponse(alphaBotResponse?.response);
-            setCompareResult(result);
+            
+            // Check if the response is actually an error message string that we couldn't parse
+            try {
+                const result = parseCompareResponse(alphaBotResponse?.response);
+                setCompareResult(result);
+            } catch (parseError: unknown) {
+                // If parseCompareResponse threw an error, it's likely a text error message from the backend
+                if (parseError instanceof Error) {
+                    setCompareError(parseError.message);
+                } else {
+                    setCompareError("Failed to analyze stocks. The AI service may be temporarily unavailable.");
+                }
+            }
+            
         } catch (err: unknown) {
             console.error("Comparison failed:", err);
             setCompareError("Comparison failed. Please try again.");

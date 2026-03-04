@@ -11,7 +11,7 @@ import { authPost } from "../utils/api";
  * @returns {Object} Object containing news state (articles, filter, loading, error) and control functions.
  */
 export const useNewsListManager = () => {
-      const [newsFilter, setNewsFilter] = useState("All");
+      const [newsFilter, setNewsFilter] = useState("all");
       const [articles, setArticles] = useState<Article[]>([]);
       const [loading, setLoading] = useState(false);
       const [error, setError] = useState<string | null>(null);

@@ -1,3 +1,73 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: var(--background-color);
+  --color-text-main: var(--text-color);
+  --color-header-btn-text: var(--header-button-txt-color);
+  --color-list-bg: var(--list-color);
+  --color-even-row: var(--even-row-color);
+  --color-border-main: var(--border-color);
+  --color-form-bg: var(--form-container-color);
+  --color-non-editable: var(--non-editable-color);
+  --color-stock-data: var(--stock-data-color);
+  --color-stock-price: var(--stock-price-color);
+  --color-glass-bg: var(--glass-bg);
+  --color-graph-llm-bg: var(--stock-graph-llm-color-bg);
+  --color-llm-field-bg: var(--llm-field-bg-color);
+  --color-password-bg: var(--passwrd-reset-bg-color);
+  --color-primary: var(--primary-green);
+  --color-row-hover: var(--row-hover-color);
+  --color-btn-bg: var(--button-bg-color);
+  
+  --breakpoint-xs: 480px;
+}
+
+:root {
+  color-scheme: light;
+  --background-color: #ffffff;
+  --text-color: #0f0f0f;
+  --header-button-txt-color: #1c1b1b;
+  --list-color: #ebe9e9;
+  --even-row-color: rgba(255, 255, 255, 0.443);
+  --scrollbar-color: rgb(92, 92, 92);
+  --scrollbar-thumb: rgb(180, 180, 182);
+  --border-color: #9a9a9a;
+  --form-container-color: #f0f0f0;
+  --input-field-color: #dfdfdf;
+  --non-editable-color: #b4b4b4;
+  --stock-data-color: #06401f;
+  --stock-price-color: #545454;
+  --glass-bg: rgba(240, 240, 240, 0.7); /* Lighter glass effect */
+  --stock-graph-llm-color-bg: #d3d3d3;
+  --llm-field-bg-color: #c8c8c8;
+  --passwrd-reset-bg-color: #cccccc;
+  --primary-green: #069042;
+  --row-hover-color: rgba(157, 157, 157, 0.1);
+  --button-bg-color: #06a94d;
+}
+
+.dark, [data-theme="dark"] {
+  color-scheme: dark;
+  --background-color: #141414;
+  --text-color: #ffffff;
+  --header-button-txt-color: #ffffff;
+  --list-color: #1e1e1e;
+  --even-row-color: rgba(255, 255, 255, 0.02);
+  --scrollbar-color: rgb(116, 116, 116);
+  --scrollbar-thumb: rgb(61, 61, 61);
+  --border-color: #333;
+  --form-container-color: #212121;
+  --input-field-color: #b4b4b4;
+  --non-editable-color: #6c6c6c;
+  --stock-data-color: #069042;
+  --stock-price-color: #b2b2b2;
+  --glass-bg: rgba(30, 30, 30, 0.6);   /* Darker glass effect */
+  --stock-graph-llm-color-bg: #474747;
+  --llm-field-bg-color: #313131;
+  --passwrd-reset-bg-color: #363636;
+  --row-hover-color: rgba(255, 255, 255, 0.05);
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",

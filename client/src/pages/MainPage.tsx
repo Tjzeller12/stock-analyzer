@@ -3,10 +3,8 @@
  * Main dashboard for the application, displaying user's stocks, news feed, and comparison charts.
  */
 import React, { useEffect } from "react";
-import Markdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import RadarGraph from '../components/common/RadarGraph';
-import "../main.css";
+import StyledMarkdown from '../components/common/StyledMarkdown';
 import "../utils/formatters";
 // Stock interface contains data about a stock
 import { AlphaBotResponseCard } from "../components/common/AlphaBotResponseCard";
@@ -21,8 +19,6 @@ import { useCompareAlphaBotManager } from '../hooks/useCompareAlphaBotManager';
 import { useNewsListManager } from '../hooks/useNewsListManager';
 import { useStockTableManager } from '../hooks/useStockTableManager';
 import { Article } from '../types';
-import "./MainPage.css";
-
 // MainPage component: Serves as the dashboard for the stock analyzer application
 const MainPage: React.FC = () => {
 
@@ -34,7 +30,7 @@ const MainPage: React.FC = () => {
 
   useEffect(() => {
     void fetchStocks();
-    void handleFilterChange("All");
+    void handleFilterChange("all");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   useEffect(() => {
@@ -50,12 +46,12 @@ const MainPage: React.FC = () => {
 
   // Main page
   return (
-    <div className="main-container">
+    <div className="flex flex-col gap-5 p-0">
       {/* Header section with title and clickable logo */}
       <Header title="AlphaBot Dashboard" />
-      <div className="main-content">
+      <div className="grid grid-cols-1 lg:grid-cols-6 gap-5 p-5 max-w-[1800px] mx-auto w-full">
       {/* Main content area with My Stocks and News buttons */}
-      <Card title="My Stocks" variant="glass" className="stock-table-container">
+      <Card title="My Stocks" variant="glass" className="col-span-1 lg:col-span-4 lg:row-start-1 w-full">
         
         {/* Stock Table */}
           <StockTable
@@ -75,30 +71,30 @@ const MainPage: React.FC = () => {
         
 
       </Card>
-      <Card title="News" variant="glass" className="news-container">
+      <Card title="News" variant="glass" className="col-span-1 lg:col-start-5 lg:col-span-2 lg:row-start-1 w-full">
           <List<Article> items={articles} renderItem={(article) => <NewsListItem article={article} />} 
         filterDropProp={{filter: newsFilter, setFilter: (f: string) => { void handleFilterChange(f); }, options: NEWS_FILTER_OPTIONS}}/>
       </Card>
       {/* Comparison result */}
-      <Card title="Comparison Analysis" variant="glass" className="compare-result-container">
+      <Card title="Comparison Analysis" variant="glass" className="col-span-1 lg:col-span-3 lg:row-span-2 lg:row-start-2 w-full">
         {(compareResult || compareLoading) && (
             <AlphaBotResponseCard isLoading={compareLoading} classNamePrefix="compare-">
                  {compareResult && (
                     <>
-                        <div className="analysis-body">
-                        <Markdown remarkPlugins={[remarkGfm]}>{compareResult.analysis}</Markdown>
+                        <div className="text-left overflow-y-auto max-h-[600px] pr-4 [scrollbar-color:var(--scrollbar-thumb)_transparent]">
+                        <StyledMarkdown>{compareResult.analysis}</StyledMarkdown>
                         </div>
                     </>
                  )}
             </AlphaBotResponseCard>
         )}  
       </Card>
-      <Card title="Compare Radar Graph" variant="glass" className="compare-radar-chart-container">
+      <Card title="Compare Radar Graph" variant="glass" className="col-span-1 lg:col-start-4 lg:col-span-3 lg:row-start-2 w-full flex justify-center items-center">
         {(compareResult || compareLoading) && (
             <AlphaBotResponseCard isLoading={compareLoading} classNamePrefix="chart-">
             {compareResult && compareResult.radarChartData && (
                     <>
-                        <div className="compare-radar-chart-container">
+                        <div className="col-span-1 lg:col-start-4 lg:col-span-3 lg:row-start-2 w-full flex justify-center items-center">
                         <RadarGraph data={compareResult.radarChartData}/>
                         </div>
 
@@ -107,12 +103,12 @@ const MainPage: React.FC = () => {
             </AlphaBotResponseCard>
         )}
       </Card>
-      <Card title="Portfolio Distribution Chart" variant="glass" className="compare-doughnut-chart-container">
+      <Card title="Portfolio Distribution Chart" variant="glass" className="col-span-1 lg:col-start-4 lg:col-span-3 lg:row-start-3 w-full flex justify-center items-center">
         {(compareResult || compareLoading) && (
           <AlphaBotResponseCard isLoading={compareLoading}>
             {compareResult && compareResult.doughnutChartData && (
               <>
-                <div className="d_chart_container">
+                <div className="w-full h-full max-h-[500px] max-w-[500px] flex justify-center items-center mx-auto">
                   <DoughnutChart data={compareResult.doughnutChartData}/>
                 </div>
               </>

@@ -1,6 +1,0 @@
-/* App.css - Minimal necessary styles for App component */
-@import url(../main.css);
-.App {
-  text-align: center;
-  background-color: var(--background-color);
-}
