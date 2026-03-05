@@ -45,4 +45,4 @@ Structure:
 - Do NOT include any introductory text like "Here is the comparison" or "Based on the data". IF THERE IS ANY INTRODUCTORY TEXT, THE JSON WILL NOT BE VALID.
 - No conversational filler.
 - Ensure all JSON keys and string values are properly escaped.
-- **radarChartData**: Must contain exactly 5 integer values (0-100) corresponding to the labels. Be sure to add a dataset object for EVERY symbol provided in {stock_symbols}.
+- **radarChartData**: Must contain exactly 6 integer values (0-100) corresponding to the labels. Be sure to add a dataset object for EVERY symbol provided in {stock_symbols}.
