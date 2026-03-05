@@ -35,8 +35,8 @@ def save():
     if not current_user:
         current_app.logger.info("User not logged in")
         return jsonify({"error": "User not logged in"}), 401
-    current_user.longterm_investor = request.json["longterm_investor"]
-    current_user.username = request.json["username"] 
+    if "username" in request.json:
+        current_user.username = request.json["username"] 
     db.session.commit()
     return jsonify("Successfully saved new user information"), 200
 

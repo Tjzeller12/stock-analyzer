@@ -18,7 +18,7 @@ const NewsListItem = (props: NewsListItemProps) => {
             </div>
             
             <div className="flex flex-col flex-1 justify-center items-center text-sm min-w-0 h-full text-center">
-                <div className="font-bold text-text-main dark:text-gray-200 line-clamp-2 leading-snug mb-1">{props.article.title}</div>
+                <div className="font-bold text-text-main line-clamp-2 leading-snug mb-1">{props.article.title}</div>
                 <div className="flex items-center justify-center gap-2 mt-auto text-xs text-text-main/60 font-medium">
                     <span className="text-primary truncate max-w-[120px]">{props.article.news_company}</span>
                     <span>•</span>

@@ -72,6 +72,27 @@ const StockPage: React.FC = () => {
     navigate("/main");
   };
 
+    // --- Calculate Sentiment from Alpha Vantage article feed ---
+  const feed = stock?.news_sentiment_data?.feed || [];
+  const totalArticles = feed.length;
+  let positiveScore = 0;
+  let neutralScore = 0;
+  let negativeScore = 0;
+
+  if (totalArticles > 0) {
+    feed.forEach(article => {
+      const label = article.overall_sentiment_label || "";
+      if (label.includes("Bullish")) positiveScore++;
+      else if (label.includes("Bearish")) negativeScore++;
+      else neutralScore++;
+    });
+    
+    positiveScore = (positiveScore / totalArticles) * 100;
+    neutralScore = (neutralScore / totalArticles) * 100;
+    negativeScore = (negativeScore / totalArticles) * 100;
+  }
+
+
   return (
     <div className="flex flex-col items-center min-h-screen p-0 font-sans bg-background text-text-main">
       <StockHeader stock={stock} onLogoClick={handleLogoClick} logo={logo} />
@@ -105,16 +126,16 @@ const StockPage: React.FC = () => {
               onChange={(e) => setLlmPrompt(e.target.value)}
             />
           </div>
-          {stock?.news_sentiment && (
+          {totalArticles > 0 && (
             <div className="flex flex-row justify-around items-center gap-4 bg-form-bg p-4 rounded-xl mt-2 text-sm font-semibold w-full shadow-md border border-border-main/10">
               <div>
-                Positive: {(stock.news_sentiment.positive * 100).toFixed(1)}%
+                Positive: {positiveScore.toFixed(1)}%
               </div>
               <div>
-                Neutral: {(stock.news_sentiment.neutral * 100).toFixed(1)}%
+                Neutral: {neutralScore.toFixed(1)}%
               </div>
               <div>
-                Negative: {(stock.news_sentiment.negative * 100).toFixed(1)}%
+                Negative: {negativeScore.toFixed(1)}%
               </div>
             </div>
           )}

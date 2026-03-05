@@ -29,7 +29,7 @@ def create_token(user_id):
 
 # creates a new user and adds it to the database
 def create_user(username, password_hash, email, longterm_investor = False):
-    new_user = User(username=username, password_hash=password_hash, email=email, longterm_investor=longterm_investor)
+    new_user = User(username=username, password_hash=password_hash, email=email)
     db.session.add(new_user)
     db.session.commit()
     token = create_token(new_user.id)
@@ -47,7 +47,6 @@ def register():
     username = request.json["username"]
     password = request.json["password"]
     email = request.json["email"]
-    longterm_investor = request.json["longterm_investor"]
 
     user_exists = User.query.filter_by(username=username).first() is not None
 
@@ -61,13 +60,12 @@ def register():
     password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
 
     # Create new user
-    create_user(username=username, password_hash=password_hash, email=email, longterm_investor=longterm_investor)
+    create_user(username=username, password_hash=password_hash, email=email)
     user = User.query.filter_by(username=username).first()
     token = create_token(user.id)
     return jsonify({
         "username": username,
         "email": email,
-        "longterm_investor": longterm_investor,
         "token": token,
         "message":"User successfully created"}), 200
 
@@ -81,7 +79,6 @@ def get_user():
     return jsonify({
         "username": user.username,
         "email": user.email,
-        "longterm_investor": user.longterm_investor,
         "message": "User successfully retrieved"
     }), 200
 

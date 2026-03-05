@@ -14,13 +14,15 @@ class User(db.Model):
     username = db.Column(db.String(64), index=True, unique=True)
     email = db.Column(db.String(120), index=True, unique=True)
     password_hash = db.Column(db.String(128))
-    longterm_investor = db.Column(db.Boolean)
+    budget = db.Column(db.Float)
+    risk_tolerance_score = db.Column(db.Float)
     time_created = db.Column(db.DateTime, default=datetime.utcnow)
     def to_dict(self):
         return {
             'username' : self.username,
             'email': self.email,
-            'longterm_investor': self.longterm_investor
+            'budget': self.budget,
+            'risk_tolerance_score': self.risk_tolerance_score
         }
 
     #relationships
@@ -44,21 +46,19 @@ class Portfolio(db.Model):
 class StockMaster(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     symbol = db.Column(db.String(6), unique=True, index=True)  # Unique symbol
-    name = db.Column(db.String(50))
-    industry = db.Column(db.String(50))
-    ev_to_ebita = db.Column(db.Float)
-    pe_ratio = db.Column(db.Float)
     price = db.Column(db.Float)
-    market_cap = db.Column(db.Float)
-    dividend_yield = db.Column(db.Float)
-    buy_rating = db.Column(db.Float)
-    hold_rating = db.Column(db.Float)
-    sell_rating = db.Column(db.Float)
+    company_overview = db.Column(db.JSON)
+    global_quote = db.Column(db.JSON)
+    time_series_monthly = db.Column(db.JSON)
+    news_sentiment_data = db.Column(db.JSON)
+    insider_volume = db.Column(db.Float) # We need a function to caclulate the net transaaction volume from INSIDER_TRANSACTIONS AV Endpoint
     # Update columns for API calls
     last_stock_update = db.Column(db.DateTime)
     last_in_depth_update = db.Column(db.DateTime)
     # In depth columns
-    free_cash_flow = db.Column(db.Float)
+    income_statement = db.Column(db.JSON)
+    cash_flow_history = db.Column(db.JSON) # History for generating a bigger picture
+    free_cash_flow = db.Column(db.Float) # immediate cash flow for comparison
     debt_to_equity = db.Column(db.Float)
     roic = db.Column(db.Float)
     price_to_fc = db.Column(db.Float)
@@ -71,18 +71,16 @@ class StockMaster(db.Model):
     def to_dict(self):
         return {
             'symbol': self.symbol,
-            'name': self.name,
-            'industry': self.industry,
-            'ev_to_ebita': self.ev_to_ebita or 0.0,
-            'pe_ratio': self.pe_ratio or 0.0,
             'price': self.price or 0.0,
-            'market_cap': self.market_cap or 0.0,
-            'dividend_yield': self.dividend_yield or 0.0,
-            'buy_rating': self.buy_rating or 0.0,
-            'hold_rating': self.hold_rating or 0.0,
-            'sell_rating': self.sell_rating or 0.0,
+            'company_overview': self.company_overview,
+            'global_quote': self.global_quote,
+            'time_series_monthly': self.time_series_monthly,
+            'news_sentiment_data': self.news_sentiment_data,
+            'insider_volume': self.insider_volume,
             'last_stock_update': self.last_stock_update or None,
             'last_in_depth_update': self.last_in_depth_update or None,
+            'income_statement': self.income_statement,
+            'cash_flow_history': self.cash_flow_history,
             'free_cash_flow': self.free_cash_flow or 0.0,
             'debt_to_equity': self.debt_to_equity or 0.0,
             'roic': self.roic or 0.0,

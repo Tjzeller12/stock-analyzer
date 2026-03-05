@@ -144,14 +144,25 @@ export const useCompareAlphaBotManager = () => {
     /**
      * Triggers the AlphaBot comparison analysis on all currently selected symbols.
      * Enforces limits (min 2, max 10 symbols) before making the API call.
+     * @param {string[]} validSymbols - Optional list of valid symbols. Any selected symbols not in this list will be ignored.
      */
-    const compareStocks = async () => {
+    const compareStocks = async (validSymbols?: string[]) => {
         setCompareError(null);
         setCompareResult(null);
         // Clear previous result from storage when starting new comparison
         localStorage.removeItem("compareResult");
         
-        const symbols = Array.from(selectedSymbols);
+        let symbols = Array.from(selectedSymbols);
+
+        // Filter out stale symbols (e.g., symbols from previous sessions that are no longer in the user's portfolio)
+        if (validSymbols && validSymbols.length > 0) {
+            symbols = symbols.filter(s => validSymbols.includes(s));
+            if (symbols.length !== selectedSymbols.size) {
+                // Update state silently so the UI drops the stale selections without throwing an error
+                setSelectedSymbols(new Set(symbols));
+            }
+        }
+
         if (symbols.length < 2) {
             setCompareError("Select at least 2 stocks to compare.");
             return;

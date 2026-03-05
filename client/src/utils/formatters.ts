@@ -55,3 +55,16 @@
     }
     return value.toFixed(2);
   };
+
+  export const formatVolume = (value: number) => {
+    if (!value) return "0";
+    const absVal = Math.abs(value);
+    const sign = value < 0 ? "-" : "+";
+    
+    if (absVal >= 1e12) return sign + (absVal / 1e12).toFixed(2) + "T";
+    if (absVal >= 1e9) return sign + (absVal / 1e9).toFixed(2) + "B";
+    if (absVal >= 1e6) return sign + (absVal / 1e6).toFixed(2) + "M";
+    if (absVal >= 1e3) return sign + (absVal / 1e3).toFixed(2) + "K";
+    
+    return sign + absVal.toLocaleString(undefined, { maximumFractionDigits: 0 });
+};

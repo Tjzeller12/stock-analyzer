@@ -13,7 +13,7 @@ import { authPost } from "../utils/api";
  * @param {string} initialSortBy - The default column key to sort the table by when it loads.
  * @returns {Object} Object containing stock list, loading/error states, and management functions.
  */
-export const useStockTableManager = (initialSortBy: string = "ev_to_ebita") => {
+export const useStockTableManager = (initialSortBy: string = "symbol") => {
     const navigate = useNavigate();
     const [stocks, setStocks] = useState<Stock[]>([]);
     const [sortBy, setSortBy] = useState(initialSortBy);
