@@ -3,7 +3,7 @@ from app import db, cache
 from app.models import Stock, StockMaster
 from sqlalchemy import desc
 from app.routes.auth import get_current_user
-from app.services.stock_manager import add_stock
+from app.services.stock_manager import add_stock, add_to_master
 from app.services.alpha_api import *
 
 from flask import abort
@@ -90,18 +90,7 @@ def update_stocks():
         symbol = stock.stock_master.symbol
         # Fetch updated data from API
         try:
-            # Get stock data from API
-            data = get_stock_data(symbol)
-            # Get stock price from API
-            price = get_stock_price(symbol)
-            # Check if data is available
-            if not data or price is None:
-                current_app.logger.warning(f"Data unavailable for symbol: {symbol}")
-                continue  # Skip this stock and proceed to the next
-
-            # Update stock master
-            db.session.commit()
-            db.session.expire_all()
+            add_to_master(symbol)
         except Exception as e:
             # Log error
             current_app.logger.error(f"Error updating stock {symbol}: {e}")

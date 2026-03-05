@@ -22,15 +22,22 @@ const MetricRow: React.FC<MetricRowProps> = ({ label, value }) => (
 );
 
 const StockMetricsTable: React.FC<{ stock: Stock | null }> = ({ stock }) => {
+
+    const overview = stock?.company_overview || {};
+    const evToEbita = overview.EVToEBITDA ? parseFloat(overview.EVToEBITDA) : undefined;
+    const peRatio = overview.PERatio ? parseFloat(overview.PERatio) : undefined;
+    const marketCap = overview.MarketCapitalization ? parseFloat(overview.MarketCapitalization) : 0;
+    const dividendYield = overview.DividendYield ? parseFloat(overview.DividendYield) : undefined;
+
     return (
         <div className="flex justify-center items-start w-full max-w-[800px] p-6 bg-form-bg rounded-2xl mb-8 shadow-lg border border-border-main/10 mt-6 mx-auto relative overflow-hidden">
             <div className="absolute top-[-50%] left-[-10%] w-[100%] h-[100%] bg-primary/5 rounded-full blur-3xl -z-10"></div>
             <table className="w-full border-collapse relative z-10">
                 <tbody>
-                    <MetricRow label="EV/EBITDA" value={stock?.ev_to_ebita} />
-                    <MetricRow label="PE Ratio" value={stock?.pe_ratio} />
-                    <MetricRow label="Market Cap" value={formatMarketCap(stock?.market_cap || 0)} />
-                    <MetricRow label="Dividend Yield" value={stock?.dividend_yield} />
+                    <MetricRow label="EV/EBITDA" value={evToEbita?.toFixed(2) || "N/A"} />
+                    <MetricRow label="PE Ratio" value={peRatio?.toFixed(2) || "N/A"} />
+                    <MetricRow label="Market Cap" value={formatMarketCap(marketCap)} />
+                    <MetricRow label="Dividend Yield" value={dividendYield ? `${(dividendYield * 100).toFixed(2)}%` : "None"} />
                     <MetricRow label="Free Cash Flow" value={formatFreeCashFlow(stock?.free_cash_flow || 0)} />
                     <MetricRow label="Debt to Equity" value={formatDebtToEquity(stock?.debt_to_equity || 0)} />
                     <MetricRow label="ROIC" value={formatRoic(stock?.roic || 0)} />

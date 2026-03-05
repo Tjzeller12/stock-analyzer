@@ -2,10 +2,12 @@ from flask import Blueprint, request, jsonify, current_app
 from app import cache
 import requests
 import os
+import json
 from app.constants import ALPHA_VANTAGE_MCP_URL, CLAUDE_MODEL, USER_QUERY_PROMPT, COMPARE_PROMPT, IN_DEPTH_PROMPT
 from app.utils.api import build_alpha_vantage_url
 from app.constants import AlphaVantageFunction
 from anthropic import AsyncAnthropic
+from app.models import StockMaster
 import asyncio
 
 # Make alphaBot blueprint
@@ -148,7 +150,7 @@ async def _run_tool_loop(client, anthropic_tools, messages, av_client):
     for i in range(50): # Safety limit to prevent infinite loops (cost protection)
         response = await client.messages.create(
             model=CLAUDE_MODEL,
-            max_tokens=4000,
+            max_tokens=8192,
             messages=messages,
             tools=anthropic_tools
         )
@@ -163,10 +165,10 @@ async def _run_tool_loop(client, anthropic_tools, messages, av_client):
         # If we are here, Claude wants to use tools. Execute them.
         tool_results = await _execute_tool_calls(av_client, response.content)
         messages.extend(tool_results)
-    
+     
     return "Analysis timed out or reached max turns."
 
-async def query_alpha_bot(prompt):
+async def query_alpha_bot(prompt, include_tools):
     """Main entry point for AlphaBot queries."""
     # helper for api key
     api_key = os.getenv('ALPHA_VANTAGE_KEY')
@@ -178,8 +180,10 @@ async def query_alpha_bot(prompt):
     av_client = HttpMCPClient(ALPHA_VANTAGE_MCP_URL, api_key)
     
     try:
+        anthropic_tools = []
         # Step 1: Discover tools
-        anthropic_tools = await _discover_tools(av_client)
+        if include_tools:
+            anthropic_tools = await _discover_tools(av_client)
         
         # Step 2: Initialize Client
         client = AsyncAnthropic()
@@ -223,7 +227,7 @@ def get_in_depth_analysis():
     prompt = prompt.replace("{stock_symbol}", stock_symbol)
 
     try:
-        response = asyncio.run(query_alpha_bot(prompt))
+        response = asyncio.run(query_alpha_bot(prompt, False))
         return jsonify({"response": response}), 200
     except Exception as e:
         current_app.logger.error(f"Error generating getting in-depth analysis: {e}")
@@ -244,8 +248,33 @@ def get_compare_analysis():
         return jsonify({"error": "Prompt not found"}), 404
     prompt = prompt.replace("{stock_symbols}", ", ".join(stock_symbols))
 
+    market_context = "<market_data>\n"
+    for symbol in stock_symbols:
+        stock = StockMaster.query.filter_by(symbol=symbol).first()
+        if stock:
+
+            market_context += f"Data for {symbol}:\n"
+            market_context += f"OVERVIEW: {json.dumps(stock.company_overview)}\n"
+            market_context += f"GLOBAL_QUOTE: {json.dumps(stock.global_quote)}\n"
+            market_context += f"NEWS_SENTIMENT: {json.dumps(stock.news_sentiment_data)}\n"
+            # Explicitly decode the volume for the LLM
+            volume = stock.insider_volume or 0
+            if volume > 0:
+                direction = "NET BUYING (Positive Signal)"
+            elif volume < 0:
+                direction = "NET SELLING (Negative Signal)"
+            else:
+                direction = "NEUTRAL (No Signal / No Data)"
+                
+            market_context += f"INSIDER_TRANSACTION_VOLUME: {volume:,.0f} shares ({direction})\n"
+            market_context += "---\n"
+        else:
+            market_context += f"Data for {symbol}: NOT FOUND IN CACHE\n---\n"
+    market_context += "</market_data>\n\n"
+    prompt = prompt + market_context
+    
     try:
-        response = asyncio.run(query_alpha_bot(prompt))
+        response = asyncio.run(query_alpha_bot(prompt, False))
         return jsonify({"response": response}), 200
     except Exception as e:
         current_app.logger.error(f"Error generating compare analysis: {e}")
@@ -265,7 +294,7 @@ def get_user_query():
     prompt = prompt.replace("{stock_symbol}", stock_symbol)
     prompt = prompt.replace("{user_query}", user_query)
     try:
-        response = asyncio.run(query_alpha_bot(prompt))
+        response = asyncio.run(query_alpha_bot(prompt, True))
         return jsonify({"response": response}), 200
     except Exception as e:
         current_app.logger.error(f"Error generating generating user query response: {e}")

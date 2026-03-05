@@ -7,9 +7,9 @@ from app.utils.api import build_alpha_vantage_url, build_financial_modeling_url
 
 # Retrieves stock data from Alpha Vantage API using the stocks symbol
 @cache.memoize(timeout=900)
-def get_stock_data(symbol):
+def get_av_json(function, **params):
     # Build API URL using utility function
-    url = build_alpha_vantage_url(AlphaVantageFunction.OVERVIEW, symbol=symbol)
+    url = build_alpha_vantage_url(function, **params)
     # request data from API
     req = requests.get(url)
     #Convert it to JSON data

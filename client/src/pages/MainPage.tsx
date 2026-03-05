@@ -59,7 +59,7 @@ const MainPage: React.FC = () => {
             selectedSymbols={selectedSymbols}
             toggleSelectSymbol={toggleSelectSymbol}
             onRowClick={navigateToStockPage}
-            onCompare={() => { void compareStocks(); }}
+            onCompare={() => { void compareStocks(stocks.map(s => s.symbol)); }}
             onRemove={removeStock}
             onAdd={addStock}
             onRefresh={refreshStocks}
