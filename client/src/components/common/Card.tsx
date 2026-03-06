@@ -4,7 +4,7 @@ interface CardProps {
   title?: string;
   children: ReactNode;
   className?: string;
-  variant?: 'default' | 'glass' | 'outline';
+  variant?: 'default' | 'glass' | 'outline' | 'inner';
   style?: React.CSSProperties;
 }
 
@@ -19,15 +19,17 @@ const Card: React.FC<CardProps> = ({
   variant = 'default',
   style 
 }) => {
-  const baseCardClasses = "backdrop-blur-xl rounded-2xl p-6 transition-all duration-300 ease-in-out flex flex-col overflow-y-auto m-0 w-full text-text-main [scrollbar-color:var(--scrollbar-color)] relative z-10 hover:shadow-2xl";
+  const baseCardClasses = "backdrop-blur-xl rounded-2xl p-6 transition-all duration-300 ease-in-out flex flex-col overflow-y-auto m-0 w-full text-text-main [scrollbar-color:var(--scrollbar-color)] relative z-10";
 
   let specificClasses = "";
   if (variant === 'default') {
-    specificClasses = "bg-form-bg border border-border-main/20 shadow-lg dark:shadow-none";
+    specificClasses = "bg-form-bg border border-border-main/20 shadow-lg dark:shadow-none hover:shadow-2xl";
   } else if (variant === 'glass') {
-    specificClasses = "bg-glass-bg border border-border-main/20 dark:border-white/10 shadow-xl";
+    specificClasses = "bg-glass-bg border border-border-main/20 dark:border-white/10 shadow-xl hover:shadow-2xl";
   } else if (variant === 'outline') {
-    specificClasses = "bg-transparent border-2 border-border-main/30 shadow-none";
+    specificClasses = "bg-transparent border-2 border-border-main/30 shadow-none hover:shadow-none";
+  } else if (variant === 'inner') {
+    specificClasses = "bg-form-bg shadow-inner border border-border-main/10 hover:shadow-none";
   }
 
   return (
