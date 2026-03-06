@@ -53,13 +53,27 @@ export const RadarGraph = ({ data }: RadarGraphProps) => {
     }
 
     // Custom Legend to force solid colors and match Doughnut chart
-    /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call */
-    const renderLegend = (props: any) => {
+    interface CustomLegendPayload {
+        value?: string;
+        color?: string;
+        payload?: {
+            stroke?: string;
+            fill?: string;
+            strokeDasharray?: string | number;
+            value?: unknown;
+            [key: string]: unknown;
+        };
+    }
+    interface CustomLegendProps {
+        payload?: readonly CustomLegendPayload[];
+    }
+
+    const renderLegend = (props: CustomLegendProps) => {
         const { payload } = props;
         if (!payload) return null;
         return (
             <ul className="flex flex-row flex-wrap justify-center gap-6 text-sm mt-4">
-                {payload.map((entry: any, index: number) => {
+                {payload.map((entry: CustomLegendPayload, index: number) => {
                     const color = entry.payload?.stroke || entry.color;
                     return (
                         <li key={`item-${index}`} className="flex items-center gap-2" style={{ color: textColor }}>
@@ -78,8 +92,6 @@ export const RadarGraph = ({ data }: RadarGraphProps) => {
             </ul>
         );
     };
-    /* eslint-enable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call */
-
     return (
         <div className="w-full h-[400px]">
             <ResponsiveContainer width="100%" height="100%">

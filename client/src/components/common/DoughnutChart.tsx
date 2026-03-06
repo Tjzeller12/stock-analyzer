@@ -57,15 +57,27 @@ export const DoughnutChart = ({ data }: DoughnutChartProps) => {
         return <div className="text-center text-text-main p-4">No data available</div>;
     }
 
-    // Custom Legend to force solid colors instead of the pie slice's transparent fill
-    // Custom Legend to force solid colors instead of the pie slice's transparent fill
-    /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument */
-    const renderLegend = (props: any) => {
+    interface CustomLegendPayload {
+        value?: string;
+        color?: string;
+        payload?: {
+            stroke?: string;
+            fill?: string;
+            strokeDasharray?: string | number;
+            value?: unknown;
+            [key: string]: unknown;
+        };
+    }
+    interface CustomLegendProps {
+        payload?: readonly CustomLegendPayload[];
+    }
+
+    const renderLegend = (props: CustomLegendProps) => {
         const { payload } = props;
         if (!payload) return null;
         return (
             <ul className="flex flex-row flex-wrap justify-center gap-6 text-sm mt-4">
-                {payload.map((entry: any, index: number) => {
+                {payload.map((entry: CustomLegendPayload, index: number) => {
                     const color = getSolidColor(entry.payload?.stroke) || getSolidColor(entry.color);
                     return (
                         <li key={`item-${index}`} className="flex items-center gap-2" style={{ color: textColor }}>
@@ -84,8 +96,6 @@ export const DoughnutChart = ({ data }: DoughnutChartProps) => {
             </ul>
         );
     };
-    /* eslint-enable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument */
-
     return (
         <div className="w-full h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
