@@ -51,7 +51,7 @@ const MainPage: React.FC = () => {
       <Header title="AlphaBot Dashboard" />
       <div className="grid grid-cols-1 lg:grid-cols-6 gap-5 p-5 max-w-[1800px] mx-auto w-full">
       {/* Main content area with My Stocks and News buttons */}
-      <Card title="My Stocks" variant="glass" className="col-span-1 lg:col-span-4 lg:row-start-1 w-full">
+      <Card title="My Stocks" variant="glass" className="col-span-1 lg:col-span-6 lg:row-start-1 w-full">
         
         {/* Stock Table */}
           <StockTable
@@ -71,17 +71,17 @@ const MainPage: React.FC = () => {
         
 
       </Card>
-      <Card title="News" variant="glass" className="col-span-1 lg:col-start-5 lg:col-span-2 lg:row-start-1 w-full">
+      <Card title="News" variant="glass" className="col-span-1 lg:col-span-2 lg:row-span-2 lg:row-start-2 lg:col-start-1 w-full h-full flex flex-col">
           <List<Article> items={articles} renderItem={(article) => <NewsListItem article={article} />} 
         filterDropProp={{filter: newsFilter, setFilter: (f: string) => { void handleFilterChange(f); }, options: NEWS_FILTER_OPTIONS}}/>
       </Card>
       {/* Comparison result */}
-      <Card title="Comparison Analysis" variant="glass" className="col-span-1 lg:col-span-3 lg:row-span-2 lg:row-start-2 w-full">
+      <Card title="Comparison Analysis" variant="glass" className="col-span-1 lg:col-span-2 lg:row-span-2 lg:row-start-2 lg:col-start-3 w-full">
         {(compareResult || compareLoading) && (
-            <AlphaBotResponseCard isLoading={compareLoading} classNamePrefix="compare-">
+            <AlphaBotResponseCard isLoading={compareLoading} className="min-h-[400px]">
                  {compareResult && (
                     <>
-                        <div className="text-left overflow-y-auto max-h-[600px] pr-4 [scrollbar-color:var(--scrollbar-thumb)_transparent]">
+                        <div className="text-left overflow-y-auto h-full max-h-[900px] pr-4 [scrollbar-color:var(--scrollbar-thumb)_transparent]">
                         <StyledMarkdown>{compareResult.analysis}</StyledMarkdown>
                         </div>
                     </>
@@ -89,12 +89,12 @@ const MainPage: React.FC = () => {
             </AlphaBotResponseCard>
         )}  
       </Card>
-      <Card title="Compare Radar Graph" variant="glass" className="col-span-1 lg:col-start-4 lg:col-span-3 lg:row-start-2 w-full flex justify-center items-center">
+      <Card title="Compare Radar Graph" variant="glass" className="col-span-1 lg:col-start-5 lg:col-span-2 lg:row-start-2 w-full flex justify-center items-center">
         {(compareResult || compareLoading) && (
-            <AlphaBotResponseCard isLoading={compareLoading} classNamePrefix="chart-">
+            <AlphaBotResponseCard isLoading={compareLoading}>
             {compareResult && compareResult.radarChartData && (
                     <>
-                        <div className="col-span-1 lg:col-start-4 lg:col-span-3 lg:row-start-2 w-full flex justify-center items-center">
+                        <div className="w-full flex justify-center items-center">
                         <RadarGraph data={compareResult.radarChartData}/>
                         </div>
 
@@ -103,7 +103,7 @@ const MainPage: React.FC = () => {
             </AlphaBotResponseCard>
         )}
       </Card>
-      <Card title="Portfolio Distribution Chart" variant="glass" className="col-span-1 lg:col-start-4 lg:col-span-3 lg:row-start-3 w-full flex justify-center items-center">
+      <Card title="Portfolio Distribution Chart" variant="glass" className="col-span-1 lg:col-start-5 lg:col-span-2 lg:row-start-3 w-full flex justify-center items-center">
         {(compareResult || compareLoading) && (
           <AlphaBotResponseCard isLoading={compareLoading}>
             {compareResult && compareResult.doughnutChartData && (

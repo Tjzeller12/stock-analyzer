@@ -29,7 +29,7 @@ const List = <T,>(props: ListProps<T>) => {
                 </div>
             )}
             <div className="w-full rounded-lg overflow-hidden border border-border-main/10">
-                <div className="overflow-y-auto max-h-[600px] [scrollbar-color:var(--scrollbar-thumb)_transparent]">
+                <div className="overflow-y-auto max-h-[950px] [scrollbar-color:var(--scrollbar-thumb)_transparent]">
                     {props.items.map((item, index) => (
                         <div key={index} className={index % 2 === 0 ? "bg-even-row" : "bg-transparent"}>
                             {props.renderItem(item)}
