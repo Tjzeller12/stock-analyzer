@@ -254,8 +254,15 @@ def get_compare_analysis():
         if stock:
 
             market_context += f"Data for {symbol}:\n"
-            market_context += f"OVERVIEW: {json.dumps(stock.company_overview)}\n"
-            market_context += f"GLOBAL_QUOTE: {json.dumps(stock.global_quote)}\n"
+            
+            # Serialize the new flat metrics structure
+            stock_data = stock.to_dict()
+            # Remove giant nested fields we don't want bloating the overview
+            stock_data.pop('news_sentiment_data', None)
+            stock_data.pop('income_statement', None)
+            stock_data.pop('cash_flow_history', None)
+            
+            market_context += f"METRICS: {json.dumps(stock_data, default=str)}\n"
             market_context += f"NEWS_SENTIMENT: {json.dumps(stock.news_sentiment_data)}\n"
             # Explicitly decode the volume for the LLM
             volume = stock.insider_volume or 0

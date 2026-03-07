@@ -9,10 +9,9 @@ interface StockHeaderProps {
 
 const StockHeader: React.FC<StockHeaderProps> = ({ stock, onLogoClick, logo}) => {
 
-    const overview = stock?.company_overview || {};
-    const buyRating = overview.AnalystRatingBuy || "N/A";
-    const holdRating = overview.AnalystRatingHold || "N/A";
-    const sellRating = overview.AnalystRatingSell || "N/A";
+    const buyRating = stock?.buy_ratings_count !== undefined && stock.buy_ratings_count !== null ? stock.buy_ratings_count : "N/A";
+    const holdRating = stock?.hold_ratings_count !== undefined && stock.hold_ratings_count !== null ? stock.hold_ratings_count : "N/A";
+    const sellRating = stock?.sell_ratings_count !== undefined && stock.sell_ratings_count !== null ? stock.sell_ratings_count : "N/A";
 
     return (
         <header className="flex justify-between items-center w-full min-h-[90px] bg-primary text-white font-bold px-6 py-4 box-border shadow-md">
@@ -28,7 +27,7 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stock, onLogoClick, logo}) =>
                 <div className="flex justify-between items-center gap-3 bg-list-bg p-3 rounded-xl text-center shadow-lg border border-border-main/20 backdrop-blur-md">
                     <div className="flex justify-center items-center flex-row gap-2 bg-primary text-white rounded-lg px-3 py-1.5 shadow-inner">
                         <span className="flex justify-center items-center text-sm font-bold text-white mb-px">Buy Rating</span>
-                        <div className="font-extrabold">{buyRating}</div>
+                        <div className="font-extrabold">{stock?.buy_ratings_count}</div>
                     </div>
                     <div className="flex justify-center items-center flex-row gap-2 bg-yellow-500 text-white rounded-lg px-3 py-1.5 shadow-inner">
                         <span className="flex justify-center items-center text-sm font-bold text-white mb-px">Hold Rating</span>

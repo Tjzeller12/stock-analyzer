@@ -95,7 +95,7 @@ export const RadarGraph = ({ data }: RadarGraphProps) => {
     return (
         <div className="w-full h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
-                <RadarChart cx="50%" cy="50%" outerRadius="80%" data={rechartsData}>
+                <RadarChart cx="50%" cy="35%" outerRadius="80%" data={rechartsData}>
                     <PolarGrid stroke={gridColor} />
                     <PolarAngleAxis 
                         dataKey="subject" 

@@ -60,9 +60,10 @@ def stock_data():
     
     # First check if the stock exists in StockMaster
     stock_master = StockMaster.query.filter_by(symbol=symbol).first()
-    if not stock_master:
-        print(f"Stock {symbol} not found in StockMaster")  # Debug log
-        # Try to add it to master
+    if not stock_master or stock_master.market_cap is None:
+        print(f"Stock {symbol} not found in StockMaster or missing flat data")  # Debug log
+        # Try to add it to master (or update existing)
+        stock_master = add_to_master(symbol)
         stock_master = add_to_master(symbol)
         if isinstance(stock_master, dict) and "error" in stock_master:
             return jsonify({"error": stock_master["error"]}), 404

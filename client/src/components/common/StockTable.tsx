@@ -73,111 +73,105 @@ const StockTable: React.FC<StockTableProps> = ({
         { 
             field: "name", 
             headerName: "Name", 
-            valueGetter: (params) => params.data?.company_overview?.Name || "N/A",
+            valueGetter: (params) => params.data?.name || "N/A",
             width: 200 
         },
         { 
             field: "price", 
             headerName: "Price", 
-            valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value ? `$${params.value.toFixed(2)}` : "N/A",
+            valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value != null ? `$${params.value.toFixed(2)}` : "N/A",
             width: 100 
         },
         { 
             headerName: "Market Cap", 
-            valueGetter: (params) => params.data?.company_overview?.MarketCapitalization,
-            valueFormatter: (params: ValueFormatterParams<Stock, string>) => params.value ? formatMarketCap(parseFloat(params.value)) : "N/A",
+            valueGetter: (params) => params.data?.market_cap,
+            valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value ? formatMarketCap(params.value) : "N/A",
             width: 150 
         },
         { 
             headerName: "P/E", 
-            valueGetter: (params) => params.data?.company_overview?.PERatio,
-            valueFormatter: (params: ValueFormatterParams<Stock, string>) => params.value ? parseFloat(params.value).toFixed(2) : "N/A",
+            valueGetter: (params) => params.data?.pe_ratio,
+            valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value != null ? params.value.toFixed(2) : "N/A",
             width: 100 
         },
         { 
             headerName: "Fwd P/E", 
-            valueGetter: (params) => params.data?.company_overview?.ForwardPE,
-            valueFormatter: (params: ValueFormatterParams<Stock, string>) => params.value ? parseFloat(params.value).toFixed(2) : "N/A",
+            valueGetter: (params) => params.data?.forward_pe,
+            valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value != null ? params.value.toFixed(2) : "N/A",
             width: 120 
         },
         { 
             headerName: "EV/EBITDA", 
-            valueGetter: (params) => params.data?.company_overview?.EVToEBITDA,
-            valueFormatter: (params: ValueFormatterParams<Stock, string>) => params.value ? parseFloat(params.value).toFixed(2) : "N/A",
+            valueGetter: (params) => params.data?.ev_to_ebitda,
+            valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value != null ? params.value.toFixed(2) : "N/A",
             width: 120 
         },
         { 
             headerName: "P/S", 
-            valueGetter: (params) => params.data?.company_overview?.PriceToSalesRatioTTM,
-            valueFormatter: (params: ValueFormatterParams<Stock, string>) => params.value ? parseFloat(params.value).toFixed(2) : "N/A",
+            valueGetter: (params) => params.data?.price_to_sales,
+            valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value != null ? params.value.toFixed(2) : "N/A",
             width: 100 
         },
         { 
             headerName: "PEG", 
-            valueGetter: (params) => params.data?.company_overview?.PEGRatio,
-            valueFormatter: (params: ValueFormatterParams<Stock, string>) => params.value ? parseFloat(params.value).toFixed(3) : "N/A",
+            valueGetter: (params) => params.data?.peg_ratio,
+            valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value != null ? params.value.toFixed(3) : "N/A",
             width: 100 
         },
         { 
             headerName: "ROE", 
-            valueGetter: (params) => params.data?.company_overview?.ReturnOnEquityTTM,
-            valueFormatter: (params: ValueFormatterParams<Stock, string>) => {
-                if (!params.value || params.value === "None") return "N/A";
-                return `${(parseFloat(params.value) * 100).toFixed(1)}%`;
+            valueGetter: (params) => params.data?.roe,
+            valueFormatter: (params: ValueFormatterParams<Stock, number>) => {
+                if (params.value === undefined || params.value === null) return "N/A";
+                return `${(params.value * 100).toFixed(1)}%`;
             },
             width: 100 
         },
         { 
             headerName: "Op Margin", 
-            valueGetter: (params) => params.data?.company_overview?.OperatingMarginTTM,
-            valueFormatter: (params: ValueFormatterParams<Stock, string>) => {
-                if (!params.value || params.value === "None") return "N/A";
-                return `${(parseFloat(params.value) * 100).toFixed(1)}%`;
+            valueGetter: (params) => params.data?.operating_margin,
+            valueFormatter: (params: ValueFormatterParams<Stock, number>) => {
+                if (params.value === undefined || params.value === null) return "N/A";
+                return `${(params.value * 100).toFixed(1)}%`;
             },
             width: 120 
         },
         { 
             headerName: "Profit Margin", 
-            valueGetter: (params) => params.data?.company_overview?.ProfitMargin,
-            valueFormatter: (params: ValueFormatterParams<Stock, string>) => {
-                if (!params.value || params.value === "None") return "N/A";
-                return `${(parseFloat(params.value) * 100).toFixed(1)}%`;
+            valueGetter: (params) => params.data?.profit_margin,
+            valueFormatter: (params: ValueFormatterParams<Stock, number>) => {
+                if (params.value === undefined || params.value === null) return "N/A";
+                return `${(params.value * 100).toFixed(1)}%`;
             },
             width: 140 
         },
         { 
             headerName: "Rev Growth (QoQ)", 
-            valueGetter: (params) => params.data?.company_overview?.QuarterlyRevenueGrowthYOY,
-            valueFormatter: (params: ValueFormatterParams<Stock, string>) => {
-                if (!params.value || params.value === "None") return "N/A";
-                return `${(parseFloat(params.value) * 100).toFixed(1)}%`;
+            valueGetter: (params) => params.data?.rev_growth_qoq,
+            valueFormatter: (params: ValueFormatterParams<Stock, number>) => {
+                if (params.value === undefined || params.value === null) return "N/A";
+                return `${(params.value * 100).toFixed(1)}%`;
             },
             width: 160 
         },
         { 
             headerName: "EPS Growth (QoQ)", 
-            valueGetter: (params) => params.data?.company_overview?.QuarterlyEarningsGrowthYOY,
-            valueFormatter: (params: ValueFormatterParams<Stock, string>) => {
-                if (!params.value || params.value === "None") return "N/A";
-                return `${(parseFloat(params.value) * 100).toFixed(1)}%`;
+            valueGetter: (params) => params.data?.eps_growth_qoq,
+            valueFormatter: (params: ValueFormatterParams<Stock, number>) => {
+                if (params.value === undefined || params.value === null) return "N/A";
+                return `${(params.value * 100).toFixed(1)}%`;
             },
             width: 160 
         },
         { 
             headerName: "Beta", 
-            valueGetter: (params) => params.data?.company_overview?.Beta,
-            valueFormatter: (params: ValueFormatterParams<Stock, string>) => params.value ? parseFloat(params.value).toFixed(3) : "N/A",
+            valueGetter: (params) => params.data?.beta,
+            valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value != null ? params.value.toFixed(3) : "N/A",
             width: 100 
         },
         { 
             headerName: "Buy Ratings", 
-            valueGetter: (params) => {
-                const stock = params.data;
-                const strongBuy = parseInt(stock?.company_overview?.AnalystRatingStrongBuy || "0");
-                const buy = parseInt(stock?.company_overview?.AnalystRatingBuy || "0");
-                const total = (isNaN(strongBuy) ? 0 : strongBuy) + (isNaN(buy) ? 0 : buy);
-                return total;
-            },
+            valueGetter: (params) => params.data?.buy_ratings_count || 0,
             valueFormatter: (params: ValueFormatterParams<Stock, number>) => (params.value && params.value > 0) ? params.value.toString() : "N/A",
             width: 130 
         },

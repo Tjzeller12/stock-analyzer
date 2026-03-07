@@ -110,20 +110,41 @@ export interface TimeSeriesMonthly {
   };
 }
 export interface AlphaVantageData {
-  company_overview?: CompanyOverview;
-  global_quote?: GlobalQuote;
-  time_series_monthly?: TimeSeriesMonthly;
   news_sentiment_data?: NewsSentimentData;
 }
 
 export interface Stock extends AlphaVantageData {
   symbol: string;
-  name: string;
+  name?: string;
+  sector?: string;
+  industry?: string;
   price: number;
+  price_change_percent?: number;
+  volume?: number;
+  market_cap?: number;
+  pe_ratio?: number;
+  forward_pe?: number;
+  peg_ratio?: number;
+  ev_to_ebitda?: number;
+  price_to_sales?: number;
+  price_to_book?: number;
+  dividend_yield?: number;
+  roe?: number;
+  roa?: number;
+  operating_margin?: number;
+  profit_margin?: number;
+  rev_growth_qoq?: number;
+  eps_growth_qoq?: number;
+  beta?: number;
+  buy_ratings_count?: number;
+  hold_ratings_count?: number;
+  sell_ratings_count?: number;
   
   insider_volume?: number;
+  ai_news_score?: number;
+  ai_moat_score?: number;
   last_stock_update?: string;
-  last_alpha_vantage_update?: string;
+  last_fundamental_update?: string;
   income_statement?: Record<string, unknown>;
   cash_flow_history?: Record<string, unknown>;
   free_cash_flow?: number;

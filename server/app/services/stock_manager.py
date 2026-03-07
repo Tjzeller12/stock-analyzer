@@ -36,14 +36,12 @@ def add_to_master(symbol):
             #Get stock data from API
             future_overview = executor.submit(run_with_context, get_av_json, AlphaVantageFunction.OVERVIEW, symbol=symbol)
             future_quote = executor.submit(run_with_context, get_av_json, AlphaVantageFunction.GLOBAL_QUOTE, symbol=symbol)
-            future_monthly = executor.submit(run_with_context, get_av_json, AlphaVantageFunction.TIME_SERIES_MONTHLY, symbol=symbol)
             future_news = executor.submit(run_with_context, get_av_json, AlphaVantageFunction.NEWS_SENTIMENT, tickers=symbol, limit=30)
             future_insider = executor.submit(run_with_context, get_av_json, AlphaVantageFunction.INSIDER_TRANSACTIONS, symbol=symbol)
             future_price = executor.submit(run_with_context, get_stock_price, symbol)
 
             overview = future_overview.result()
             quote = future_quote.result()
-            monthly = future_monthly.result()
             news = future_news.result()
             insider = future_insider.result()
             price = future_price.result()
@@ -53,11 +51,40 @@ def add_to_master(symbol):
 
         insider_volume = calculate_insider_volume(insider)
 
+        # Map overview attributes cleanly
+        market_cap_val = overview.get("MarketCapitalization")
+        market_cap = int(safe_float(market_cap_val)) if market_cap_val else None
+        
+        global_quote_data = quote.get("Global Quote", {})
+        volume_val = global_quote_data.get("06. volume")
+        volume = int(safe_float(volume_val)) if volume_val else None
+
         if stock_master:
             stock_master.price = price
-            stock_master.company_overview = overview
-            stock_master.global_quote = quote
-            stock_master.time_series_monthly = monthly
+            stock_master.name = overview.get("Name")
+            stock_master.sector = overview.get("Sector")
+            stock_master.industry = overview.get("Industry")
+            stock_master.market_cap = market_cap
+            stock_master.pe_ratio = safe_float(overview.get("PERatio"))
+            stock_master.forward_pe = safe_float(overview.get("ForwardPE"))
+            stock_master.peg_ratio = safe_float(overview.get("PEGRatio"))
+            stock_master.ev_to_ebitda = safe_float(overview.get("EVToEBITDA"))
+            stock_master.price_to_sales = safe_float(overview.get("PriceToSalesRatioTTM"))
+            stock_master.price_to_book = safe_float(overview.get("PriceToBookRatio"))
+            stock_master.dividend_yield = safe_float(overview.get("DividendYield"))
+            stock_master.roe = safe_float(overview.get("ReturnOnEquityTTM"))
+            stock_master.roa = safe_float(overview.get("ReturnOnAssetsTTM"))
+            stock_master.operating_margin = safe_float(overview.get("OperatingMarginTTM"))
+            stock_master.profit_margin = safe_float(overview.get("ProfitMargin"))
+            stock_master.rev_growth_qoq = safe_float(overview.get("QuarterlyRevenueGrowthYOY"))
+            stock_master.eps_growth_qoq = safe_float(overview.get("QuarterlyEarningsGrowthYOY"))
+            stock_master.beta = safe_float(overview.get("Beta"))
+            stock_master.buy_ratings_count = int(safe_float(overview.get("AnalystRatingBuy"))) + int(safe_float(overview.get("AnalystRatingStrongBuy")))
+            stock_master.hold_ratings_count = int(safe_float(overview.get("AnalystRatingHold")))
+            stock_master.sell_ratings_count = int(safe_float(overview.get("AnalystRatingSell"))) + int(safe_float(overview.get("AnalystRatingStrongSell")))
+            stock_master.price_change_percent = safe_float(global_quote_data.get("10. change percent", "0").replace('%', ''))
+            stock_master.volume = volume
+            
             stock_master.news_sentiment_data = news
             stock_master.insider_volume = insider_volume
             stock_master.last_stock_update = datetime.datetime.now()
@@ -66,23 +93,42 @@ def add_to_master(symbol):
             stock_master = StockMaster(
                 symbol=symbol,
                 price=price,
+                name=overview.get("Name"),
+                sector=overview.get("Sector"),
+                industry=overview.get("Industry"),
+                market_cap=market_cap,
+                pe_ratio=safe_float(overview.get("PERatio")),
+                forward_pe=safe_float(overview.get("ForwardPE")),
+                peg_ratio=safe_float(overview.get("PEGRatio")),
+                ev_to_ebitda=safe_float(overview.get("EVToEBITDA")),
+                price_to_sales=safe_float(overview.get("PriceToSalesRatioTTM")),
+                price_to_book=safe_float(overview.get("PriceToBookRatio")),
+                dividend_yield=safe_float(overview.get("DividendYield")),
+                roe=safe_float(overview.get("ReturnOnEquityTTM")),
+                roa=safe_float(overview.get("ReturnOnAssetsTTM")),
+                operating_margin=safe_float(overview.get("OperatingMarginTTM")),
+                profit_margin=safe_float(overview.get("ProfitMargin")),
+                rev_growth_qoq=safe_float(overview.get("QuarterlyRevenueGrowthYOY")),
+                eps_growth_qoq=safe_float(overview.get("QuarterlyEarningsGrowthYOY")),
+                beta=safe_float(overview.get("Beta")),
+                buy_ratings_count=int(safe_float(overview.get("AnalystRatingBuy"))) + int(safe_float(overview.get("AnalystRatingStrongBuy"))),
+                hold_ratings_count=int(safe_float(overview.get("AnalystRatingHold"))),
+                sell_ratings_count=int(safe_float(overview.get("AnalystRatingSell"))) + int(safe_float(overview.get("AnalystRatingStrongSell"))),
+                price_change_percent=safe_float(global_quote_data.get("10. change percent", "0").replace('%', '')),
+                volume=volume,
 
-                # Cache the JSON payloads
-                company_overview=overview,
-                global_quote=quote,
-                time_series_monthly=monthly,
                 news_sentiment_data=news,
                 insider_volume=insider_volume,
                 last_stock_update=datetime.datetime.now(),
                 
                 # Defaults for in-depth financials
-                income_statement={},
+                income_statement_history={},
                 cash_flow_history={},
                 free_cash_flow=0.0,
                 debt_to_equity=0.0,
                 roic=0.0,
                 price_to_fc=0.0,
-                cashAndCashEquivalents=0.0
+                cash_and_equiv=0.0
             )    
             db.session.add(stock_master)
 

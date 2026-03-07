@@ -26,11 +26,17 @@
   };
 
   export const formatFreeCashFlow = (value: number) => {
-    if (value >= 1e12) {
-      return (value / 1e12).toFixed(1) + "T";
-    } else if (value >= 1e9) {
-      return (value / 1e9).toFixed(1) + "B";
+    if (!value) return "0.00";
+    const absVal = Math.abs(value);
+    const sign = value < 0 ? "-" : "";
+    if (absVal >= 1e12) {
+      return sign + (absVal / 1e12).toFixed(2) + "T";
+    } else if (absVal >= 1e9) {
+      return sign + (absVal / 1e9).toFixed(2) + "B";
+    } else if (absVal >= 1e6) {
+      return sign + (absVal / 1e6).toFixed(2) + "M";
     }
+    return sign + absVal.toFixed(2);
   };
 
   export const formatDebtToEquity = (value: number) => {
@@ -46,14 +52,17 @@
   };
 
   export const formatCashAndCashEquivalents = (value: number) => {
-    if (value >= 1e12) {
-      return (value / 1e12).toFixed(1) + "T";
-    } else if (value >= 1e9) {
-      return (value / 1e9).toFixed(1) + "B";
-    } else if (value >= 1e6) {
-      return (value / 1e6).toFixed(1) + "M";
+    if (!value) return "0.00";
+    const absVal = Math.abs(value);
+    const sign = value < 0 ? "-" : "";
+    if (absVal >= 1e12) {
+      return sign + (absVal / 1e12).toFixed(2) + "T";
+    } else if (absVal >= 1e9) {
+      return sign + (absVal / 1e9).toFixed(2) + "B";
+    } else if (absVal >= 1e6) {
+      return sign + (absVal / 1e6).toFixed(2) + "M";
     }
-    return value.toFixed(2);
+    return sign + absVal.toFixed(2);
   };
 
   export const formatVolume = (value: number) => {
