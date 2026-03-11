@@ -232,13 +232,7 @@ const StockTable: React.FC<StockTableProps> = ({
             valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value != null && params.value > 0 ? params.value.toFixed(0) : "N/A",
             tooltipValueGetter: (params) => params.data?.ai_moat_summary || "No moat summary available.",
             width: 110,
-            cellClass: (params) => {
-                const score = params.data?.ai_moat_score || 0;
-                if (score >= 80) return "text-green-500 font-bold";
-                if (score >= 50) return "text-yellow-500 font-bold";
-                if (score > 0) return "text-red-500 font-bold";
-                return "";
-            }
+            headerClass: "ai-header-glow"
         },
         {
             headerName: "AI News",
@@ -246,13 +240,7 @@ const StockTable: React.FC<StockTableProps> = ({
             valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value != null && params.value > 0 ? params.value.toFixed(0) : "N/A",
             tooltipValueGetter: (params) => params.data?.ai_news_summary || "No recent news summary.",
             width: 110,
-            cellClass: (params) => {
-                const score = params.data?.ai_news_score || 0;
-                if (score >= 70) return "text-green-500 font-bold";
-                if (score >= 40) return "text-yellow-500 font-bold";
-                if (score > 0) return "text-red-500 font-bold";
-                return "";
-            }
+            headerClass: "ai-header-glow"
         },
         {
             colId: "select",
