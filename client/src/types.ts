@@ -142,12 +142,22 @@ export interface Stock extends AlphaVantageData {
   
   insider_volume?: number;
   ai_news_score?: number;
+  ai_news_summary?: string;
   ai_moat_score?: number;
+  ai_moat_summary?: string;
   last_stock_update?: string;
   last_fundamental_update?: string;
   income_statement?: Record<string, unknown>;
   cash_flow_history?: Record<string, unknown>;
+  
+  // Standard and Core Financials
   free_cash_flow?: number;
+  operating_cash_flow?: number;
+  capital_expenditures?: number;
+  total_assets?: number;
+  total_liabilities?: number;
+  total_shareholder_equity?: number;
+  net_income?: number;
   debt_to_equity?: number;
   roic?: number;
   price_to_fc?: number;

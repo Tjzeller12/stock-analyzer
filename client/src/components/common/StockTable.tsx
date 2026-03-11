@@ -1,4 +1,4 @@
-import { ClientSideRowModelModule, ColDef, ValidationModule, ValueFormatterParams, themeQuartz } from 'ag-grid-community';
+import { ClientSideRowModelModule, ColDef, TooltipModule, ValidationModule, ValueFormatterParams, themeQuartz } from 'ag-grid-community';
 import { AgGridReact, CustomCellRendererProps } from 'ag-grid-react';
 import React, { useContext, useMemo } from 'react';
 import { ThemeContext } from '../../ThemeContext';
@@ -146,6 +146,15 @@ const StockTable: React.FC<StockTableProps> = ({
             width: 140 
         },
         { 
+            headerName: "ROA", 
+            valueGetter: (params) => params.data?.roa,
+            valueFormatter: (params: ValueFormatterParams<Stock, number>) => {
+                if (params.value === undefined || params.value === null) return "N/A";
+                return `${(params.value * 100).toFixed(1)}%`;
+            },
+            width: 100 
+        },
+        { 
             headerName: "Rev Growth (QoQ)", 
             valueGetter: (params) => params.data?.rev_growth_qoq,
             valueFormatter: (params: ValueFormatterParams<Stock, number>) => {
@@ -164,6 +173,42 @@ const StockTable: React.FC<StockTableProps> = ({
             width: 160 
         },
         { 
+            headerName: "Total Assets", 
+            valueGetter: (params) => params.data?.total_assets,
+            valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value != null ? formatMarketCap(params.value) : "N/A",
+            width: 140 
+        },
+        { 
+            headerName: "Total Liab.", 
+            valueGetter: (params) => params.data?.total_liabilities,
+            valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value != null ? formatMarketCap(params.value) : "N/A",
+            width: 140 
+        },
+        { 
+            headerName: "Op. Cash Flow", 
+            valueGetter: (params) => params.data?.operating_cash_flow,
+            valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value != null ? formatMarketCap(params.value) : "N/A",
+            width: 140 
+        },
+        { 
+            headerName: "CapEx", 
+            valueGetter: (params) => params.data?.capital_expenditures,
+            valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value != null ? formatMarketCap(params.value) : "N/A",
+            width: 120 
+        },
+        { 
+            headerName: "Free Cash Flow", 
+            valueGetter: (params) => params.data?.free_cash_flow,
+            valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value != null ? formatMarketCap(params.value) : "N/A",
+            width: 150 
+        },
+        { 
+            headerName: "Debt/Equity", 
+            valueGetter: (params) => params.data?.debt_to_equity,
+            valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value != null ? params.value.toFixed(2) : "N/A",
+            width: 130 
+        },
+        { 
             headerName: "Beta", 
             valueGetter: (params) => params.data?.beta,
             valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value != null ? params.value.toFixed(3) : "N/A",
@@ -180,6 +225,34 @@ const StockTable: React.FC<StockTableProps> = ({
             headerName: "Insider Vol", 
             valueFormatter: (params: ValueFormatterParams<Stock, number | undefined>) => params.value ? formatVolume(params.value) : "0",
             width: 130 
+        },
+        {
+            headerName: "AI Moat",
+            field: "ai_moat_score",
+            valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value != null && params.value > 0 ? params.value.toFixed(0) : "N/A",
+            tooltipValueGetter: (params) => params.data?.ai_moat_summary || "No moat summary available.",
+            width: 110,
+            cellClass: (params) => {
+                const score = params.data?.ai_moat_score || 0;
+                if (score >= 80) return "text-green-500 font-bold";
+                if (score >= 50) return "text-yellow-500 font-bold";
+                if (score > 0) return "text-red-500 font-bold";
+                return "";
+            }
+        },
+        {
+            headerName: "AI News",
+            field: "ai_news_score",
+            valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value != null && params.value > 0 ? params.value.toFixed(0) : "N/A",
+            tooltipValueGetter: (params) => params.data?.ai_news_summary || "No recent news summary.",
+            width: 110,
+            cellClass: (params) => {
+                const score = params.data?.ai_news_score || 0;
+                if (score >= 70) return "text-green-500 font-bold";
+                if (score >= 40) return "text-yellow-500 font-bold";
+                if (score > 0) return "text-red-500 font-bold";
+                return "";
+            }
         },
         {
             colId: "select",
@@ -271,7 +344,7 @@ const StockTable: React.FC<StockTableProps> = ({
             <div className={`ag-theme-quartz w-full`} style={{ height: 600 }}>
                 <AgGridReact
                     theme={myTheme}
-                    modules={[ClientSideRowModelModule, ValidationModule]}
+                    modules={[ClientSideRowModelModule, ValidationModule, TooltipModule]}
                     rowData={stocks}
                     columnDefs={columnDefs}
                     defaultColDef={defaultColDef}
