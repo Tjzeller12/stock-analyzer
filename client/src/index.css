@@ -130,3 +130,20 @@ code {
 .ag-theme-quartz .ag-cell-action {
   justify-content: center !important;
 }
+
+/* AG Grid Tooltip Opacity Fix */
+.ag-theme-quartz .ag-tooltip,
+.ag-theme-quartz-dark .ag-tooltip {
+  background-color: var(--background-color) !important;
+  color: var(--text-color) !important;
+  opacity: 1 !important;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5) !important;
+  padding: 8px !important;
+}
+
+/* AI Glowing Headers */
+.ai-header-glow .ag-header-cell-text {
+  color: var(--primary-green) !important;
+  text-shadow: 0 0 2px rgba(13, 218, 102, 0.8), 0 0 6px rgba(6, 144, 66, 0.4);
+}

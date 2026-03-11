@@ -45,11 +45,13 @@ class Portfolio(db.Model):
 # Mster table for all stocks to be stored in
 class StockMaster(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+
     # --- Metadata & Identifiers ---
     symbol = db.Column(db.String(6), unique=True, index=True, nullable=False)
     name = db.Column(db.String(255))
     sector = db.Column(db.String(100))
     industry = db.Column(db.String(100))
+    description = db.Column(db.Text)
     
     # --- Price Action (Global Quote) ---
     price = db.Column(db.Float)
@@ -62,36 +64,40 @@ class StockMaster(db.Model):
     forward_pe = db.Column(db.Float)
     peg_ratio = db.Column(db.Float)
     ev_to_ebitda = db.Column(db.Float)
-    price_to_sales = db.Column(db.Float)        # PriceToSalesRatioTTM
+    price_to_sales = db.Column(db.Float)        
     price_to_book = db.Column(db.Float)
-    price_to_fc = db.Column(db.Float)           # Price to Free Cash Flow
+    price_to_fc = db.Column(db.Float)           
     dividend_yield = db.Column(db.Float)
     
     # --- Profitability & Efficiency ---
-    roe = db.Column(db.Float)                   # ReturnOnEquityTTM
-    roa = db.Column(db.Float)                   # ReturnOnAssetsTTM
-    operating_margin = db.Column(db.Float)      # OperatingMarginTTM
-    profit_margin = db.Column(db.Float)         # ProfitMargin
-    roic = db.Column(db.Float)                  # Calculated: NOPAT / Invested Capital
+    roe = db.Column(db.Float)                   
+    roa = db.Column(db.Float)                   
+    operating_margin = db.Column(db.Float)      
+    profit_margin = db.Column(db.Float)         
+    roic = db.Column(db.Float)                  
     
     # --- Growth Metrics (QoQ/YoY) ---
-    rev_growth_qoq = db.Column(db.Float)        # QuarterlyRevenueGrowthYOY
-    eps_growth_qoq = db.Column(db.Float)        # QuarterlyEarningsGrowthYOY
+    rev_growth_qoq = db.Column(db.Float)        
+    eps_growth_qoq = db.Column(db.Float)        
     
-    # --- Financial Health ---
-    debt_to_equity = db.Column(db.Float)
+    # --- Financial Health (Consolidated) ---
+    operating_cash_flow = db.Column(db.Float)
+    capital_expenditures = db.Column(db.Float)
     free_cash_flow = db.Column(db.Float)
-    cash_and_equiv = db.Column(db.Float)        # cashAndCashEquivalents
+    total_assets = db.Column(db.BigInteger)
+    total_liabilities = db.Column(db.BigInteger)
+    total_shareholder_equity = db.Column(db.BigInteger)
+    net_income = db.Column(db.BigInteger)
+    cash_and_equiv = db.Column(db.Float)        
+    debt_to_equity = db.Column(db.Float)
     
     # --- Risk & Sentiment ---
     beta = db.Column(db.Float)
-    buy_ratings_count = db.Column(db.Integer)   # Sum of Strong Buy + Buy
-    hold_ratings_count = db.Column(db.Integer)  # AnalystRatingHold
-    sell_ratings_count = db.Column(db.Integer)  # Sum of Strong Sell + Sell
-    insider_volume = db.Column(db.Float)        # Net Transaction Volume
-    ai_news_score = db.Column(db.Float)         # Normalized 0-100
-    ai_moat_score = db.Column(db.Float)         # Normalized 0-100
-
+    buy_ratings_count = db.Column(db.Integer)   
+    hold_ratings_count = db.Column(db.Integer)  
+    sell_ratings_count = db.Column(db.Integer)  
+    insider_volume = db.Column(db.Float)        
+    
     # --- Analyst Ratings Breakdown ---
     analyst_strong_buy = db.Column(db.Integer, default=0)
     analyst_buy = db.Column(db.Integer, default=0)
@@ -99,13 +105,17 @@ class StockMaster(db.Model):
     analyst_sell = db.Column(db.Integer, default=0)
     analyst_strong_sell = db.Column(db.Integer, default=0)
     
-    # --- Update Tracking ---
-    last_stock_update = db.Column(db.DateTime)      # Price/Quote (Daily)
-    last_fundamental_update = db.Column(db.DateTime) # Overview/Income/CashFlow (Quarterly)
+    # --- AI Insights ---
+    ai_news_score = db.Column(db.Float)         
+    ai_news_summary = db.Column(db.Text)
+    ai_moat_score = db.Column(db.Float)         
+    ai_moat_summary = db.Column(db.Text)
     
-    # --- Raw Data Blobs (Optional: Keep for Debugging or History) ---
-    # It is often helpful to keep these as "sources of truth" for 
-    # historical analysis without re-pinging the API.
+    # --- Update Tracking ---
+    last_stock_update = db.Column(db.DateTime)      
+    last_fundamental_update = db.Column(db.DateTime) 
+    
+    # --- Raw Data Blobs ---
     income_statement_history = db.Column(db.JSON) 
     cash_flow_history = db.Column(db.JSON)
     news_sentiment_data = db.Column(db.JSON)
@@ -122,6 +132,7 @@ class StockMaster(db.Model):
             'name': self.name,
             'sector': self.sector,
             'industry': self.industry,
+            'description': self.description,
             'price': self.price or 0.0,
             'price_change_percent': self.price_change_percent,
             'volume': self.volume,
@@ -132,28 +143,41 @@ class StockMaster(db.Model):
             'ev_to_ebitda': self.ev_to_ebitda,
             'price_to_sales': self.price_to_sales,
             'price_to_book': self.price_to_book,
-            'price_to_fc': self.price_to_fc or 0.0,
+            'price_to_fc': self.price_to_fc,
             'dividend_yield': self.dividend_yield,
             'roe': self.roe,
             'roa': self.roa,
             'operating_margin': self.operating_margin,
             'profit_margin': self.profit_margin,
-            'roic': self.roic or 0.0,
+            'roic': self.roic,
             'rev_growth_qoq': self.rev_growth_qoq,
             'eps_growth_qoq': self.eps_growth_qoq,
-            'debt_to_equity': self.debt_to_equity or 0.0,
-            'free_cash_flow': self.free_cash_flow or 0.0,
-            'cashAndCashEquivalents': self.cash_and_equiv or 0.0,
+            'debt_to_equity': self.debt_to_equity,
+            'free_cash_flow': self.free_cash_flow,
+            'operating_cash_flow': self.operating_cash_flow,
+            'capital_expenditures': self.capital_expenditures,
+            'total_assets': self.total_assets,
+            'total_liabilities': self.total_liabilities,
+            'total_shareholder_equity': self.total_shareholder_equity,
+            'net_income': self.net_income,
+            'cashAndCashEquivalents': self.cash_and_equiv,
             'beta': self.beta,
             'buy_ratings_count': self.buy_ratings_count,
             'hold_ratings_count': self.hold_ratings_count,
             'sell_ratings_count': self.sell_ratings_count,
+            'analyst_strong_buy': self.analyst_strong_buy,
+            'analyst_buy': self.analyst_buy,
+            'analyst_hold': self.analyst_hold,
+            'analyst_sell': self.analyst_sell,
+            'analyst_strong_sell': self.analyst_strong_sell,
             'insider_volume': self.insider_volume,
             'ai_news_score': self.ai_news_score,
+            'ai_news_summary': self.ai_news_summary,
             'ai_moat_score': self.ai_moat_score,
+            'ai_moat_summary': self.ai_moat_summary,
+            'last_stock_update': self.last_stock_update.isoformat() if self.last_stock_update else None,
+            'last_fundamental_update': self.last_fundamental_update.isoformat() if self.last_fundamental_update else None,
             'news_sentiment_data': self.news_sentiment_data,
-            'last_stock_update': self.last_stock_update or None,
-            'last_fundamental_update': self.last_fundamental_update or None,
             'income_statement': self.income_statement_history,
             'cash_flow_history': self.cash_flow_history
         }

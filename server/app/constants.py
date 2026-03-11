@@ -13,6 +13,8 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 IN_DEPTH_PROMPT = os.path.join(BASE_DIR, "prompts/in_depth.md")
 COMPARE_PROMPT = os.path.join(BASE_DIR, "prompts/compare.md")
 USER_QUERY_PROMPT = os.path.join(BASE_DIR, "prompts/user_query.md")
+NEWS_ANALYSIS_PROMPT = os.path.join(BASE_DIR, "prompts/news_analysis.md")
+MOAT_ANALYSIS_PROMPT = os.path.join(BASE_DIR, "prompts/moat_analysis.md")
 
 
 # Internal API Routes
@@ -47,6 +49,7 @@ class AlphaVantageFunction:
     OVERVIEW = "OVERVIEW"
     INCOME_STATEMENT = "INCOME_STATEMENT"
     CASH_FLOW = "CASH_FLOW"
+    BALANCE_SHEET = "BALANCE_SHEET"
 
 # Financial Modeling Prep API Endpoints
 class FinancialModelingEndpoint:

@@ -3,7 +3,7 @@ from app import cache
 import requests
 import os
 import json
-from app.constants import ALPHA_VANTAGE_MCP_URL, CLAUDE_MODEL, USER_QUERY_PROMPT, COMPARE_PROMPT, IN_DEPTH_PROMPT
+from app.constants import ALPHA_VANTAGE_MCP_URL, CLAUDE_MODEL, USER_QUERY_PROMPT, COMPARE_PROMPT, IN_DEPTH_PROMPT, MOAT_ANALYSIS_PROMPT, NEWS_ANALYSIS_PROMPT
 from app.utils.api import build_alpha_vantage_url
 from app.constants import AlphaVantageFunction
 from anthropic import AsyncAnthropic
@@ -306,3 +306,56 @@ def get_user_query():
     except Exception as e:
         current_app.logger.error(f"Error generating generating user query response: {e}")
         return jsonify({"error": "Failed to generate response for user query"}), 500
+
+
+def get_news_analysis(stock):
+
+    prompt = get_prompt(NEWS_ANALYSIS_PROMPT)
+    if not prompt:
+        raise ValueError("News analysis prompt not found")
+
+    # Inject data into prompt
+    prompt = prompt.replace('{symbol}', stock.symbol)
+    news_data_string = json.dumps(stock.news_sentiment_data) if stock.news_sentiment_data else "No recent news."
+    prompt = prompt.replace('{news_json}', news_data_string)
+
+    try:
+        response_text = asyncio.run(query_alpha_bot(prompt, False))
+        try:
+            # Strip markdown codeblocks if Claude includes them
+            clean_text = response_text.replace("```json", "").replace("```", "").strip()
+            return json.loads(clean_text)
+        except json.JSONDecodeError:
+            print(f"Failed to parse news JSON: {response_text}", flush=True)
+            return {"ai_news_score": 50, "ai_news_summary": "Analysis failed or unavailable."}
+    except Exception as e:
+        print(f"News Analysis Error for {stock.symbol}: {e}")
+        return {"ai_news_score": 50, "ai_news_summary": "Analysis failed or unavailable."}
+
+def get_moat_analysis(stock):
+
+    prompt = get_prompt(MOAT_ANALYSIS_PROMPT)
+    if not prompt:
+        raise ValueError("Moat analysis prompt not found")
+    # Inject data into prompt
+    prompt = prompt.replace('{company_name}', str(stock.name or ""))
+    prompt = prompt.replace('{symbol}', str(stock.symbol or ""))
+    prompt = prompt.replace('{description}', str(stock.description or ""))
+    prompt = prompt.replace('{operating_margin}', str(stock.operating_margin))
+    prompt = prompt.replace('{profit_margin}', str(stock.profit_margin))
+    prompt = prompt.replace('{roe}', str(stock.roe))
+    prompt = prompt.replace('{free_cash_flow}', str(stock.free_cash_flow))
+    prompt = prompt.replace('{market_cap}', str(stock.market_cap))
+
+    try:
+        response_text = asyncio.run(query_alpha_bot(prompt, False))
+        try:
+            # Strip markdown codeblocks if Claude includes them
+            clean_text = response_text.replace("```json", "").replace("```", "").strip()
+            return json.loads(clean_text)
+        except json.JSONDecodeError:
+            print(f"Failed to parse moat JSON: {response_text}", flush=True)
+            return {"ai_moat_score": 50, "ai_moat_summary": "Analysis failed or unavailable."}
+    except Exception as e:
+        print(f"Moat Analysis Error for {stock.symbol}: {e}")
+        return {"ai_moat_score": 50, "ai_moat_summary": "Analysis failed or unavailable."}
