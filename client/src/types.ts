@@ -180,7 +180,6 @@ export interface AlphaBotResponse {
 // Used for after alpha bot response is parsed
 export interface CompareResponse {
   analysis: string;
-  radarChartData: ChartData;
   doughnutChartData: ChartData;
 }
 

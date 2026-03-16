@@ -16,8 +16,8 @@ interface MetricRowProps {
 
 const MetricRow: React.FC<MetricRowProps> = ({ label, value }) => (
     <tr className="border-b border-border-main/20 last:border-b-0 hover:bg-border-main/5 transition-colors">
-        <td className="p-4 text-base font-bold text-primary text-left w-1/2">{label}</td>
-        <td className="p-4 text-base text-text-main text-right w-1/2 font-medium">{value}</td>
+        <td className="p-2.5 text-sm font-bold text-primary text-left w-1/2">{label}</td>
+        <td className="p-2.5 text-sm text-text-main text-right w-1/2 font-medium">{value}</td>
     </tr>
 );
 
@@ -29,7 +29,7 @@ const StockMetricsTable: React.FC<{ stock: Stock | null }> = ({ stock }) => {
     const dividendYield = stock?.dividend_yield;
 
     return (
-        <div className="flex justify-center items-start w-full max-w-[800px] p-6 bg-form-bg rounded-2xl mb-8 shadow-lg border border-border-main/10 mt-6 mx-auto relative overflow-hidden">
+        <div className="flex justify-center items-start w-full max-w-[800px] p-4 bg-form-bg rounded-xl mb-6 shadow-lg border border-border-main/10 mt-4 mx-auto relative overflow-hidden">
             <div className="absolute top-[-50%] left-[-10%] w-[100%] h-[100%] bg-primary/5 rounded-full blur-3xl -z-10"></div>
             <table className="w-full border-collapse relative z-10">
                 <tbody>

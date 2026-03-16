@@ -1,16 +1,21 @@
 import { ClientSideRowModelModule, ColDef, TooltipModule, ValidationModule, ValueFormatterParams, themeQuartz } from 'ag-grid-community';
 import { AgGridReact, CustomCellRendererProps } from 'ag-grid-react';
-import React, { useContext, useMemo } from 'react';
+import React, { useContext, useMemo, useState } from 'react';
 import { ThemeContext } from '../../ThemeContext';
 import removeIcon from '../../resources/x-close-delete-svgrepo-com.svg';
 import { Stock } from '../../types';
 import { formatMarketCap, formatVolume } from '../../utils/formatters';
+import AdvancedSettingsPanel, { RadarTemplate } from './AdvancedSettingsPanel';
 import ControlPanel from './ControlPanel';
+import RadarGraph from './RadarGraph';
 
 // AG Grid styles moved to index.css for correct ordering
 
 export interface StockTableProps {
     stocks: Stock[];
+    radarScores: Record<string, Record<string, number>>;
+    activeTemplate: RadarTemplate;
+    setActiveTemplate: (template: RadarTemplate) => void;
     selectedSymbols: Set<string>;
     toggleSelectSymbol: (symbol: string) => void;
     onRowClick: (symbol: string) => void;
@@ -34,6 +39,9 @@ export interface StockTableProps {
  */
 const StockTable: React.FC<StockTableProps> = ({
     stocks,
+    radarScores,
+    activeTemplate,
+    setActiveTemplate,
     selectedSymbols,
     toggleSelectSymbol,
     onRowClick,
@@ -46,6 +54,7 @@ const StockTable: React.FC<StockTableProps> = ({
     error,
 }) => {
     const { theme } = useContext(ThemeContext);
+    const [showAdvanced, setShowAdvanced] = useState(false);
 
     // Modern V35 programmatic theme hooking native dark mode text/scrollbars without breaking SASS variables
     const myTheme = useMemo(() => {
@@ -63,6 +72,74 @@ const StockTable: React.FC<StockTableProps> = ({
 
     // AG Grid columns definition
     const columnDefs: ColDef<Stock>[] = useMemo(() => [
+{
+            colId: "radar",
+            headerName: "Radar",
+            pinned: "left",
+            width: 120,
+            sortable: false,
+            filter: false,
+            // 1. THE NATIVE GRID TOOLTIP FIX
+            // This grabs the scores and formats them into a clean string on hover
+            tooltipValueGetter: (params) => {
+                const stock = params.data;
+                if (!stock) return "";
+                const scores = radarScores[stock.symbol];
+                if (!scores) return "Loading...";
+                
+                // Formats as: "Valuation: 85 | Growth: 40 | Stability: 92..."
+                return Object.entries(scores)
+                    .map(([key, val]) => `${key}: ${Math.round(val)}`)
+                    .join(' | ');
+            },
+            cellStyle: { padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' },
+            cellRenderer: (params: CustomCellRendererProps<Stock>) => {
+                const stock = params.data;
+                if (!stock) return null;
+                const scores = radarScores[stock.symbol];
+                if (!scores) return <div className="text-xs text-gray-500 flex items-center justify-center h-full">Loading...</div>;
+
+                const labels = Object.keys(scores);
+                const dataPts = labels.map(l => scores[l]);
+
+                // 2. THE TRAFFIC LIGHT LOGIC
+                // Sum up all 6 scores (Max possible is 600)
+                const totalScore = dataPts.reduce((acc, curr) => acc + curr, 0);
+
+                // Default to Primary Green (> 400)
+                let borderColor = '#069042'; 
+                let bgColor = 'rgba(6, 144, 66, 0.3)';
+
+                if (totalScore < 300) {
+                    // Danger Red
+                    borderColor = '#ef4444'; 
+                    bgColor = 'rgba(239, 68, 68, 0.3)';
+                } else if (totalScore <= 400) {
+                    // Warning Yellow
+                    borderColor = '#eab308'; 
+                    bgColor = 'rgba(234, 179, 8, 0.3)';
+                }
+
+                const chartData = {
+                    labels,
+                    datasets: [{
+                        label: stock.symbol,
+                        data: dataPts,
+                        backgroundColor: bgColor,
+                        borderColor: borderColor,
+                        borderWidth: 2,
+                        fill: true
+                    }]
+                };
+
+                return (
+                    // Bumped the size up slightly to 110x50 so the shapes pop more!
+                    <div className="w-[100px] h-[40px] flex items-center justify-center min-w-1 min-h-[40px]">
+                        <RadarGraph data={chartData} hideLegend={true} hideAxes={true} hideToolTip={true} height={50} outerRadius="100%" cy={"50%"} />
+                    </div>
+                );
+            }
+        },
         { 
             field: "symbol", 
             headerName: "Symbol", 
@@ -251,7 +328,7 @@ const StockTable: React.FC<StockTableProps> = ({
             filter: false,
             cellClass: "ag-cell-action",
             headerClass: "ag-cell-action",
-            cellStyle: { display: 'flex', alignItems: 'center', justifyContent: 'center' },
+            cellStyle: { padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' },
             cellRenderer: (params: CustomCellRendererProps<Stock>) => {
                 const stock = params.data;
                 if (!stock) return null;
@@ -281,7 +358,7 @@ const StockTable: React.FC<StockTableProps> = ({
             filter: false,
             cellClass: "ag-cell-action",
             headerClass: "ag-cell-action",
-            cellStyle: { display: 'flex', alignItems: 'center', justifyContent: 'center' },
+            cellStyle: { padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' },
             cellRenderer: (params: CustomCellRendererProps<Stock>) => {
                 const stock = params.data;
                 if (!stock) return null;
@@ -301,7 +378,7 @@ const StockTable: React.FC<StockTableProps> = ({
                 );
             }
         }
-    ], [selectedSymbols, toggleSelectSymbol, onRemove]);
+    ], [selectedSymbols, toggleSelectSymbol, onRemove, radarScores]);
 
     const defaultColDef = useMemo(() => ({
         sortable: true,
@@ -326,9 +403,23 @@ const StockTable: React.FC<StockTableProps> = ({
                 label: compareLoading ? "Comparing..." : "Compare Selected",
                 onClick: onCompare,
                 disabled: selectedSymbols.size < 2 || selectedSymbols.size > 10 || compareLoading
+            }, {
+                label: showAdvanced ? "Hide Advanced" : "Advanced",
+                onClick: () => setShowAdvanced(!showAdvanced)
             }]}
             info={`Selected: ${selectedSymbols.size} (min 2, max 10) ${compareError ? ` - ${compareError}` : ''}${error ? ` - ${error}` : ''}`}
         >
+            {showAdvanced && (
+                <AdvancedSettingsPanel 
+                    onClose={() => setShowAdvanced(false)}
+                    initialTemplate={activeTemplate}
+                    onApply={(template: RadarTemplate) => {
+                        console.log("Applying active template!", template);
+                        setActiveTemplate(template);
+                        setShowAdvanced(false);
+                    }}
+                />
+            )}
             <div className={`ag-theme-quartz w-full`} style={{ height: 600 }}>
                 <AgGridReact
                     theme={myTheme}
@@ -336,8 +427,8 @@ const StockTable: React.FC<StockTableProps> = ({
                     rowData={stocks}
                     columnDefs={columnDefs}
                     defaultColDef={defaultColDef}
-                    rowHeight={55}
-                    headerHeight={45}
+                    rowHeight={45}
+                    headerHeight={36}
                     onCellClicked={(e) => {
                         // Prevent row click navigation if clicking on Action columns
                         const colId = e.column.getColId();

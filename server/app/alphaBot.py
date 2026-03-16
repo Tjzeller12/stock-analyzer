@@ -239,16 +239,25 @@ def get_compare_analysis():
     data = request.json
 
     stock_symbols = data.get("stock_symbols")
+    equations = data.get("equations", {})
+    scores = data.get("scores", {})
 
     if not stock_symbols:
         print("ERROR: Missing stock_symbols", flush=True)
         return jsonify({"error": "Stock symbols are required"}), 400
+
     prompt = get_prompt(COMPARE_PROMPT)
     if not prompt:
         return jsonify({"error": "Prompt not found"}), 404
     prompt = prompt.replace("{stock_symbols}", ", ".join(stock_symbols))
 
     market_context = "<market_data>\n"
+
+    market_context += "=== USER'S CUSTOM ALGORITHMS ===\n"
+    market_context += f"{json.dumps(equations, indent=2)}\n\n"
+    market_context += "=== RESULTING SCORES (0-100, Higher is Better) ===\n"
+    market_context += f"{json.dumps(scores, indent=2)}\n\n"
+
     for symbol in stock_symbols:
         stock = StockMaster.query.filter_by(symbol=symbol).first()
         if stock:
@@ -263,7 +272,6 @@ def get_compare_analysis():
             stock_data.pop('cash_flow_history', None)
             
             market_context += f"METRICS: {json.dumps(stock_data, default=str)}\n"
-            market_context += f"NEWS_SENTIMENT: {json.dumps(stock.news_sentiment_data)}\n"
             # Explicitly decode the volume for the LLM
             volume = stock.insider_volume or 0
             if volume > 0:

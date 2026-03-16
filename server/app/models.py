@@ -261,6 +261,50 @@ class Filter(db.Model):
             'filter_name': self.filter_name
         }
 
+class MarketStats(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    scope_type = db.Column(db.String(50), nullable=False) # e.g., "global", "sector", "industry"
+    scope_name = db.Column(db.String(100), nullable=False) # e.g., "All", "Technology", "Software - Infrstructure"
+    stats_data = db.Column(db.JSON, nullable=False, default=dict)
+    last_updated = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f'<MarketStats {self.scope_type}:{self.scope_name}>'
+
+    def to_dict(self):
+        return {
+            'scope_type': self.scope_type,
+            'scope_name': self.scope_name,
+            'stats_data': self.stats_data,
+            'last_updated': self.last_updated.isoformat() if self.last_updated else None
+        }
+
+class AnalysisTemplate(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.String(255))
+    creator_id = db.Column(db.String(32), db.ForeignKey('user.id'), nullable=True) # Null for default templates
     
+    # Store equations as a JSON object
+    # Example:
+    # {
+    #   "Valuation": "(n_pe_ratio * 0.4) + (n_ev_to_ebitda * 0.4) + (n_price_to_fc * 0.2)",
+    #   ...
+    # }
+    equations = db.Column(db.JSON, nullable=False)
+    
+    is_default = db.Column(db.Boolean, default=False)
+    time_created = db.Column(db.DateTime, default=datetime.utcnow)
+    def __repr__(self):
+        return f'<AnalysisTemplate {self.name}>'
+        
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'description': self.description,
+            'equations': self.equations,
+            'is_default': self.is_default
+        }
     
     

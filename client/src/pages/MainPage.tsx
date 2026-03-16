@@ -2,11 +2,12 @@
  * MainPage component
  * Main dashboard for the application, displaying user's stocks, news feed, and comparison charts.
  */
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import RadarGraph from '../components/common/RadarGraph';
 import StyledMarkdown from '../components/common/StyledMarkdown';
 import "../utils/formatters";
 // Stock interface contains data about a stock
+import { DEFAULT_TEMPLATE, RadarTemplate } from '../components/common/AdvancedSettingsPanel';
 import { AlphaBotResponseCard } from "../components/common/AlphaBotResponseCard";
 import Card from '../components/common/Card';
 import { DoughnutChart } from "../components/common/DoughnutChart";
@@ -19,12 +20,15 @@ import { useCompareAlphaBotManager } from '../hooks/useCompareAlphaBotManager';
 import { useNewsListManager } from '../hooks/useNewsListManager';
 import { useStockTableManager } from '../hooks/useStockTableManager';
 import { Article } from '../types';
+
 // MainPage component: Serves as the dashboard for the stock analyzer application
 const MainPage: React.FC = () => {
 
-  const { stocks, sortBy, fetchStocks, addStock, removeStock, refreshStocks, navigateToStockPage, setSortBy, error } = useStockTableManager();
+  const [activeTemplate, setActiveTemplate] = useState<RadarTemplate>(DEFAULT_TEMPLATE);
+
+  const { stocks, sortBy, radarScores, fetchStocks, fetchCompareRadarScores, addStock, removeStock, refreshStocks, navigateToStockPage, setSortBy, error } = useStockTableManager();
   const { articles, newsFilter, handleFilterChange } = useNewsListManager();
-  const { selectedSymbols, compareLoading, compareError, compareResult, compareStocks, toggleSelectSymbol } = useCompareAlphaBotManager();
+  const { compareRadarScores, selectedSymbols, compareLoading, compareError, compareResult, compareStocks, toggleSelectSymbol } = useCompareAlphaBotManager();
 
 
 
@@ -44,6 +48,18 @@ const MainPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [newsFilter]);
 
+  useEffect(() => {
+    // Fetch individual radar scores for the table whenever stocks or the template change
+    const symbols = stocks.map(s => s.symbol);
+    if (symbols.length > 0) {
+        // Here we use the compare endpoint as a bulk-fetch for the table stats, 
+        // to avoid N round trips to the single endpoint on page load.
+        // It's not *technically* compare mode, we are just borrowing the bulk capability.
+        void fetchCompareRadarScores(symbols, activeTemplate);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stocks.length, activeTemplate]);
+
   // Main page
   return (
     <div className="flex flex-col gap-5 p-0">
@@ -56,10 +72,13 @@ const MainPage: React.FC = () => {
         {/* Stock Table */}
           <StockTable
             stocks={stocks}
+            radarScores={radarScores}
+            activeTemplate={activeTemplate}
+            setActiveTemplate={setActiveTemplate}
             selectedSymbols={selectedSymbols}
             toggleSelectSymbol={toggleSelectSymbol}
             onRowClick={navigateToStockPage}
-            onCompare={() => { void compareStocks(stocks.map(s => s.symbol)); }}
+            onCompare={() => { void compareStocks(stocks.map(s => s.symbol), activeTemplate); }}
             onRemove={removeStock}
             onAdd={addStock}
             onRefresh={refreshStocks}
@@ -90,12 +109,12 @@ const MainPage: React.FC = () => {
         )}  
       </Card>
       <Card title="Compare Radar Graph" variant="glass" className="col-span-1 lg:col-start-5 lg:col-span-2 lg:row-start-2 w-full flex justify-center items-center">
-        {(compareResult || compareLoading) && (
-            <AlphaBotResponseCard isLoading={compareLoading}>
-            {compareResult && compareResult.radarChartData && (
+        {(compareRadarScores || compareLoading) && (
+            <AlphaBotResponseCard isLoading={compareLoading && !compareRadarScores}>
+            {compareRadarScores && (
                     <>
-                        <div className="w-full flex justify-center items-center">
-                        <RadarGraph data={compareResult.radarChartData}/>
+                        <div className="w-full h-full flex justify-center items-center">
+                        <RadarGraph data={compareRadarScores}/>
                         </div>
 
                     </>

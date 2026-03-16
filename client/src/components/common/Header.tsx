@@ -40,18 +40,18 @@ const handleNavButtonClick = (path: string) => {
     navigate(path);
   };
 
-    const buttonClass = "px-5 py-2.5 bg-btn-bg text-white font-semibold my-[10px] mx-[4px] border border-white/10 rounded-lg cursor-pointer hover:shadow-lg hover:shadow-btn-bg/30 hover:-translate-y-0.5 active:scale-95 transition-all duration-300";
+    const buttonClass = "px-4 py-1.5 text-sm bg-btn-bg text-white font-semibold my-[6px] mx-[4px] border border-white/10 rounded-md cursor-pointer hover:shadow-lg hover:shadow-btn-bg/30 hover:-translate-y-0.5 active:scale-95 transition-all duration-300";
 
     return (
-        <header className="flex justify-between items-center w-full min-h-[90px] bg-primary text-white font-bold px-[20px] py-[10px] box-border shadow-md">
-            <div className="flex items-center gap-[20px] flex-1">
+        <header className="flex justify-between items-center w-full min-h-[60px] bg-primary text-white font-bold px-[20px] py-[6px] box-border shadow-md">
+            <div className="flex items-center gap-[12px] flex-1">
                 <img
-                    className="max-h-[70px] w-auto cursor-pointer hover:scale-110 transition-transform duration-300 ease-in-out"
+                    className="max-h-[40px] w-auto cursor-pointer hover:scale-105 transition-transform duration-300 ease-in-out"
                     src={logo}
                     alt="AlphaBot Logo"
                     onClick={handleLogoClick}
                 />
-                <h1 className="text-white text-3xl font-extrabold m-0 whitespace-nowrap tracking-tight drop-shadow-sm">{props.title}</h1>
+                <h1 className="text-white text-xl font-extrabold m-0 whitespace-nowrap tracking-tight drop-shadow-sm">{props.title}</h1>
             </div>
             
             <div className="flex items-center gap-[15px] flex-wrap justify-end mr-[15px]">
