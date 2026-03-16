@@ -22,20 +22,7 @@ export const useCompareAlphaBotManager = () => {
     const [compareError, setCompareError] = useState<string | null>(null);
     const [compareResult, setCompareResult] = useState<CompareResponse | null>(() => {
         const saved = localStorage.getItem("compareResult");
-        if (saved && saved !== "null" && saved !== "undefined") {
-            try {
-                const parsed = JSON.parse(saved) as CompareResponse;
-                // We HAVE to reinject the colors when pulling from the cache!
-                if (parsed && parsed.doughnutChartData) {
-                    injectDoughnutStyling(parsed.doughnutChartData);
-                }
-                return parsed;
-            } catch (e) {
-                console.error("Failed to parse cached compare result", e);
-                return null;
-            }
-        }
-        return null;
+        return saved ? (JSON.parse(saved) as CompareResponse) : null;
     });
 
     const [compareRadarScores, setCompareRadarScores] = useState<ChartData | null>(() => {
@@ -58,11 +45,7 @@ export const useCompareAlphaBotManager = () => {
 
     // Persist compareResult whenever it changes
     useEffect(() => {
-        if (compareResult) {
-            localStorage.setItem("compareResult", JSON.stringify(compareResult));
-        } else {
-            localStorage.removeItem("compareResult");
-        }
+        localStorage.setItem("compareResult", JSON.stringify(compareResult));
     }, [compareResult]);
 
     useEffect(() => {
