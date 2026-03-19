@@ -92,3 +92,64 @@ def in_depth_data():
         return jsonify(in_depth_data), 500
     
     return jsonify(in_depth_data), 200
+
+@bp.route('/chart_data', methods=['POST'])
+@login_required
+def chart_data():
+    symbol = request.json.get("symbol")
+    time_frame = request.json.get("timeFrame", "1D")
+    
+    if not symbol:
+        return jsonify({"error": "No symbol provided"}), 400
+        
+    try:
+        if time_frame in ['1D', '1W']:
+            data = get_av_json(AlphaVantageFunction.TIME_SERIES_INTRADAY, symbol=symbol, interval='5min', outputsize='full')
+            time_series = data.get("Time Series (5min)", {})
+            date_format = "%Y-%m-%d %H:%M:%S"
+        else:
+            outputsize = 'compact' if time_frame in ['1M', '3M'] else 'full'
+            data = get_av_json(AlphaVantageFunction.TIME_SERIES_DAILY_ADJUSTED, symbol=symbol, outputsize=outputsize)
+            time_series = data.get("Time Series (Daily)", {})
+            date_format = "%Y-%m-%d"
+
+        if not time_series:
+            if "Information" in data or "Note" in data:
+                return jsonify({"error": "API rate limit exceeded. Please try again later."}), 429
+            return jsonify({"error": "No time series data available"}), 404
+
+        parsed_data = []
+        for dt_str, values in time_series.items():
+            dt_obj = datetime.datetime.strptime(dt_str, date_format)
+            timestamp = int(dt_obj.timestamp())
+            price = safe_float(values.get("5. adjusted close", values.get("4. close", 0)))
+            parsed_data.append({"time": timestamp, "value": price})
+            
+        parsed_data.sort(key=lambda x: x["time"])
+        
+        if parsed_data:
+            last_time = parsed_data[-1]["time"]
+            start_time = 0
+            
+            if time_frame == '1D':
+                start_time = last_time - (24 * 60 * 60)
+            elif time_frame == '1W':
+                start_time = last_time - (7 * 24 * 60 * 60)
+            elif time_frame == '1M':
+                start_time = last_time - (30 * 24 * 60 * 60)
+            elif time_frame == '3M':
+                start_time = last_time - (90 * 24 * 60 * 60)
+            elif time_frame == '6M':
+                start_time = last_time - (180 * 24 * 60 * 60)
+            elif time_frame == '1Y':
+                start_time = last_time - (365 * 24 * 60 * 60)
+            elif time_frame == '5Y':
+                start_time = last_time - (5 * 365 * 24 * 60 * 60)
+            
+            parsed_data = [d for d in parsed_data if d["time"] >= start_time]
+        
+        return jsonify(parsed_data), 200
+        
+    except Exception as e:
+        current_app.logger.error(f"Error fetching chart data: {str(e)}")
+        return jsonify({"error": str(e)}), 500

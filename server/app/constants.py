@@ -29,6 +29,7 @@ class Routes:
     DATA_STOCK = "/data/stock_data"
     DATA_NEWS = "/data/news"
     DATA_IN_DEPTH = "/data/in_depth_data"
+    DATA_CHART = "/data/chart_data"
     
     # AlphaBot routes
     ALPHA_BOT = "/alphaBot"
@@ -41,6 +42,8 @@ class AlphaVantageFunction:
     NEWS_SENTIMENT = "NEWS_SENTIMENT"
     GLOBAL_QUOTE = "GLOBAL_QUOTE"
     TIME_SERIES_DAILY = "TIME_SERIES_DAILY"
+    TIME_SERIES_DAILY_ADJUSTED = "TIME_SERIES_DAILY_ADJUSTED"
+    TIME_SERIES_INTRADAY = "TIME_SERIES_INTRADAY"
     TIME_SERIES_INTRADAY = "TIME_SERIES_INTRADAY"
     TIME_SERIES_MONTHLY = "TIME_SERIES_MONTHLY"
     INSIDER_TRANSACTIONS = "INSIDER_TRANSACTIONS"

@@ -11,6 +11,7 @@ import StockMetricsTable from "../components/StockMetricsTable";
 import { ALPHA_BOT_ENDPOINTS, DATA_ENDPOINTS } from '../constants/api';
 import logo from "../resources/alphaBotLogo.png";
 import { authPost } from '../utils/api';
+import EventPulseChart from "../components/charts";
 
 import { Stock } from '../types';
 
@@ -22,6 +23,8 @@ const StockPage: React.FC = () => {
   const [queryResult] = useState<string | null>(null);
   const [, setLoading] = useState(false);
   const [llmPrompt, setLlmPrompt] = useState("");
+  const [timeFrame, setTimeFrame] = useState('1D');
+  const [chartData, setChartData] = useState<any[]>([]);
 
   const fetchStock = async () => {
     if (!symbol) return;
@@ -61,12 +64,29 @@ const StockPage: React.FC = () => {
     }
   };
 
+  const fetchChartData = async () => {
+    if (!symbol) return;
+    try {
+      const data = await authPost<any[]>(DATA_ENDPOINTS.CHART, { symbol, timeFrame });
+      if (Array.isArray(data)) {
+        setChartData(data);
+      }
+    } catch (error) {
+      console.error("Chart data fetch failed:", error);
+    }
+  };
+
   useEffect(() => {
     void fetchStock();
     void fetchInDepthData();
     void fetchAlphaBotInDepthAnalysis();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [symbol]);
+
+  useEffect(() => {
+    void fetchChartData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [symbol, timeFrame]);
 
   const handleLogoClick = () => {
     navigate("/main");
@@ -96,7 +116,12 @@ const StockPage: React.FC = () => {
   return (
     <div className="flex flex-col items-center min-h-screen p-0 font-sans bg-background text-text-main">
       <StockHeader stock={stock} onLogoClick={handleLogoClick} logo={logo} />
-
+      <EventPulseChart 
+        symbol={symbol || ''} 
+        data={chartData} 
+        activeTimeFrame={timeFrame as any}
+        onTimeFrameChange={setTimeFrame}
+      />
       <StockMetricsTable stock={stock} />
 
       <div className="flex flex-col lg:flex-row items-stretch gap-6 w-[97.5%] h-full bg-list-bg p-6 rounded-2xl shadow-lg border border-border-main/10 mt-4">

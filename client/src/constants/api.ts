@@ -23,6 +23,7 @@ export const DATA_ENDPOINTS = {
     STOCK: `${API_BASE_URL}/data/stock_data`,
     NEWS: `${API_BASE_URL}/data/news`,
     IN_DEPTH: `${API_BASE_URL}/data/in_depth_data`,
+    CHART: `${API_BASE_URL}/data/chart_data`,
 } as const;
 
 // AlphaBot endpoints
