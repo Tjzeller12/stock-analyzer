@@ -87,3 +87,63 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
     monospace;
 }
+
+/* AG Grid Glass Theme Overrides */
+.ag-theme-quartz:not(.ag-theme-quartz-dark), .ag-theme-quartz-dark {
+  --ag-background-color: transparent !important;
+  --ag-row-background-color: transparent !important;
+  --ag-odd-row-background-color: transparent !important;
+  --ag-header-background-color: var(--list-color) !important;
+  --ag-row-hover-color: var(--row-hover-color) !important;
+  --ag-wrapper-border-color: transparent !important;
+  --ag-borders: none !important;
+  --ag-font-family: inherit !important;
+  --ag-data-color: var(--text-color) !important;
+}
+
+/* Force aggressive background transparency on wrappers to prevent Quartz default white blocking */
+.ag-theme-quartz .ag-root-wrapper,
+.ag-theme-quartz-dark .ag-root-wrapper {
+   background-color: transparent !important;
+}
+
+/* Replicate old zebra striping manually on the exact row classes */
+.ag-theme-quartz .ag-row-even, .ag-theme-quartz-dark .ag-row-even {
+  background-color: var(--even-row-color) !important;
+}
+.ag-theme-quartz .ag-row-odd, .ag-theme-quartz-dark .ag-row-odd {
+  background-color: transparent !important;
+}
+
+/* Ensure horizontal left alignment, overriding AG Grid numeric right-aligns */
+.ag-theme-quartz .ag-cell:not(.ag-cell-action),
+.ag-theme-quartz .ag-right-aligned-cell:not(.ag-cell-action) {
+  justify-content: flex-start !important;
+  text-align: left !important;
+}
+
+.ag-theme-quartz .ag-header-cell-label:not(.ag-cell-action) {
+  justify-content: flex-start !important;
+}
+
+/* Keep Action Cells Centered */
+.ag-theme-quartz .ag-cell-action {
+  justify-content: center !important;
+}
+
+/* AG Grid Tooltip Opacity Fix */
+.ag-theme-quartz .ag-tooltip,
+.ag-theme-quartz-dark .ag-tooltip {
+  background-color: var(--background-color) !important;
+  color: var(--text-color) !important;
+  opacity: 1 !important;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5) !important;
+  padding: 8px !important;
+}
+
+/* AI Glowing Headers */
+.ai-header-glow .ag-header-cell-text {
+  color: var(--primary-green) !important;
+  text-shadow: 0 0 2px rgba(13, 218, 102, 0.8), 0 0 6px rgba(6, 144, 66, 0.4);
+}

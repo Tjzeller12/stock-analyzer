@@ -88,8 +88,8 @@ def get_in_depth_financials(symbol):
             stock_master.debt_to_equity = safe_float(bs_data.get("totalDebt", 0)) / safe_float(bs_data.get("totalStockholdersEquity", 1))  # Calculated
             stock_master.roic = safe_float(km_data.get("roic", 0))
             stock_master.price_to_fc = safe_float(km_data.get("pfcfRatio", 0))
-            stock_master.cashAndCashEquivalents = safe_float(bs_data.get("cashAndCashEquivalents", 0))
-            stock_master.last_in_depth_update = datetime.datetime.now()
+            stock_master.cash_and_equiv = safe_float(bs_data.get("cashAndCashEquivalents", 0))
+            stock_master.last_fundamental_update = datetime.datetime.now()
 
             db.session.commit()
 

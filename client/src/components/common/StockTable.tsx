@@ -1,12 +1,21 @@
-import React from 'react';
+import { ClientSideRowModelModule, ColDef, TooltipModule, ValidationModule, ValueFormatterParams, themeQuartz } from 'ag-grid-community';
+import { AgGridReact, CustomCellRendererProps } from 'ag-grid-react';
+import React, { useContext, useMemo, useState } from 'react';
+import { ThemeContext } from '../../ThemeContext';
 import removeIcon from '../../resources/x-close-delete-svgrepo-com.svg';
 import { Stock } from '../../types';
 import { formatMarketCap, formatVolume } from '../../utils/formatters';
+import AdvancedSettingsPanel, { RadarTemplate } from './AdvancedSettingsPanel';
 import ControlPanel from './ControlPanel';
-import Table, { Column } from './Table';
+import RadarGraph from './RadarGraph';
+
+// AG Grid styles moved to index.css for correct ordering
 
 export interface StockTableProps {
     stocks: Stock[];
+    radarScores: Record<string, Record<string, number>>;
+    activeTemplate: RadarTemplate;
+    setActiveTemplate: (template: RadarTemplate) => void;
     selectedSymbols: Set<string>;
     toggleSelectSymbol: (symbol: string) => void;
     onRowClick: (symbol: string) => void;
@@ -24,12 +33,15 @@ export interface StockTableProps {
  * StockTable Component
  * 
  * A complex composite component specifically designed to display a portfolio of stocks.
- * It combines the generic `Table` component with the `ControlPanel` UI to provide an 
+ * It combines the `AgGridReact` component with the `ControlPanel` UI to provide an 
  * integrated interface for searching/adding stocks, selecting multiple stocks via checkboxes
  * for LLM comparison, deleting stocks, and sorting columns by financial metrics.
  */
 const StockTable: React.FC<StockTableProps> = ({
     stocks,
+    radarScores,
+    activeTemplate,
+    setActiveTemplate,
     selectedSymbols,
     toggleSelectSymbol,
     onRowClick,
@@ -40,202 +52,340 @@ const StockTable: React.FC<StockTableProps> = ({
     compareLoading,
     compareError,
     error,
-    onSort
 }) => {
+    const { theme } = useContext(ThemeContext);
+    const [showAdvanced, setShowAdvanced] = useState(false);
 
-    const columns: Column<Stock>[] = [
-        { header: "Symbol", accessor: "symbol", className: "stock-symbol", onHeaderClick: () => onSort("symbol") },
-        { 
-            header: "Name", 
-            accessor: "name", 
-            className: "stock-name", 
-            render: (stock) => {
-                const val =stock.company_overview?.Name;
-                return val ? val : "N/A";
-            }, 
-            onHeaderClick: () => onSort("name"), 
-            sortable: true 
-        },
-        { 
-            header: "Price", 
-            accessor: "price", 
-            className: "stock-data min-w-[80px]",
-            render: (stock) => `$${stock.price.toFixed(2)}`,
-            onHeaderClick: () => onSort("price"),
-            sortable: true
-        },
-        { 
-            header: "Market Cap", 
-            accessor: "company_overview", 
-            className: "stock-data min-w-[100px]",
-            render: (stock) => {
-                const val = stock.company_overview?.MarketCapitalization;
-                return val ? formatMarketCap(parseFloat(val)) : "N/A";
+    // Modern V35 programmatic theme hooking native dark mode text/scrollbars without breaking SASS variables
+    const myTheme = useMemo(() => {
+        return themeQuartz.withParams({
+            backgroundColor: "transparent",
+            foregroundColor: theme === 'dark' ? "#ffffff" : "#0f0f0f",
+            browserColorScheme: theme === 'dark' ? "dark" : "light",
+            headerBackgroundColor: "transparent",
+            rowHoverColor: "rgba(157, 157, 157, 0.1)",
+            wrapperBorder: false,
+            rowBorder: false,
+            columnBorder: false,
+        });
+    }, [theme]);
+
+    // AG Grid columns definition
+    const columnDefs: ColDef<Stock>[] = useMemo(() => [
+{
+            colId: "radar",
+            headerName: "Radar",
+            pinned: "left",
+            width: 120,
+            sortable: false,
+            filter: false,
+            // 1. THE NATIVE GRID TOOLTIP FIX
+            // This grabs the scores and formats them into a clean string on hover
+            tooltipValueGetter: (params) => {
+                const stock = params.data;
+                if (!stock) return "";
+                const scores = radarScores[stock.symbol];
+                if (!scores) return "Loading...";
+                
+                // Formats as: "Valuation: 85 | Growth: 40 | Stability: 92..."
+                return Object.entries(scores)
+                    .map(([key, val]) => `${key}: ${Math.round(val)}`)
+                    .join(' | ');
+            },
+            cellStyle: { padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' },
+            cellRenderer: (params: CustomCellRendererProps<Stock>) => {
+                const stock = params.data;
+                if (!stock) return null;
+                const scores = radarScores[stock.symbol];
+                if (!scores) return <div className="text-xs text-gray-500 flex items-center justify-center h-full">Loading...</div>;
+
+                const labels = Object.keys(scores);
+                const dataPts = labels.map(l => scores[l]);
+
+                // 2. THE TRAFFIC LIGHT LOGIC
+                // Sum up all 6 scores (Max possible is 600)
+                const totalScore = dataPts.reduce((acc, curr) => acc + curr, 0);
+
+                // Default to Primary Green (> 400)
+                let borderColor = '#069042'; 
+                let bgColor = 'rgba(6, 144, 66, 0.3)';
+
+                if (totalScore < 300) {
+                    // Danger Red
+                    borderColor = '#ef4444'; 
+                    bgColor = 'rgba(239, 68, 68, 0.3)';
+                } else if (totalScore <= 400) {
+                    // Warning Yellow
+                    borderColor = '#eab308'; 
+                    bgColor = 'rgba(234, 179, 8, 0.3)';
+                }
+
+                const chartData = {
+                    labels,
+                    datasets: [{
+                        label: stock.symbol,
+                        data: dataPts,
+                        backgroundColor: bgColor,
+                        borderColor: borderColor,
+                        borderWidth: 2,
+                        fill: true
+                    }]
+                };
+
+                return (
+                    // Bumped the size up slightly to 110x50 so the shapes pop more!
+                    <div className="w-[100px] h-[40px] flex items-center justify-center min-w-1 min-h-[40px]">
+                        <RadarGraph data={chartData} hideLegend={true} hideAxes={true} hideToolTip={true} height={50} outerRadius="100%" cy={"50%"} />
+                    </div>
+                );
             }
         },
         { 
-            header: "P/E", 
-            accessor: "company_overview", 
-            className: "stock-data min-w-[70px]",
-            render: (stock) => {
-                const val = stock.company_overview?.PERatio;
-                return val ? parseFloat(val).toFixed(2) : "N/A";
-            }
+            field: "symbol", 
+            headerName: "Symbol", 
+            pinned: "left", 
+            width: 100,
+            cellClass: "font-bold text-primary"
         },
         { 
-            header: "Fwd P/E", 
-            accessor: "company_overview", 
-            className: "stock-data min-w-[80px]",
-            render: (stock) => {
-                const val = stock.company_overview?.ForwardPE;
-                return val ? parseFloat(val).toFixed(2) : "N/A";
-            }
+            field: "name", 
+            headerName: "Name", 
+            valueGetter: (params) => params.data?.name || "N/A",
+            width: 200 
         },
         { 
-            header: "EV/EBITDA", 
-            accessor: "company_overview", 
-            className: "stock-data min-w-[100px]",
-            render: (stock) => {
-                const val = stock.company_overview?.EVToEBITDA;
-                return val ? parseFloat(val).toFixed(2) : "N/A";
-            }
+            field: "price", 
+            headerName: "Price", 
+            valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value != null ? `$${params.value.toFixed(2)}` : "N/A",
+            width: 100 
         },
         { 
-            header: "P/S", 
-            accessor: "company_overview", 
-            className: "stock-data min-w-[70px]",
-            render: (stock) => {
-                const val = stock.company_overview?.PriceToSalesRatioTTM;
-                return val ? parseFloat(val).toFixed(2) : "N/A";
-            }
+            headerName: "Market Cap", 
+            valueGetter: (params) => params.data?.market_cap,
+            valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value ? formatMarketCap(params.value) : "N/A",
+            width: 150 
         },
         { 
-            header: "PEG", 
-            accessor: "company_overview", 
-            className: "stock-data min-w-[70px]",
-            render: (stock) => {
-                const val = stock.company_overview?.PEGRatio;
-                return val ? parseFloat(val).toFixed(3) : "N/A";
-            }
+            headerName: "P/E", 
+            valueGetter: (params) => params.data?.pe_ratio,
+            valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value != null ? params.value.toFixed(2) : "N/A",
+            width: 100 
         },
         { 
-            header: "ROE", 
-            accessor: "company_overview", 
-            className: "stock-data min-w-[80px]",
-            render: (stock) => {
-                const val = stock.company_overview?.ReturnOnEquityTTM;
-                if (!val || val === "None") return "N/A";
-                const num = parseFloat(val);
-                return `${(num * 100).toFixed(1)}%`;
-            }
+            headerName: "Fwd P/E", 
+            valueGetter: (params) => params.data?.forward_pe,
+            valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value != null ? params.value.toFixed(2) : "N/A",
+            width: 120 
         },
         { 
-            header: "Op Margin", 
-            accessor: "company_overview", 
-            className: "stock-data min-w-[90px]",
-            render: (stock) => {
-                const val = stock.company_overview?.OperatingMarginTTM;
-                if (!val || val === "None") return "N/A";
-                const num = parseFloat(val);
-                return `${(num * 100).toFixed(1)}%`;
-            }
+            headerName: "EV/EBITDA", 
+            valueGetter: (params) => params.data?.ev_to_ebitda,
+            valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value != null ? params.value.toFixed(2) : "N/A",
+            width: 120 
         },
         { 
-            header: "Profit Margin", 
-            accessor: "company_overview", 
-            className: "stock-data min-w-[100px]",
-            render: (stock) => {
-                const val = stock.company_overview?.ProfitMargin;
-                if (!val || val === "None") return "N/A";
-                const num = parseFloat(val);
-                return `${(num * 100).toFixed(1)}%`;
-            }
+            headerName: "P/S", 
+            valueGetter: (params) => params.data?.price_to_sales,
+            valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value != null ? params.value.toFixed(2) : "N/A",
+            width: 100 
         },
         { 
-            header: "Rev Growth (QoQ)", 
-            accessor: "company_overview", 
-            className: "stock-data min-w-[130px]",
-            render: (stock) => {
-                const val = stock.company_overview?.QuarterlyRevenueGrowthYOY;
-                if (!val || val === "None") return "N/A";
-                const num = parseFloat(val);
-                return `${(num * 100).toFixed(1)}%`;
-            }
+            headerName: "PEG", 
+            valueGetter: (params) => params.data?.peg_ratio,
+            valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value != null ? params.value.toFixed(3) : "N/A",
+            width: 100 
         },
         { 
-            header: "EPS Growth (QoQ)", 
-            accessor: "company_overview", 
-            className: "stock-data min-w-[130px]",
-            render: (stock) => {
-                const val = stock.company_overview?.QuarterlyEarningsGrowthYOY;
-                if (!val || val === "None") return "N/A";
-                const num = parseFloat(val);
-                return `${(num * 100).toFixed(1)}%`;
-            }
+            headerName: "ROE", 
+            valueGetter: (params) => params.data?.roe,
+            valueFormatter: (params: ValueFormatterParams<Stock, number>) => {
+                if (params.value === undefined || params.value === null) return "N/A";
+                return `${(params.value * 100).toFixed(1)}%`;
+            },
+            width: 100 
         },
         { 
-            header: "Beta", 
-            accessor: "company_overview", 
-            className: "stock-data min-w-[70px]",
-            render: (stock) => {
-                const val = stock.company_overview?.Beta;
-                return val ? parseFloat(val).toFixed(3) : "N/A";
-            }
+            headerName: "Op Margin", 
+            valueGetter: (params) => params.data?.operating_margin,
+            valueFormatter: (params: ValueFormatterParams<Stock, number>) => {
+                if (params.value === undefined || params.value === null) return "N/A";
+                return `${(params.value * 100).toFixed(1)}%`;
+            },
+            width: 120 
         },
         { 
-            header: "Buy Ratings", 
-            accessor: "company_overview", 
-            className: "stock-data min-w-[100px] text-center",
-            render: (stock) => {
-                const strongBuy = parseInt(stock.company_overview?.AnalystRatingStrongBuy || "0");
-                const buy = parseInt(stock.company_overview?.AnalystRatingBuy || "0");
-                const total = (isNaN(strongBuy) ? 0 : strongBuy) + (isNaN(buy) ? 0 : buy);
-                return total > 0 ? total.toString() : "N/A";
+            headerName: "Profit Margin", 
+            valueGetter: (params) => params.data?.profit_margin,
+            valueFormatter: (params: ValueFormatterParams<Stock, number>) => {
+                if (params.value === undefined || params.value === null) return "N/A";
+                return `${(params.value * 100).toFixed(1)}%`;
+            },
+            width: 140 
+        },
+        { 
+            headerName: "ROA", 
+            valueGetter: (params) => params.data?.roa,
+            valueFormatter: (params: ValueFormatterParams<Stock, number>) => {
+                if (params.value === undefined || params.value === null) return "N/A";
+                return `${(params.value * 100).toFixed(1)}%`;
+            },
+            width: 100 
+        },
+        { 
+            headerName: "Rev Growth (QoQ)", 
+            valueGetter: (params) => params.data?.rev_growth_qoq,
+            valueFormatter: (params: ValueFormatterParams<Stock, number>) => {
+                if (params.value === undefined || params.value === null) return "N/A";
+                return `${(params.value * 100).toFixed(1)}%`;
+            },
+            width: 160 
+        },
+        { 
+            headerName: "EPS Growth (QoQ)", 
+            valueGetter: (params) => params.data?.eps_growth_qoq,
+            valueFormatter: (params: ValueFormatterParams<Stock, number>) => {
+                if (params.value === undefined || params.value === null) return "N/A";
+                return `${(params.value * 100).toFixed(1)}%`;
+            },
+            width: 160 
+        },
+        { 
+            headerName: "Total Assets", 
+            valueGetter: (params) => params.data?.total_assets,
+            valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value != null ? formatMarketCap(params.value) : "N/A",
+            width: 140 
+        },
+        { 
+            headerName: "Total Liab.", 
+            valueGetter: (params) => params.data?.total_liabilities,
+            valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value != null ? formatMarketCap(params.value) : "N/A",
+            width: 140 
+        },
+        { 
+            headerName: "Op. Cash Flow", 
+            valueGetter: (params) => params.data?.operating_cash_flow,
+            valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value != null ? formatMarketCap(params.value) : "N/A",
+            width: 140 
+        },
+        { 
+            headerName: "CapEx", 
+            valueGetter: (params) => params.data?.capital_expenditures,
+            valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value != null ? formatMarketCap(params.value) : "N/A",
+            width: 120 
+        },
+        { 
+            headerName: "Free Cash Flow", 
+            valueGetter: (params) => params.data?.free_cash_flow,
+            valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value != null ? formatMarketCap(params.value) : "N/A",
+            width: 150 
+        },
+        { 
+            headerName: "Debt/Equity", 
+            valueGetter: (params) => params.data?.debt_to_equity,
+            valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value != null ? params.value.toFixed(2) : "N/A",
+            width: 130 
+        },
+        { 
+            headerName: "Beta", 
+            valueGetter: (params) => params.data?.beta,
+            valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value != null ? params.value.toFixed(3) : "N/A",
+            width: 100 
+        },
+        { 
+            headerName: "Buy Ratings", 
+            valueGetter: (params) => params.data?.buy_ratings_count || 0,
+            valueFormatter: (params: ValueFormatterParams<Stock, number>) => (params.value && params.value > 0) ? params.value.toString() : "N/A",
+            width: 130 
+        },
+        {
+            field: "insider_volume",
+            headerName: "Insider Vol", 
+            valueFormatter: (params: ValueFormatterParams<Stock, number | undefined>) => params.value ? formatVolume(params.value) : "0",
+            width: 130 
+        },
+        {
+            headerName: "AI Moat",
+            field: "ai_moat_score",
+            valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value != null && params.value > 0 ? params.value.toFixed(0) : "N/A",
+            tooltipValueGetter: (params) => params.data?.ai_moat_summary || "No moat summary available.",
+            width: 110,
+            headerClass: "ai-header-glow"
+        },
+        {
+            headerName: "AI News",
+            field: "ai_news_score",
+            valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value != null && params.value > 0 ? params.value.toFixed(0) : "N/A",
+            tooltipValueGetter: (params) => params.data?.ai_news_summary || "No recent news summary.",
+            width: 110,
+            headerClass: "ai-header-glow"
+        },
+        {
+            colId: "select",
+            headerName: "Select",
+            pinned: "right",
+            width: 100,
+            sortable: false,
+            filter: false,
+            cellClass: "ag-cell-action",
+            headerClass: "ag-cell-action",
+            cellStyle: { padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' },
+            cellRenderer: (params: CustomCellRendererProps<Stock>) => {
+                const stock = params.data;
+                if (!stock) return null;
+                return (
+                    <div className="flex items-center justify-center h-full">
+                        <input
+                            className="w-[20px] h-[20px] cursor-pointer accent-[#069042]"
+                            type="checkbox"
+                            checked={selectedSymbols.has(stock.symbol)}
+                            onChange={() => {
+                                // Stop propagation so row doesn't get clicked
+                                toggleSelectSymbol(stock.symbol);
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                            aria-label={`Select ${stock.symbol}`}
+                        />
+                    </div>
+                );
             }
         },
         {
-            header: "Insider Vol", 
-            accessor: "insider_volume", 
-            className: "stock-data min-w-[100px]",
-            render: (stock) => {
-                const val = stock.insider_volume;
-                return val ? formatVolume(val) : "0";
+            colId: "remove",
+            headerName: "Remove",
+            pinned: "right",
+            width: 100,
+            sortable: false,
+            filter: false,
+            cellClass: "ag-cell-action",
+            headerClass: "ag-cell-action",
+            cellStyle: { padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' },
+            cellRenderer: (params: CustomCellRendererProps<Stock>) => {
+                const stock = params.data;
+                if (!stock) return null;
+                return (
+                    <div className="flex items-center justify-center h-full">
+                        <button
+                            className="w-7 h-7 flex items-center justify-center rounded-md bg-red-500/10 border border-red-500/30 text-red-500 hover:bg-red-500 hover:text-white transition-all duration-200 hover:shadow-md hover:shadow-red-500/20 active:scale-95"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                void onRemove(stock.symbol);
+                            }}
+                            aria-label={`Remove ${stock.symbol}`}
+                        >
+                            <img src={removeIcon} alt="Remove" className="w-[16px] h-[16px]" />
+                        </button>
+                    </div>
+                );
             }
-        },
-        {
-            header: "Select",
-            className: "stock-action-cell",
-            render: (stock) => (
-                <input
-                    className="w-[25px] h-[25px] cursor-pointer accent-[#069042]"
-                    type="checkbox"
-                    checked={selectedSymbols.has(stock.symbol)}
-                    onClick={(e) => e.stopPropagation()}
-                    onChange={(e) => {
-                        e.stopPropagation();
-                        toggleSelectSymbol(stock.symbol);
-                    }}
-                    aria-label={`Select ${stock.symbol}`}
-                />
-            )
-        },
-        {
-            header: "Remove",
-            className: "stock-remove-cell",
-            render: (stock) => (
-                <button
-                    className="w-8 h-8 flex items-center justify-center rounded-md bg-red-500/10 border border-red-500/30 text-red-500 hover:bg-red-500 hover:text-white transition-all duration-200 hover:shadow-md hover:shadow-red-500/20 active:scale-95 mx-auto"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        void onRemove(stock.symbol);
-                    }}
-                    aria-label={`Remove ${stock.symbol}`}
-                >
-                    <img src={removeIcon} alt="Remove" className="w-[20px] h-[20px]" />
-                </button>
-            )
         }
-    ];
+    ], [selectedSymbols, toggleSelectSymbol, onRemove, radarScores]);
+
+    const defaultColDef = useMemo(() => ({
+        sortable: true,
+        filter: true,
+        resizable: true,
+        suppressMovable: true
+    }), []);
 
     return (
         <ControlPanel
@@ -253,14 +403,45 @@ const StockTable: React.FC<StockTableProps> = ({
                 label: compareLoading ? "Comparing..." : "Compare Selected",
                 onClick: onCompare,
                 disabled: selectedSymbols.size < 2 || selectedSymbols.size > 10 || compareLoading
+            }, {
+                label: showAdvanced ? "Hide Advanced" : "Advanced",
+                onClick: () => setShowAdvanced(!showAdvanced)
             }]}
             info={`Selected: ${selectedSymbols.size} (min 2, max 10) ${compareError ? ` - ${compareError}` : ''}${error ? ` - ${error}` : ''}`}
         >
-            <Table 
-                columns={columns} 
-                data={stocks} 
-                onRowClick={(stock) => onRowClick(stock.symbol)}
-            />
+            {showAdvanced && (
+                <AdvancedSettingsPanel 
+                    onClose={() => setShowAdvanced(false)}
+                    initialTemplate={activeTemplate}
+                    onApply={(template: RadarTemplate) => {
+                        console.log("Applying active template!", template);
+                        setActiveTemplate(template);
+                        setShowAdvanced(false);
+                    }}
+                />
+            )}
+            <div className={`ag-theme-quartz w-full`} style={{ height: 600 }}>
+                <AgGridReact
+                    theme={myTheme}
+                    modules={[ClientSideRowModelModule, ValidationModule, TooltipModule]}
+                    rowData={stocks}
+                    columnDefs={columnDefs}
+                    defaultColDef={defaultColDef}
+                    rowHeight={45}
+                    headerHeight={36}
+                    onCellClicked={(e) => {
+                        // Prevent row click navigation if clicking on Action columns
+                        const colId = e.column.getColId();
+                        if (colId === 'select' || colId === 'remove') {
+                            return;
+                        }
+                        if (e.data?.symbol) {
+                            onRowClick(e.data.symbol);
+                        }
+                    }}
+                    tooltipShowDelay={0}
+                />
+            </div>
         </ControlPanel>
     );
 };

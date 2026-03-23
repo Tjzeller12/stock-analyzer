@@ -16,28 +16,27 @@ interface MetricRowProps {
 
 const MetricRow: React.FC<MetricRowProps> = ({ label, value }) => (
     <tr className="border-b border-border-main/20 last:border-b-0 hover:bg-border-main/5 transition-colors">
-        <td className="p-4 text-base font-bold text-primary text-left w-1/2">{label}</td>
-        <td className="p-4 text-base text-text-main text-right w-1/2 font-medium">{value}</td>
+        <td className="p-2.5 text-sm font-bold text-primary text-left w-1/2">{label}</td>
+        <td className="p-2.5 text-sm text-text-main text-right w-1/2 font-medium">{value}</td>
     </tr>
 );
 
 const StockMetricsTable: React.FC<{ stock: Stock | null }> = ({ stock }) => {
 
-    const overview = stock?.company_overview || {};
-    const evToEbita = overview.EVToEBITDA ? parseFloat(overview.EVToEBITDA) : undefined;
-    const peRatio = overview.PERatio ? parseFloat(overview.PERatio) : undefined;
-    const marketCap = overview.MarketCapitalization ? parseFloat(overview.MarketCapitalization) : 0;
-    const dividendYield = overview.DividendYield ? parseFloat(overview.DividendYield) : undefined;
+    const evToEbita = stock?.ev_to_ebitda;
+    const peRatio = stock?.pe_ratio;
+    const marketCap = stock?.market_cap || 0;
+    const dividendYield = stock?.dividend_yield;
 
     return (
-        <div className="flex justify-center items-start w-full max-w-[800px] p-6 bg-form-bg rounded-2xl mb-8 shadow-lg border border-border-main/10 mt-6 mx-auto relative overflow-hidden">
+        <div className="flex justify-center items-start w-full max-w-[800px] p-4 bg-form-bg rounded-xl mb-6 shadow-lg border border-border-main/10 mt-4 mx-auto relative overflow-hidden">
             <div className="absolute top-[-50%] left-[-10%] w-[100%] h-[100%] bg-primary/5 rounded-full blur-3xl -z-10"></div>
             <table className="w-full border-collapse relative z-10">
                 <tbody>
                     <MetricRow label="EV/EBITDA" value={evToEbita?.toFixed(2) || "N/A"} />
                     <MetricRow label="PE Ratio" value={peRatio?.toFixed(2) || "N/A"} />
                     <MetricRow label="Market Cap" value={formatMarketCap(marketCap)} />
-                    <MetricRow label="Dividend Yield" value={dividendYield ? `${(dividendYield * 100).toFixed(2)}%` : "None"} />
+                    <MetricRow label="Dividend Yield" value={dividendYield !== undefined && dividendYield !== null ? `${(dividendYield * 100).toFixed(2)}%` : "None"} />
                     <MetricRow label="Free Cash Flow" value={formatFreeCashFlow(stock?.free_cash_flow || 0)} />
                     <MetricRow label="Debt to Equity" value={formatDebtToEquity(stock?.debt_to_equity || 0)} />
                     <MetricRow label="ROIC" value={formatRoic(stock?.roic || 0)} />

@@ -124,35 +124,35 @@ const StockPage: React.FC = () => {
       />
       <StockMetricsTable stock={stock} />
 
-      <div className="flex flex-col lg:flex-row items-stretch gap-6 w-[97.5%] h-full bg-list-bg p-6 rounded-2xl shadow-lg border border-border-main/10 mt-4">
-        <div className="flex flex-col items-center gap-4 bg-list-bg p-6 rounded-xl w-full lg:w-[60%] text-center shadow-md border border-border-main/5 relative overflow-hidden">
+      <div className="flex flex-col lg:flex-row items-stretch gap-4 w-[97.5%] h-full bg-list-bg p-4 rounded-xl shadow-lg border border-border-main/10 mt-4">
+        <div className="flex flex-col items-center gap-3 bg-list-bg p-4 rounded-lg w-full lg:w-[60%] text-center shadow-md border border-border-main/5 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -z-10"></div>
           <div className="flex flex-col items-center gap-2">
-            <span className="text-2xl font-extrabold text-transparent bg-clip-text bg-linear-to-r from-primary to-green-500 tracking-tight">In Depth Analysis</span>
+            <span className="text-xl font-extrabold text-transparent bg-clip-text bg-linear-to-r from-primary to-green-500 tracking-tight">In Depth Analysis</span>
           </div>
-          <div className="flex flex-col items-start gap-4 bg-form-bg p-6 rounded-xl w-[95%] min-h-[300px] h-full text-left shadow-inner border border-border-main/10">
+          <div className="flex flex-col items-start gap-4 bg-form-bg p-4 rounded-lg w-[95%] min-h-[300px] h-full text-left shadow-inner border border-border-main/10">
             {summary ? <StyledMarkdown>{summary}</StyledMarkdown> : "Loading analysis..."}
           </div>
         </div>
-        <div className="flex flex-col items-start gap-4 bg-list-bg p-6 w-full lg:w-[40%] rounded-xl text-center shadow-md border border-border-main/5 relative overflow-hidden">
+        <div className="flex flex-col items-start gap-3 bg-list-bg p-4 w-full lg:w-[40%] rounded-lg text-center shadow-md border border-border-main/5 relative overflow-hidden">
           <div className="absolute bottom-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-3xl -z-10"></div>
           <div className="flex flex-col items-center gap-2 w-full">
-            <span className="text-2xl font-extrabold text-transparent bg-clip-text bg-linear-to-r from-primary to-green-500 tracking-tight w-full">Alpha Bot Summary</span>
+            <span className="text-xl font-extrabold text-transparent bg-clip-text bg-linear-to-r from-primary to-green-500 tracking-tight w-full">Alpha Bot Summary</span>
           </div>
-          <div className="flex flex-col items-start gap-4 bg-form-bg p-6 rounded-xl w-[95%] min-h-[300px] h-full mx-auto shadow-inner border border-border-main/10">
-            <div className="text-left w-full">{queryResult || "Loading response..."}</div>
+          <div className="flex flex-col items-start gap-4 bg-form-bg p-4 rounded-lg w-[95%] min-h-[300px] h-full mx-auto shadow-inner border border-border-main/10">
+            <div className="text-left w-full text-sm">{queryResult || "Loading response..."}</div>
           </div>
-          <div className="flex gap-3 my-4 mx-auto w-[95%] relative">
+          <div className="flex gap-3 my-2 mx-auto w-[95%] relative">
             <input
               type="text"
               placeholder="Ask about this stock..."
-              className="flex-1 p-4 rounded-xl text-base bg-input-bg text-text-main border border-border-main/40 focus:outline-none focus:ring-2 focus:ring-primary/50 shadow-inner transition-all w-full"
+              className="flex-1 p-2.5 rounded-lg text-sm bg-input-bg text-text-main border border-border-main/40 focus:outline-none focus:ring-2 focus:ring-primary/50 shadow-inner transition-all w-full"
               value={llmPrompt}
               onChange={(e) => setLlmPrompt(e.target.value)}
             />
           </div>
           {totalArticles > 0 && (
-            <div className="flex flex-row justify-around items-center gap-4 bg-form-bg p-4 rounded-xl mt-2 text-sm font-semibold w-full shadow-md border border-border-main/10">
+            <div className="flex flex-row justify-around items-center gap-4 bg-form-bg p-3 rounded-lg mt-2 text-xs font-semibold w-full shadow-md border border-border-main/10">
               <div>
                 Positive: {positiveScore.toFixed(1)}%
               </div>

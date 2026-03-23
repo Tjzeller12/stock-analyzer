@@ -29,13 +29,13 @@ const StyledMarkdown: React.FC<StyledMarkdownProps> = ({ children }) => {
       <h5 className="text-base font-medium mt-4 mb-2 text-primary/90" {...props} />
     ),
     p: ({ node, ...props }) => (
-      <p className="text-sm leading-relaxed mb-4 text-text-main/80" {...props} />
+      <p className="text-sm leading-relaxed mb-3 text-text-main/80" {...props} />
     ),
     ul: ({ node, ...props }) => (
-      <ul className="list-disc list-inside mb-4 text-sm text-text-main/80 space-y-1" {...props} />
+      <ul className="list-disc list-inside mb-3 text-sm text-text-main/80 space-y-1" {...props} />
     ),
     ol: ({ node, ...props }) => (
-      <ol className="list-decimal list-inside mb-4 text-sm text-text-main/80 space-y-1" {...props} />
+      <ol className="list-decimal list-inside mb-3 text-sm text-text-main/80 space-y-1" {...props} />
     ),
     li: ({ node, ...props }) => (
       <li className="ml-2" {...props} />

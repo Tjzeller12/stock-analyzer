@@ -5,7 +5,7 @@ export interface AlphaBotResponseCardProps {
     isLoading: boolean;
     title?: string;
     children: React.ReactNode;
-    classNamePrefix?: string;
+    className?: string;
 }
 
 /**
@@ -17,7 +17,7 @@ export interface AlphaBotResponseCardProps {
  */
 export const AlphaBotResponseCard: React.FC<AlphaBotResponseCardProps> = (props) => {
     return (
-        <Card title={props.title} className={`${props.classNamePrefix ? props.classNamePrefix : ""} overflow-y-auto [scrollbar-color:var(--scrollbar-color)]`}>
+        <Card variant="inner" title={props.title} className={`${props.className || ""} overflow-y-auto [scrollbar-color:var(--scrollbar-color)] flex flex-col h-full w-full`}>
             {props.isLoading ?
             ( <div>
             <span className='alpha-bot-spinner'></span>

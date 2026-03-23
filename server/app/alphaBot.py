@@ -3,7 +3,7 @@ from app import cache
 import requests
 import os
 import json
-from app.constants import ALPHA_VANTAGE_MCP_URL, CLAUDE_MODEL, USER_QUERY_PROMPT, COMPARE_PROMPT, IN_DEPTH_PROMPT, EVENT_PULSE_PROMPT
+from app.constants import ALPHA_VANTAGE_MCP_URL, CLAUDE_MODEL, USER_QUERY_PROMPT, COMPARE_PROMPT, IN_DEPTH_PROMPT, EVENT_PULSE_PROMPT, MOAT_ANALYSIS_PROMPT, NEWS_ANALYSIS_PROMPT
 from app.utils.api import build_alpha_vantage_url
 from app.constants import AlphaVantageFunction
 from anthropic import AsyncAnthropic
@@ -239,24 +239,39 @@ def get_compare_analysis():
     data = request.json
 
     stock_symbols = data.get("stock_symbols")
+    equations = data.get("equations", {})
+    scores = data.get("scores", {})
 
     if not stock_symbols:
         print("ERROR: Missing stock_symbols", flush=True)
         return jsonify({"error": "Stock symbols are required"}), 400
+
     prompt = get_prompt(COMPARE_PROMPT)
     if not prompt:
         return jsonify({"error": "Prompt not found"}), 404
     prompt = prompt.replace("{stock_symbols}", ", ".join(stock_symbols))
 
     market_context = "<market_data>\n"
+
+    market_context += "=== USER'S CUSTOM ALGORITHMS ===\n"
+    market_context += f"{json.dumps(equations, indent=2)}\n\n"
+    market_context += "=== RESULTING SCORES (0-100, Higher is Better) ===\n"
+    market_context += f"{json.dumps(scores, indent=2)}\n\n"
+
     for symbol in stock_symbols:
         stock = StockMaster.query.filter_by(symbol=symbol).first()
         if stock:
 
             market_context += f"Data for {symbol}:\n"
-            market_context += f"OVERVIEW: {json.dumps(stock.company_overview)}\n"
-            market_context += f"GLOBAL_QUOTE: {json.dumps(stock.global_quote)}\n"
-            market_context += f"NEWS_SENTIMENT: {json.dumps(stock.news_sentiment_data)}\n"
+            
+            # Serialize the new flat metrics structure
+            stock_data = stock.to_dict()
+            # Remove giant nested fields we don't want bloating the overview
+            stock_data.pop('news_sentiment_data', None)
+            stock_data.pop('income_statement', None)
+            stock_data.pop('cash_flow_history', None)
+            
+            market_context += f"METRICS: {json.dumps(stock_data, default=str)}\n"
             # Explicitly decode the volume for the LLM
             volume = stock.insider_volume or 0
             if volume > 0:
@@ -300,6 +315,7 @@ def get_user_query():
         current_app.logger.error(f"Error generating generating user query response: {e}")
         return jsonify({"error": "Failed to generate response for user query"}), 500
 
+
 @cache.memoize(timeout=3600)
 @alphaBot_bp.route('/alphaBot/event_pulse', methods=['POST'])
 def get_event_pulse_analysis():
@@ -334,4 +350,58 @@ def get_event_pulse_analysis():
     except Exception as e:
         current_app.logger.error(f"Error generating Event Pulse analysis: {e}")
         return jsonify({"error": "Failed to generate Event Pulse analysis"}), 500
+
+
+
+def get_news_analysis(stock):
+
+    prompt = get_prompt(NEWS_ANALYSIS_PROMPT)
+    if not prompt:
+        raise ValueError("News analysis prompt not found")
+
+    # Inject data into prompt
+    prompt = prompt.replace('{symbol}', stock.symbol)
+    news_data_string = json.dumps(stock.news_sentiment_data) if stock.news_sentiment_data else "No recent news."
+    prompt = prompt.replace('{news_json}', news_data_string)
+
+    try:
+        response_text = asyncio.run(query_alpha_bot(prompt, False))
+        try:
+            # Strip markdown codeblocks if Claude includes them
+            clean_text = response_text.replace("```json", "").replace("```", "").strip()
+            return json.loads(clean_text)
+        except json.JSONDecodeError:
+            print(f"Failed to parse news JSON: {response_text}", flush=True)
+            return {"ai_news_score": 50, "ai_news_summary": "Analysis failed or unavailable."}
+    except Exception as e:
+        print(f"News Analysis Error for {stock.symbol}: {e}")
+        return {"ai_news_score": 50, "ai_news_summary": "Analysis failed or unavailable."}
+
+def get_moat_analysis(stock):
+
+    prompt = get_prompt(MOAT_ANALYSIS_PROMPT)
+    if not prompt:
+        raise ValueError("Moat analysis prompt not found")
+    # Inject data into prompt
+    prompt = prompt.replace('{company_name}', str(stock.name or ""))
+    prompt = prompt.replace('{symbol}', str(stock.symbol or ""))
+    prompt = prompt.replace('{description}', str(stock.description or ""))
+    prompt = prompt.replace('{operating_margin}', str(stock.operating_margin))
+    prompt = prompt.replace('{profit_margin}', str(stock.profit_margin))
+    prompt = prompt.replace('{roe}', str(stock.roe))
+    prompt = prompt.replace('{free_cash_flow}', str(stock.free_cash_flow))
+    prompt = prompt.replace('{market_cap}', str(stock.market_cap))
+
+    try:
+        response_text = asyncio.run(query_alpha_bot(prompt, False))
+        try:
+            # Strip markdown codeblocks if Claude includes them
+            clean_text = response_text.replace("```json", "").replace("```", "").strip()
+            return json.loads(clean_text)
+        except json.JSONDecodeError:
+            print(f"Failed to parse moat JSON: {response_text}", flush=True)
+            return {"ai_moat_score": 50, "ai_moat_summary": "Analysis failed or unavailable."}
+    except Exception as e:
+        print(f"Moat Analysis Error for {stock.symbol}: {e}")
+        return {"ai_moat_score": 50, "ai_moat_summary": "Analysis failed or unavailable."}
 

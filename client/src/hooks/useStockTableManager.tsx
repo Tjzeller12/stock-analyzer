@@ -1,7 +1,8 @@
 import axios from "axios";
 import { useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { PORTFOLIO_ENDPOINTS } from "../constants/api";
+import { RadarTemplate } from "../components/common/AdvancedSettingsPanel";
+import { PORTFOLIO_ENDPOINTS, RADAR_ENDPOINTS } from "../constants/api";
 import { Stock } from "../types";
 import { authPost } from "../utils/api";
 
@@ -16,6 +17,7 @@ import { authPost } from "../utils/api";
 export const useStockTableManager = (initialSortBy: string = "symbol") => {
     const navigate = useNavigate();
     const [stocks, setStocks] = useState<Stock[]>([]);
+    const [radarScores, setRadarScores] = useState<Record<string, Record<string, number>>>({}); // symbol -> { category: score }
     const [sortBy, setSortBy] = useState(initialSortBy);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -41,6 +43,53 @@ export const useStockTableManager = (initialSortBy: string = "symbol") => {
             setLoading(false);
         }
     }, [sortBy]);
+
+    /**
+     * Calculates radar scores for a single stock using the specified template.
+     * Updates the `radarScores` state map.
+     */
+    const fetchSingleStockRadarScores = async (symbol: string, template: RadarTemplate) => {
+        try {
+            const data = await authPost<{scores: Record<string, number>, symbol: string}>(
+                RADAR_ENDPOINTS.SINGLE, 
+                { symbol, template }
+            );
+            
+            if (data && data.scores && data.symbol) {
+                setRadarScores(prev => ({
+                    ...prev,
+                    [data.symbol]: data.scores
+                }));
+            }
+        } catch (err) {
+            console.error(`Failed to fetch radar scores for ${symbol}:`, err);
+        }
+    };
+
+    /**
+     * Calculates radar scores for ALL currently loaded stocks using Compare mode.
+     * Updates the `radarScores` state map with the new cross-normalized scores.
+     */
+    const fetchCompareRadarScores = async (symbols: string[], template: RadarTemplate) => {
+        if (symbols.length === 0) return;
+        
+        try {
+            const data = await authPost<{scores: Record<string, Record<string, number>>}>(
+                RADAR_ENDPOINTS.COMPARE, 
+                { symbols, template }
+            );
+            
+            if (data && data.scores) {
+               // Update all fetched scores at once
+               setRadarScores(prev => ({
+                   ...prev,
+                   ...data.scores
+               }));
+            }
+        } catch (err) {
+             console.error(`Failed to fetch compare radar scores for ${symbols.length} stocks:`, err);
+        }
+    };
 
     /**
      * Adds a new stock symbol to the user's portfolio and re-fetches the updated list.
@@ -104,10 +153,13 @@ export const useStockTableManager = (initialSortBy: string = "symbol") => {
 
     return {
         stocks,
+        radarScores,
         loading,
         error,
         sortBy,
         fetchStocks,
+        fetchSingleStockRadarScores,
+        fetchCompareRadarScores,
         setSortBy,
         addStock,
         removeStock,

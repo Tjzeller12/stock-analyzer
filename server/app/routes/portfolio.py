@@ -121,10 +121,20 @@ def stock_sort_by():
         else:
             stocks = Stock.query.join(StockMaster).filter(Stock.portfolio_id == portfolio.id).order_by(getattr(StockMaster, sort_by)).all()
         print(f"Stocks query executed. Found {len(stocks)} stocks for portfolio {portfolio.id}.")
+        result_list = []
         for s in stocks:
             print(f" - Found stock: {s.stock_master.symbol}")
+            if s.stock_master.market_cap is None:
+                updated_master = add_to_master(s.stock_master.symbol)
+                # Ensure we don't crash if hitting API limit during auto-heal
+                if not isinstance(updated_master, dict):
+                    result_list.append(updated_master.to_dict())
+                else:
+                    result_list.append(s.stock_master.to_dict())
+            else:
+                result_list.append(s.stock_master.to_dict())
         # Return the stocks
-        return jsonify([stock.stock_master.to_dict() for stock in stocks])
+        return jsonify(result_list)
     # Return error if invalid sort field
     except AttributeError:
         # Return error if invalid sort field
