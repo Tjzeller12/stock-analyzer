@@ -69,6 +69,18 @@ def stock_data():
 
     # Return the stock data directly from StockMaster
     if stock_master:
+        # Auto-refresh strictly the GLOBAL_QUOTE realtime price if older than 15 minutes
+        if not stock_master.last_stock_update or (datetime.datetime.now() - stock_master.last_stock_update).total_seconds() > 900:
+            quote_data = get_av_json(AlphaVantageFunction.GLOBAL_QUOTE, symbol=symbol)
+            global_quote = quote_data.get("Global Quote", {})
+            if global_quote and "05. price" in global_quote:
+                new_price = safe_float(global_quote.get("05. price"))
+                if new_price > 0:
+                    stock_master.price = new_price
+                    stock_master.global_quote = quote_data
+                    stock_master.last_stock_update = datetime.datetime.now()
+                    db.session.commit()
+
         stock_data = stock_master.to_dict()
         if stock_master.news:
             stock_data.update(stock_master.news.to_dict())

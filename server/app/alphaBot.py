@@ -3,7 +3,7 @@ from app import cache
 import requests
 import os
 import json
-from app.constants import ALPHA_VANTAGE_MCP_URL, CLAUDE_MODEL, USER_QUERY_PROMPT, COMPARE_PROMPT, IN_DEPTH_PROMPT
+from app.constants import ALPHA_VANTAGE_MCP_URL, CLAUDE_MODEL, USER_QUERY_PROMPT, COMPARE_PROMPT, IN_DEPTH_PROMPT, EVENT_PULSE_PROMPT
 from app.utils.api import build_alpha_vantage_url
 from app.constants import AlphaVantageFunction
 from anthropic import AsyncAnthropic
@@ -299,3 +299,39 @@ def get_user_query():
     except Exception as e:
         current_app.logger.error(f"Error generating generating user query response: {e}")
         return jsonify({"error": "Failed to generate response for user query"}), 500
+
+@cache.memoize(timeout=3600)
+@alphaBot_bp.route('/alphaBot/event_pulse', methods=['POST'])
+def get_event_pulse_analysis():
+    data = request.json
+    stock_symbol = data.get("stock_symbol")
+    timestamp = data.get("timestamp")
+    date_str = data.get("date_str")
+    price = data.get("price")
+    swing_type = data.get("swing_type", "event")
+    start_date_str = data.get("start_date_str", "")
+    start_price = data.get("start_price", 0)
+    
+    if not stock_symbol or not timestamp:
+        return jsonify({"error": "Stock symbol and timestamp are required"}), 400
+
+    prompt = get_prompt(EVENT_PULSE_PROMPT)
+    if not prompt:
+        return jsonify({"error": "Prompt not found"}), 404
+        
+    prompt = prompt.replace("{stock_symbol}", stock_symbol)
+    prompt = prompt.replace("{timestamp}", str(timestamp))
+    prompt = prompt.replace("{date_str}", str(date_str))
+    prompt = prompt.replace("{price}", str(price))
+    prompt = prompt.replace("{swing_type}", str(swing_type))
+    prompt = prompt.replace("{start_date_str}", str(start_date_str))
+    prompt = prompt.replace("{start_price}", str(start_price))
+    
+    try:
+        # include_tools=True activates the Alpha Vantage MCP to allow Claude to pull live forensic data!
+        response = asyncio.run(query_alpha_bot(prompt, True))
+        return jsonify({"response": response}), 200
+    except Exception as e:
+        current_app.logger.error(f"Error generating Event Pulse analysis: {e}")
+        return jsonify({"error": "Failed to generate Event Pulse analysis"}), 500
+

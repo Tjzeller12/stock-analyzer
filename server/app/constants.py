@@ -13,6 +13,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 IN_DEPTH_PROMPT = os.path.join(BASE_DIR, "prompts/in_depth.md")
 COMPARE_PROMPT = os.path.join(BASE_DIR, "prompts/compare.md")
 USER_QUERY_PROMPT = os.path.join(BASE_DIR, "prompts/user_query.md")
+EVENT_PULSE_PROMPT = os.path.join(BASE_DIR, "prompts/event_pulse.md")
 
 
 # Internal API Routes
@@ -36,6 +37,7 @@ class Routes:
     ALPHA_BOT_COMPARE = "/alphaBot/compare_analysis"
     ALPHA_BOT_IN_DEPTH = "/alphaBot/in_depth_analysis"
     ALPHA_BOT_USER_QUERY = "/alphaBot/user_query"
+    ALPHA_BOT_EVENT_PULSE = "/alphaBot/event_pulse"
 
 # Alpha Vantage API Functions
 class AlphaVantageFunction:
