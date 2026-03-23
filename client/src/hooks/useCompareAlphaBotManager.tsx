@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { ALPHA_BOT_ENDPOINTS } from "../constants/api";
+import { RadarTemplate } from "../components/common/AdvancedSettingsPanel";
+import { ALPHA_BOT_ENDPOINTS, RADAR_ENDPOINTS } from "../constants/api";
 import { CHART_COLORS } from "../constants/chartColors";
 import { AlphaBotResponse, ChartData, CompareResponse } from "../types";
 import { authPost } from "../utils/api";
@@ -24,6 +25,19 @@ export const useCompareAlphaBotManager = () => {
         return saved ? (JSON.parse(saved) as CompareResponse) : null;
     });
 
+    const [compareRadarScores, setCompareRadarScores] = useState<ChartData | null>(() => {
+        const saved = localStorage.getItem("compareRadarScores");
+        if (saved && saved !== "null" && saved !== "undefined") {
+            try {
+                return JSON.parse(saved) as ChartData;
+            } catch (e) {
+                console.error("Failed to parse cached radar scores", e);
+                return null;
+            }
+        }
+        return null;
+    });
+
     // Persist selectedSymbols whenever it changes
     useEffect(() => {
         localStorage.setItem("selectedSymbols", JSON.stringify(Array.from(selectedSymbols)));
@@ -31,10 +45,16 @@ export const useCompareAlphaBotManager = () => {
 
     // Persist compareResult whenever it changes
     useEffect(() => {
-        if (compareResult) {
-            localStorage.setItem("compareResult", JSON.stringify(compareResult));
-        }
+        localStorage.setItem("compareResult", JSON.stringify(compareResult));
     }, [compareResult]);
+
+    useEffect(() => {
+        if (compareRadarScores) {
+            localStorage.setItem("compareRadarScores", JSON.stringify(compareRadarScores))
+        } else {
+            localStorage.removeItem("compareRadarScores");
+        }
+    }, [compareRadarScores]);
 
     /**
      * Parses the raw text response from the AlphaBot LLM.
@@ -63,11 +83,6 @@ export const useCompareAlphaBotManager = () => {
         // We trust that the Regex above extracted just the JSON, and standard JSON.parse will work.
     
         const parsedResponse = JSON.parse(jsonString) as CompareResponse;
-        
-        // Inject styling into Radar Chart datasets
-        if (parsedResponse.radarChartData) {
-           injectChartStyling(parsedResponse.radarChartData);
-        }
 
         // Inject styling into Doughnut Chart datasets
         if (parsedResponse.doughnutChartData) {
@@ -86,16 +101,36 @@ export const useCompareAlphaBotManager = () => {
      * Radar charts use the same color for the background fill and the border stroke 
      * for a single dataset (representing one stock).
      */
-    const injectChartStyling = (chartData: ChartData) => {
-        if (chartData.datasets) {
-            chartData.datasets.forEach((dataset: ChartData['datasets'][0], index: number) => {
-                const color = CHART_COLORS[index % CHART_COLORS.length];
-                dataset.backgroundColor = color.bg;
-                dataset.borderColor = color.border;
-                dataset.borderWidth = 2;
-                dataset.fill = true;
-            });
-        }
+    /**
+     * Helper function to convert the backend's raw score dictionary into 
+     * the format expected by Chart.js / Recharts.
+     * Also injects theme colors into Radar Chart datasets.
+     */
+    const buildRadarChartData = (scoresBySymbol: Record<string, Record<string, number>>): ChartData => {
+        const symbols = Object.keys(scoresBySymbol);
+        if (symbols.length === 0) return { labels: [], datasets: [] };
+
+        // Assume all stocks have the same axes/categories based on the template
+        const labels = Object.keys(scoresBySymbol[symbols[0]] || {});
+        
+        const datasets = symbols.map((symbol, index) => {
+            const scores = scoresBySymbol[symbol];
+            
+            // Map the dictionary scores into an array matching the order of 'labels'
+            const dataPnts = labels.map(label => scores[label] || 0);
+            
+            const color = CHART_COLORS[index % CHART_COLORS.length];
+            return {
+                label: symbol,
+                data: dataPnts,
+                backgroundColor: color.bg,
+                borderColor: color.border,
+                borderWidth: 2,
+                fill: true
+            };
+        });
+
+        return { labels, datasets };
     }
 
     /**
@@ -141,24 +176,23 @@ export const useCompareAlphaBotManager = () => {
         });
     };
     
-    /**
+/**
      * Triggers the AlphaBot comparison analysis on all currently selected symbols.
      * Enforces limits (min 2, max 10 symbols) before making the API call.
      * @param {string[]} validSymbols - Optional list of valid symbols. Any selected symbols not in this list will be ignored.
+     * @param {RadarTemplate} template - The active template defining the axis and equations.
      */
-    const compareStocks = async (validSymbols?: string[]) => {
+    const compareStocks = async (validSymbols: string[], template: RadarTemplate) => {
         setCompareError(null);
         setCompareResult(null);
-        // Clear previous result from storage when starting new comparison
+        setCompareRadarScores(null);
         localStorage.removeItem("compareResult");
         
         let symbols = Array.from(selectedSymbols);
 
-        // Filter out stale symbols (e.g., symbols from previous sessions that are no longer in the user's portfolio)
         if (validSymbols && validSymbols.length > 0) {
             symbols = symbols.filter(s => validSymbols.includes(s));
             if (symbols.length !== selectedSymbols.size) {
-                // Update state silently so the UI drops the stale selections without throwing an error
                 setSelectedSymbols(new Set(symbols));
             }
         }
@@ -171,21 +205,45 @@ export const useCompareAlphaBotManager = () => {
             setCompareError("You can compare at most 10 stocks at once.");
             return;
         }
+
         try {
             setCompareLoading(true);
-            const alphaBotResponse: AlphaBotResponse | null = await authPost<AlphaBotResponse>(ALPHA_BOT_ENDPOINTS.COMPARE, { stock_symbols: symbols });
-            
-            // Check if the response is actually an error message string that we couldn't parse
-            try {
-                const result = parseCompareResponse(alphaBotResponse?.response);
-                setCompareResult(result);
-            } catch (parseError: unknown) {
-                // If parseCompareResponse threw an error, it's likely a text error message from the backend
-                if (parseError instanceof Error) {
-                    setCompareError(parseError.message);
-                } else {
-                    setCompareError("Failed to analyze stocks. The AI service may be temporarily unavailable.");
+
+            // 1. FIRST: Await the Deterministic Radar Engine request
+            const radarResult = await authPost<{scores: Record<string, Record<string, number>>}>(
+                RADAR_ENDPOINTS.COMPARE, 
+                { symbols, template, is_relative: true }
+            );
+
+            let calculatedScores = {};
+
+            // If we got scores, build the chart data immediately so the UI feels fast!
+            if (radarResult && radarResult.scores) {
+                calculatedScores = radarResult.scores;
+                const chartData = buildRadarChartData(calculatedScores);
+                setCompareRadarScores(chartData);
+            }
+
+            // 2. SECOND: Fire off the LLM request, injecting the equations and the newly calculated scores!
+            const alphaBotResult = await authPost<AlphaBotResponse>(
+                ALPHA_BOT_ENDPOINTS.COMPARE, 
+                { 
+                    stock_symbols: symbols,
+                    equations: template.equations, // <--- Injecting the rules
+                    scores: calculatedScores       // <--- Injecting the results
                 }
+            );
+            
+            // 3. Process LLM Text + Doughnut Data
+            if (alphaBotResult && alphaBotResult.response) {
+                const result = parseCompareResponse(alphaBotResult.response);
+                if (result) {
+                    setCompareResult(result);
+                } else {
+                    setCompareError("Failed to parse AI analysis. The AI service may be temporarily unavailable.");
+                }
+            } else {
+                setCompareError("AI comparison failed. You may be out of credits or the service is down.");
             }
             
         } catch (err: unknown) {
@@ -202,6 +260,7 @@ export const useCompareAlphaBotManager = () => {
         compareError,
         compareResult,
         compareStocks,
-        toggleSelectSymbol
+        toggleSelectSymbol,
+        compareRadarScores
     }
 }

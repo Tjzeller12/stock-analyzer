@@ -40,3 +40,9 @@ export const PROFILE_ENDPOINTS = {
     INFO: `${API_BASE_URL}/profile/info`,
 } as const;
 
+// Radar endpoints
+export const RADAR_ENDPOINTS = {
+    SINGLE: `${API_BASE_URL}/radar/single`,
+    COMPARE: `${API_BASE_URL}/radar/compare`,
+} as const;
+

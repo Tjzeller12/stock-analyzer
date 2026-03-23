@@ -7,6 +7,7 @@ from app.constants import AlphaVantageFunction
 from app.services.alpha_api import safe_float, get_av_json, get_stock_price
 from app.alphaBot import get_moat_analysis, get_news_analysis
 from flask import current_app
+from app.utils.normalization import update_global_and_sector_stats
 
 # Calculates the insider net volume by looping through eact transaction and addting it to the total volume
 def calculate_insider_volume(insider_data):
@@ -257,6 +258,8 @@ def get_ai_analysis_metrics(app, stock_id):
 
             print(f"[{stock.symbol}] AI news and moat analysis complete")
             db.session.commit()
+
+            update_global_and_sector_stats(sector=stock.sector, industry=stock.industry)
             
         except Exception as e:
             print(f"[{stock.symbol}] Failed to get AI metrics: {e}")

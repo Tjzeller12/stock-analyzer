@@ -15,6 +15,12 @@ import { ChartData } from '../../types';
 
 interface RadarGraphProps {
     data: ChartData;
+    hideLegend?: boolean;
+    hideAxes?: boolean;
+    hideToolTip?: boolean;
+    height?: number;
+    outerRadius?: string | number;
+    cy?: string | number;
 }
 
 interface RechartsDataRow {
@@ -29,12 +35,14 @@ interface RechartsDataRow {
  * Hooks into the global `ThemeContext` to dynamically flip text colors, grid lines, and 
  * radial angle lines to maintain high contrast whether the user is in dark or light mode.
  */
-export const RadarGraph = ({ data }: RadarGraphProps) => {
+export const RadarGraph = ({ data, hideLegend = false, hideAxes = false, hideToolTip = false, height = 400, outerRadius = "", cy = "50%" }: RadarGraphProps) => {
     const { theme } = useContext(ThemeContext);
     
     // Determine Chart Colors based on Theme
     const textColor = theme === 'light' ? '#666' : '#e0e0e0';
     const gridColor = theme === 'light' ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.2)';
+
+    const appliedRadius = outerRadius || (hideAxes ? "90%" : "80%");
 
     // Transform Chart.js data format to Recharts format
     const rechartsData = useMemo(() => {
@@ -93,22 +101,26 @@ export const RadarGraph = ({ data }: RadarGraphProps) => {
         );
     };
     return (
-        <div className="w-full h-[400px]">
-            <ResponsiveContainer width="100%" height="100%">
-                <RadarChart cx="50%" cy="35%" outerRadius="80%" data={rechartsData}>
+        <div className={`w-full min-w-0`} style={{ height: `${height}px`, minHeight: `${height}px` }}>
+            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
+                <RadarChart cx="50%" cy={cy} outerRadius={appliedRadius} data={rechartsData}>
                     <PolarGrid stroke={gridColor} />
-                    <PolarAngleAxis 
-                        dataKey="subject" 
-                        tick={{ fill: textColor, fontSize: 12 }} 
-                    />
-                    <PolarRadiusAxis 
-                        angle={30} 
-                        domain={[0, 100]} 
-                        tick={{ fill: textColor }}
-                        axisLine={false}
-                        fontSize={10}
-                    />
-                    <Tooltip 
+                    {!hideAxes && (
+                        <>
+                            <PolarAngleAxis 
+                                dataKey="subject" 
+                                tick={{ fill: textColor, fontSize: 12 }} 
+                            />
+                            <PolarRadiusAxis 
+                                angle={30} 
+                                domain={[0, 100]} 
+                                tick={{ fill: textColor }}
+                                axisLine={false}
+                                fontSize={10}
+                            />
+                        </>
+                    )}
+                    {!hideToolTip && <Tooltip 
                         contentStyle={{ 
                             backgroundColor: theme === 'dark' ? 'rgba(31, 41, 55, 0.85)' : 'rgba(255, 255, 255, 0.85)',
                             backdropFilter: 'blur(8px)',
@@ -118,8 +130,8 @@ export const RadarGraph = ({ data }: RadarGraphProps) => {
                             color: textColor,
                             padding: '12px 16px'
                         }}
-                    />
-                    <Legend content={renderLegend} />
+                    />}
+                    {!hideLegend && <Legend content={renderLegend} />}
                     <defs>
                         <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
                             <feGaussianBlur stdDeviation="3" result="blur" />

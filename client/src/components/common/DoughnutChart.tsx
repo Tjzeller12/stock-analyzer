@@ -97,8 +97,8 @@ export const DoughnutChart = ({ data }: DoughnutChartProps) => {
         );
     };
     return (
-        <div className="w-full h-[400px]">
-            <ResponsiveContainer width="100%" height="100%">
+        <div className="w-full h-[400px] min-h-[400px] min-w-0">
+            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={400}>
                 <PieChart>
                     <defs>
                         <filter id="pieGlow" x="-20%" y="-20%" width="140%" height="140%">

@@ -58,6 +58,9 @@ def create_app(config_class=Config):
     from app.routes.main import bp as main_bp
     app.register_blueprint(main_bp)
 
+    from app.routes.radar import bp as radar_bp
+    app.register_blueprint(radar_bp, url_prefix='/radar')
+
     from app.alphaBot import alphaBot_bp
     app.register_blueprint(alphaBot_bp)
 
