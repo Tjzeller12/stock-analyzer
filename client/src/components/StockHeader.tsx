@@ -16,7 +16,7 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stock, onLogoClick, logo}) =>
         <header className="flex justify-between items-center w-full min-h-[60px] bg-primary text-white font-bold px-6 py-2 box-border shadow-md">
             <div className="flex items-center gap-4">
                 <h1 className="text-3xl text-white m-0 whitespace-nowrap tracking-tight drop-shadow-sm font-extrabold">
-                    {stock ? `${stock.symbol} - ${stock.company_overview?.Name || 'Unknown Company'}` : "Loading..."}
+                    {stock ? `${stock.symbol} - ${stock.name || 'Unknown Company'}` : "Loading..."}
                 </h1>
                 <div className="flex justify-center items-center flex-row text-white text-xl font-bold gap-2 ml-4">
                     <div>${stock?.price.toFixed(2)}</div>

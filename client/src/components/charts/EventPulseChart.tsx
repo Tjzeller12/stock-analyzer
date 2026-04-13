@@ -203,7 +203,7 @@ const EventPulseChart: React.FC<EventPulseChartProps> = ({ symbol, data, activeT
         };
 
         // Standard Hover Tooltip Logic + Crosshair Tracker
-        chartRef.current.subscribeCrosshairMove((param) => {
+        chartRef.current.subscribeCrosshairMove((param: any) => {
             if (selectionPhaseRef.current === 'selecting' && param.time) {
                 hoverTimeRef.current = param.time as number;
                 updateWindowPosition();
@@ -266,7 +266,7 @@ const EventPulseChart: React.FC<EventPulseChartProps> = ({ symbol, data, activeT
         });
 
         // Interactive Selection Logic
-        chartRef.current.subscribeClick((param) => {
+        chartRef.current.subscribeClick((param: any) => {
             if (!param.point || !param.time || !seriesRef.current) return;
             
             const time = param.time as number;
