@@ -3,6 +3,7 @@ from app import cache
 import requests
 import os
 import json
+import hashlib
 from app.constants import ALPHA_VANTAGE_MCP_URL, CLAUDE_MODEL, USER_QUERY_PROMPT, COMPARE_PROMPT, IN_DEPTH_PROMPT, EVENT_PULSE_PROMPT, MOAT_ANALYSIS_PROMPT, NEWS_ANALYSIS_PROMPT
 from app.utils.api import build_alpha_vantage_url
 from app.constants import AlphaVantageFunction
@@ -194,7 +195,10 @@ async def query_alpha_bot(prompt, include_tools):
         
     except Exception as e:
         print(f"CRITICAL ERROR in query_alpha_bot: {e}", flush=True)
-        return f"System Error: {str(e)}"
+        error_msg = str(e)
+        if "credit balance is too low" in error_msg:
+            return "**Alpha Bot is Unavailable:** We apologize, but Alpha Bot is currently experiencing high token usage. Please try again later."
+        return f"System Error: {error_msg}"
         
 def get_prompt(prompt_path):
     if not os.path.exists(prompt_path):
@@ -213,13 +217,17 @@ def alphaBot_endpoint():
     return jsonify({"message": "AlphaBot is running"}), 200
 
 
-@cache.memoize(timeout=900)
 @alphaBot_bp.route('/alphaBot/in_depth_analysis', methods=['POST'])
 def get_in_depth_analysis():
     data = request.json
     stock_symbol = data.get("stock_symbol")
     if not stock_symbol:
         return jsonify({"error": "Stock symbol is required"}), 400
+
+    cache_key = f"in_depth_analysis:{stock_symbol.upper()}"
+    cached = cache.get(cache_key)
+    if cached:
+        return jsonify({"response": cached}), 200
 
     prompt = get_prompt(IN_DEPTH_PROMPT)
     if not prompt:
@@ -228,12 +236,13 @@ def get_in_depth_analysis():
 
     try:
         response = asyncio.run(query_alpha_bot(prompt, False))
+        if not response.startswith("**Alpha Bot is Unavailable:**") and not response.startswith("System Error:") and not response.startswith("Error:"):
+            cache.set(cache_key, response, timeout=900)
         return jsonify({"response": response}), 200
     except Exception as e:
         current_app.logger.error(f"Error generating getting in-depth analysis: {e}")
         return jsonify({"error": "Failed to generate in-depth analysis"}), 500
 
-# @cache.memoize(timeout=900)
 @alphaBot_bp.route('/alphaBot/compare_analysis', methods=['POST'])
 def get_compare_analysis():
     data = request.json
@@ -245,6 +254,14 @@ def get_compare_analysis():
     if not stock_symbols:
         print("ERROR: Missing stock_symbols", flush=True)
         return jsonify({"error": "Stock symbols are required"}), 400
+
+    # Create a deterministic hash of the custom dictionary so that algorithm changes break the cache
+    eq_hash = hashlib.md5(json.dumps(equations, sort_keys=True).encode('utf-8')).hexdigest()
+    symbols_key = "_".join(sorted(s.upper() for s in stock_symbols))
+    cache_key = f"compare_analysis:{symbols_key}:{eq_hash}"
+    cached = cache.get(cache_key)
+    if cached:
+        return jsonify({"response": cached}), 200
 
     prompt = get_prompt(COMPARE_PROMPT)
     if not prompt:
@@ -290,12 +307,13 @@ def get_compare_analysis():
     
     try:
         response = asyncio.run(query_alpha_bot(prompt, False))
+        if not response.startswith("**Alpha Bot is Unavailable:**") and not response.startswith("System Error:") and not response.startswith("Error:"):
+            cache.set(cache_key, response, timeout=900)
         return jsonify({"response": response}), 200
     except Exception as e:
         current_app.logger.error(f"Error generating compare analysis: {e}")
         return jsonify({"error": "Failed to generate compare analysis"}), 500
 
-@cache.memoize(timeout=900)
 @alphaBot_bp.route('/alphaBot/user_query', methods=['POST'])
 def get_user_query():
     data = request.json
@@ -316,7 +334,6 @@ def get_user_query():
         return jsonify({"error": "Failed to generate response for user query"}), 500
 
 
-@cache.memoize(timeout=3600)
 @alphaBot_bp.route('/alphaBot/event_pulse', methods=['POST'])
 def get_event_pulse_analysis():
     data = request.json
@@ -330,6 +347,11 @@ def get_event_pulse_analysis():
     
     if not stock_symbol or not timestamp:
         return jsonify({"error": "Stock symbol and timestamp are required"}), 400
+
+    cache_key = f"event_pulse:{stock_symbol.upper()}:{timestamp}:{swing_type}:{start_date_str}"
+    cached = cache.get(cache_key)
+    if cached:
+        return jsonify({"response": cached}), 200
 
     prompt = get_prompt(EVENT_PULSE_PROMPT)
     if not prompt:
@@ -346,6 +368,8 @@ def get_event_pulse_analysis():
     try:
         # include_tools=True activates the Alpha Vantage MCP to allow Claude to pull live forensic data!
         response = asyncio.run(query_alpha_bot(prompt, True))
+        if not response.startswith("**Alpha Bot is Unavailable:**") and not response.startswith("System Error:") and not response.startswith("Error:"):
+            cache.set(cache_key, response, timeout=3600)
         return jsonify({"response": response}), 200
     except Exception as e:
         current_app.logger.error(f"Error generating Event Pulse analysis: {e}")
