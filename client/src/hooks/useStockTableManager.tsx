@@ -148,7 +148,9 @@ export const useStockTableManager = (initialSortBy: string = "symbol") => {
      * Navigates the user to the detailed stock analysis page for the given symbol.
      */
     const navigateToStockPage = (symbol: string) => {
-        navigate(`/stock/${symbol}`);
+        navigate(`/stock/${symbol}`, {
+            state: { radarScores: radarScores[symbol] ?? null }
+        });
     };
 
     return {
