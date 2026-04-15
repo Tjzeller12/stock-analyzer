@@ -1,12 +1,13 @@
-import React, { useContext, useEffect, useRef, useState } from 'react';
+import React, { useContext, useEffect, useRef } from 'react';
 import { createChart, IChartApi, ISeriesApi, AreaSeries, Time } from 'lightweight-charts';
 import { ThemeContext } from '../../ThemeContext';
-import { authPost } from '../../utils/api';
-import { ALPHA_BOT_ENDPOINTS } from '../../constants/api';
-import StyledMarkdown from '../common/StyledMarkdown';
+import ForensicAnalysisPanel from './ForensicAnalysisPanel';
 
-export type TimeFrame = '1D' | '1W' | '1M' | '3M' | '6M' | '1Y' | '5Y' | 'MAX';
-export const timeFrames: TimeFrame[] = ['1D', '1W', '1M', '3M', '6M', '1Y', '5Y', 'MAX'];
+import {
+    useEventPulseManager,
+    TimeFrame,
+    timeFrames
+} from '../../hooks/useEventPulseManager';
 
 export interface EventPulseChartProps {
     symbol: string;
@@ -14,14 +15,6 @@ export interface EventPulseChartProps {
     activeTimeFrame: TimeFrame;
     onTimeFrameChange: (tf: TimeFrame) => void;
 }
-
-interface ClickedPoint {
-    time: number;
-    price: number;
-    rawDateStr: string;
-}
-
-type SelectionPhase = 'idle' | 'selecting' | 'selected';
 
 const EventPulseChart: React.FC<EventPulseChartProps> = ({ symbol, data, activeTimeFrame, onTimeFrameChange }) => {
     const chartContainerRef = useRef<HTMLDivElement>(null);
@@ -31,73 +24,12 @@ const EventPulseChart: React.FC<EventPulseChartProps> = ({ symbol, data, activeT
     const seriesRef = useRef<ISeriesApi<"Area"> | null>(null);
     const { theme } = useContext(ThemeContext);
 
-    // Event Pulse Selection State
-    const [selectionPhase, setSelectionPhase] = useState<SelectionPhase>('idle');
-    const selectionPhaseRef = useRef<SelectionPhase>('idle');
-    const [anchorStart, setAnchorStart] = useState<ClickedPoint | null>(null);
-    const anchorStartRef = useRef<ClickedPoint | null>(null);
-    const [anchorEnd, setAnchorEnd] = useState<ClickedPoint | null>(null);
-    const anchorEndRef = useRef<ClickedPoint | null>(null);
-    const hoverTimeRef = useRef<number | null>(null);
-    
-    // Status / Error / AI State
-    const [selectionError, setSelectionError] = useState<string | null>(null);
-    const [isAnalyzing, setIsAnalyzing] = useState(false);
-    const [analysisResult, setAnalysisResult] = useState<string | null>(null);
-
-    // Update tracking Refs immediately
-    useEffect(() => { selectionPhaseRef.current = selectionPhase; }, [selectionPhase]);
-    useEffect(() => { anchorStartRef.current = anchorStart; }, [anchorStart]);
-    useEffect(() => { anchorEndRef.current = anchorEnd; }, [anchorEnd]);
-
-    // Fetch forensic analysis when the range is firmly selected
-    useEffect(() => {
-        if (selectionPhase === 'selected' && anchorStart && anchorEnd && symbol) {
-            const fetchAnalysis = async () => {
-                setIsAnalyzing(true);
-                setAnalysisResult(null); 
-                setSelectionError(null);
-                
-                // Dynamically deduce if it was a rally or crash
-                const swingType = anchorEnd.price > anchorStart.price ? 'Massive Rally' : 'Major Sell-off';
-
-                try {
-                    const response = await authPost<{ response: string }>(ALPHA_BOT_ENDPOINTS.EVENT_PULSE, {
-                        stock_symbol: symbol,
-                        start_date_str: anchorStart.rawDateStr,
-                        start_price: anchorStart.price,
-                        date_str: anchorEnd.rawDateStr,
-                        price: anchorEnd.price,
-                        swing_type: swingType,
-                        timestamp: anchorEnd.time // Legacy pass-through
-                    });
-                    if (response.response) {
-                        setAnalysisResult(response.response);
-                    }
-                } catch (err) {
-                    console.error("Forensic analysis failed", err);
-                    setAnalysisResult("System Error: Failed to analyze this highlighted range. Please try again.");
-                } finally {
-                    setIsAnalyzing(false);
-                }
-            };
-
-            void fetchAnalysis();
-        }
-    }, [selectionPhase, anchorStart, anchorEnd, symbol]);
-
-    // Handle clearing the UI selection
-    const clearPulse = () => {
-        setSelectionPhase('idle');
-        setAnchorStart(null);
-        setAnchorEnd(null);
-        setAnalysisResult(null);
-        setIsAnalyzing(false);
-        setSelectionError(null);
-        if (windowOverlayRef.current) {
-            windowOverlayRef.current.style.display = 'none';
-        }
-    };
+    const {
+        selectionPhase, setSelectionPhase, selectionPhaseRef,
+        anchorStart, setAnchorStart, anchorStartRef,
+        anchorEnd, setAnchorEnd, anchorEndRef, hoverTimeRef,
+        selectionError, setSelectionError, isAnalyzing, analysisResult, setAnalysisResult, clearPulse
+    } = useEventPulseManager(symbol, windowOverlayRef);
 
     useEffect(() => {
         if (!chartContainerRef.current) return;
@@ -121,62 +53,31 @@ const EventPulseChart: React.FC<EventPulseChartProps> = ({ symbol, data, activeT
                 horzLines: { color: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' },
             },
             crosshair: {
-                vertLine: { 
-                    color: mainColor,
-                    width: 2,
-                    style: 3,
-                    labelBackgroundColor: mainColor,
-                },
-                horzLine: { 
-                    color: mainColor,
-                    width: 2,
-                    style: 3, 
-                    labelBackgroundColor: mainColor,
-                },
+                vertLine: {  color: mainColor, width: 2, style: 3, labelBackgroundColor: mainColor },
+                horzLine: {  color: mainColor, width: 2, style: 3, labelBackgroundColor: mainColor },
             },
-            rightPriceScale: {
-                borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
-            },
-            timeScale: {
-                borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
-                timeVisible: true,
-                secondsVisible: false,
-            },
+            rightPriceScale: { borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' },
+            timeScale: { borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)', timeVisible: true, secondsVisible: false },
         });
 
         seriesRef.current = chartRef.current.addSeries(AreaSeries, {
-            lineColor: mainColor,
-            topColor: topColor,
-            bottomColor: 'rgba(0,0,0,0)',
-            lineWidth: 2,
-            crosshairMarkerRadius: 6,
+            lineColor: mainColor, topColor: topColor, bottomColor: 'rgba(0,0,0,0)', lineWidth: 2, crosshairMarkerRadius: 6,
         });
 
-        if (data && data.length > 0) {
-            seriesRef.current.setData(data);
-        }
-
+        if (data && data.length > 0) seriesRef.current.setData(data);
         chartRef.current.timeScale().fitContent();
 
-        // --------------------------------------------------------------------------
-        // Range Highlighter UI Positioning
-        // --------------------------------------------------------------------------
         const updateWindowPosition = () => {
             if (!chartRef.current || !windowOverlayRef.current) return;
-            
             const phase = selectionPhaseRef.current;
             const start = anchorStartRef.current;
-            
             if (phase === 'idle' || !start) {
                 windowOverlayRef.current.style.display = 'none';
                 return;
             }
-            
             const t1 = start.time;
             const t2 = phase === 'selected' ? anchorEndRef.current?.time : hoverTimeRef.current;
-            
             if (!t2) return;
-            
             const x1 = chartRef.current.timeScale().timeToCoordinate(t1 as Time);
             const x2 = chartRef.current.timeScale().timeToCoordinate(t2 as Time);
             
@@ -187,12 +88,10 @@ const EventPulseChart: React.FC<EventPulseChartProps> = ({ symbol, data, activeT
             
             const left = Math.min(x1, x2);
             const width = Math.abs(x2 - x1);
-            
             windowOverlayRef.current.style.display = 'block';
             windowOverlayRef.current.style.left = `${left}px`;
             windowOverlayRef.current.style.width = `${width}px`;
 
-            // Adjust styles based on dragging vs locked
             if (phase === 'selecting') {
                 windowOverlayRef.current.className = "absolute top-0 h-[320px] pointer-events-none bg-blue-500/20 border-x-2 border-blue-500/80 transition-none z-20 shadow-[0_0_15px_rgba(59,130,246,0.3)]";
             } else {
@@ -202,7 +101,6 @@ const EventPulseChart: React.FC<EventPulseChartProps> = ({ symbol, data, activeT
             }
         };
 
-        // Standard Hover Tooltip Logic + Crosshair Tracker
         chartRef.current.subscribeCrosshairMove((param: any) => {
             if (selectionPhaseRef.current === 'selecting' && param.time) {
                 hoverTimeRef.current = param.time as number;
@@ -210,17 +108,9 @@ const EventPulseChart: React.FC<EventPulseChartProps> = ({ symbol, data, activeT
             }
 
             if (!tooltipRef.current || !container) return;
-            
             const tooltip = tooltipRef.current;
             
-            if (
-                param.point === undefined ||
-                !param.time ||
-                param.point.x < 0 ||
-                param.point.x > container.clientWidth ||
-                param.point.y < 0 ||
-                param.point.y > container.clientHeight
-            ) {
+            if (param.point === undefined || !param.time || param.point.x < 0 || param.point.x > container.clientWidth || param.point.y < 0 || param.point.y > container.clientHeight) {
                 tooltip.style.display = 'none';
                 return;
             }
@@ -243,32 +133,34 @@ const EventPulseChart: React.FC<EventPulseChartProps> = ({ symbol, data, activeT
                 : param.time;
 
             const isSelecting = selectionPhaseRef.current === 'selecting';
+            const isShortTimeframe = ['1D', '1W'].includes(activeTimeFrame);
 
             tooltip.innerHTML = `
                 <div style="font-size: 14px; margin-bottom: 4px; color: ${isDark ? '#e0e0e0' : '#444'}">${timestampStr}</div>
                 <div style="font-size: 18px; font-weight: bold; color: #06a84d">$${price.toFixed(2)}</div>
-                <div style="font-size: 11px; margin-top: 6px; color: ${isDark ? '#888' : '#aaa'}; font-style: italic;">
+                ${!isShortTimeframe ? `<div style="font-size: 11px; margin-top: 6px; color: ${isDark ? '#888' : '#aaa'}; font-style: italic;">
                     ${isSelecting ? 'Click again to analyze bounded area' : 'Click to trace Macro event'}
-                </div>
+                </div>` : ''}
             `;
 
             const tooltipWidth = tooltip.offsetWidth;
             const tooltipHeight = tooltip.offsetHeight;
             const y = param.point.y;
             let x = param.point.x + 15;
-            
-            if (x > container.clientWidth - tooltipWidth) {
-                x = param.point.x - tooltipWidth - 15;
-            }
+            if (x > container.clientWidth - tooltipWidth) x = param.point.x - tooltipWidth - 15;
 
             tooltip.style.left = x + 'px';
             tooltip.style.top = Math.max(0, y - tooltipHeight / 2) + 'px';
         });
 
-        // Interactive Selection Logic
         chartRef.current.subscribeClick((param: any) => {
+            const isShortTimeframe = ['1D', '1W'].includes(activeTimeFrame);
+            if (isShortTimeframe) {
+                setSelectionError('Please highlight a window of at least 7 days across structural timeframes.');
+                return;
+            }
+
             if (!param.point || !param.time || !seriesRef.current) return;
-            
             const time = param.time as number;
             const dataPoint = param.seriesData.get(seriesRef.current);
             if (!dataPoint) return;
@@ -278,7 +170,6 @@ const EventPulseChart: React.FC<EventPulseChartProps> = ({ symbol, data, activeT
             const phase = selectionPhaseRef.current;
             
             if (phase === 'idle' || phase === 'selected') {
-                // Drop Anchor 1
                 setSelectionPhase('selecting');
                 setAnchorStart({ time, price, rawDateStr });
                 setAnchorEnd(null);
@@ -293,30 +184,28 @@ const EventPulseChart: React.FC<EventPulseChartProps> = ({ symbol, data, activeT
                 const start = anchorStartRef.current;
                 if (!start) return;
                 
-                // Enforce minimum gap to strictly ensure real analysis (Prevent double-clicks)
-                const isShortTimeframe = ['1D', '1W'].includes(activeTimeFrame);
-                const minDaysRequirement = isShortTimeframe ? 0 : 7; // Require 7 days for macro, 0 for intraday
-                const minSeconds = minDaysRequirement * 86400;
+                const minSeconds = 7 * 86400; // 7 days for macro
 
                 const diffSeconds = Math.abs(time - start.time);
-                
-                // Block double-clicking the same timestamp exactly
                 if (diffSeconds < 1) { 
                      setSelectionPhase('idle');
                      setAnchorStart(null);
-                     if(windowOverlayRef.current) windowOverlayRef.current.style.display = 'none';
+                     selectionPhaseRef.current = 'idle';
+                     anchorStartRef.current = null;
+                     if (windowOverlayRef.current) windowOverlayRef.current.style.display = 'none';
                      return;
                 }
 
                 if (diffSeconds < minSeconds) {
-                    setSelectionError(`Please highlight a window of at least ${minDaysRequirement} days across structural timeframes.`);
+                    setSelectionError(`Please highlight a window of at least 7 days across structural timeframes.`);
                     setSelectionPhase('idle');
                     setAnchorStart(null);
-                    if(windowOverlayRef.current) windowOverlayRef.current.style.display = 'none';
+                    selectionPhaseRef.current = 'idle';
+                    anchorStartRef.current = null;
+                    if (windowOverlayRef.current) windowOverlayRef.current.style.display = 'none';
                     return;
                 }
                 
-                // Finalize Bounds Chronologically
                 setSelectionError(null);
                 setSelectionPhase('selected');
                 
@@ -334,16 +223,19 @@ const EventPulseChart: React.FC<EventPulseChartProps> = ({ symbol, data, activeT
             }
         });
         
-        // Ensure Highlight Window faithfully tracks native Panning Dynamics
         chartRef.current.timeScale().subscribeVisibleTimeRangeChange(updateWindowPosition);
         chartRef.current.timeScale().subscribeVisibleLogicalRangeChange(updateWindowPosition);
         chartRef.current.timeScale().subscribeSizeChange(updateWindowPosition);
 
+        let lastWidth = container.clientWidth;
         const resizeObserver = new ResizeObserver((entries) => {
             if (entries.length === 0 || !chartRef.current) return;
             const newRect = entries[0].contentRect;
-            chartRef.current.applyOptions({ width: newRect.width });
-            clearPulse(); // Reset overlay coordinates on layout breaking constraints
+            if (newRect.width !== lastWidth) {
+                lastWidth = newRect.width;
+                chartRef.current.applyOptions({ width: newRect.width });
+                clearPulse();
+            }
         });
 
         resizeObserver.observe(container);
@@ -367,11 +259,14 @@ const EventPulseChart: React.FC<EventPulseChartProps> = ({ symbol, data, activeT
                     <span className="text-xl font-bold bg-clip-text text-transparent bg-linear-to-r from-blue-400 to-blue-600">
                         {symbol} {activeTimeFrame === '1D' || activeTimeFrame === '1W' ? 'Intraday' : 'Historical'} Data
                     </span>
-                    <span className="text-xs text-text-main/50 font-medium">Click to draw a Macro Analysis Window, click again to finalize</span>
+                    <span className="text-xs text-text-main/50 font-medium">
+                        {['1D', '1W'].includes(activeTimeFrame) 
+                            ? 'Intraday charts are currently un-analyzable due to market noise.' 
+                            : 'Click to draw a Macro Analysis Window, click again to finalize'}
+                    </span>
                 </div>
             </div>
             
-            {/* Context Error Toast */}
             {selectionError && (
                 <div className="w-[95%] mx-auto bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-semibold px-4 py-2 rounded-lg mb-2 text-center animate-in fade-in slide-in-from-top-2">
                     {selectionError}
@@ -402,74 +297,27 @@ const EventPulseChart: React.FC<EventPulseChartProps> = ({ symbol, data, activeT
                 <div className="relative w-full overflow-hidden">
                     <div ref={chartContainerRef} className="w-full h-[350px] relative z-10" />
                     
-                    {/* Floating Hover Tooltip Div */}
                     <div 
                         ref={tooltipRef}
                         className="absolute z-60 pointer-events-none bg-form-bg/90 backdrop-blur-md border border-border-main/20 p-3 rounded-lg shadow-xl"
                         style={{ display: 'none', transition: 'opacity 0.1s ease' }}
                     />
 
-                    {/* Interactive Selection Blue Window Overlay (Bound completely natively to the Time scale matrix) */}
                     <div 
                         ref={windowOverlayRef}
                         className="absolute top-0 h-[320px] pointer-events-none z-20"
                         style={{ display: 'none' }}
-                    >
-                    </div>
+                    ></div>
                 </div>
 
-                {/* Event Pulse: Forensic Case File Dropdown */}
-                {selectionPhase === 'selected' && anchorStart && anchorEnd && (
-                    <div className="w-full relative z-40 mt-4 animate-in fade-in slide-in-from-top-4 duration-300">
-                        <div className="w-[95%] mx-auto bg-list-bg border border-border-main/20 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] p-6 relative overflow-hidden backdrop-blur-xl">
-                            {/* Accent line purely derived by UI bounding momentum */}
-                            <div className={`absolute top-0 left-0 w-full h-1 bg-linear-to-r ${(anchorEnd.price > anchorStart.price) ? 'from-green-500 via-emerald-500 to-green-400' : 'from-red-500 via-rose-500 to-red-400'}`}></div>
-                            
-                            <div className="flex justify-between items-start mb-4">
-                                <div className="flex items-center space-x-3">
-                                    <div className={`flex items-center justify-center w-10 h-10 rounded-full border ${(anchorEnd.price > anchorStart.price) ? 'bg-green-500/10 border-green-500/20 text-green-500' : 'bg-red-500/10 border-red-500/20 text-red-500'}`}>
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <h3 className="text-lg font-bold text-text-main">
-                                            Analyzing {Math.abs(((anchorEnd.price - anchorStart.price) / anchorStart.price) * 100).toFixed(1)}% {anchorEnd.price > anchorStart.price ? 'Rally' : 'Sell-Off'}
-                                        </h3>
-                                        <p className="text-xs text-text-main/60 font-medium">
-                                            from {new Date(anchorStart.time * 1000).toLocaleString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric', year: 'numeric' })} to {new Date(anchorEnd.time * 1000).toLocaleString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric', year: 'numeric' })}
-                                        </p>
-                                    </div>
-                                </div>
-                                <button 
-                                    onClick={clearPulse}
-                                    className="p-2 rounded-full hover:bg-border-main/10 text-text-main/50 hover:text-text-main transition-colors"
-                                >
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </button>
-                            </div>
-
-                            <div className="bg-form-bg rounded-xl p-5 border border-border-main/10 shadow-inner min-h-[120px]">
-                                {isAnalyzing ? (
-                                    <div className="flex flex-col items-center justify-center space-y-4 h-full py-4">
-                                        <div className="flex justify-center space-x-2 w-full">
-                                            <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                                            <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                                            <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce"></div>
-                                        </div>
-                                        <span className="text-sm font-semibold text-blue-500 animate-pulse">Running Bounded Sector Context Queries...</span>
-                                    </div>
-                                ) : analysisResult ? (
-                                    <div className="text-sm prose prose-invert max-w-none prose-p:leading-relaxed prose-headings:text-text-main prose-a:text-blue-400">
-                                        <StyledMarkdown>{analysisResult}</StyledMarkdown>
-                                    </div>
-                                ) : null}
-                            </div>
-                        </div>
-                    </div>
-                )}
+                <ForensicAnalysisPanel 
+                    selectionPhase={selectionPhase}
+                    anchorStart={anchorStart}
+                    anchorEnd={anchorEnd}
+                    isAnalyzing={isAnalyzing}
+                    analysisResult={analysisResult}
+                    clearPulse={clearPulse}
+                />
             </div>
         </div>
     );

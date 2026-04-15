@@ -3,41 +3,35 @@
  * Detailed view for a specific stock, displaying metrics, charts, news sentiment, and AI analysis.
  * Uses StockHeader and StockMetricsTable extracted components.
  */
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useMemo } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import StyledMarkdown from "../components/common/StyledMarkdown";
 import StockHeader from "../components/StockHeader";
 import StockMetricsTable from "../components/common/StockMetricsTable";
-import { DEFAULT_TEMPLATE } from "../components/common/AdvancedSettingsPanel";
 import RadarGraph from "../components/common/RadarGraph";
-import { ALPHA_BOT_ENDPOINTS, DATA_ENDPOINTS, RADAR_ENDPOINTS } from '../constants/api';
 import logo from "../resources/alphaBotLogo.png";
-import { authPost } from '../utils/api';
 import EventPulseChart from "../components/charts";
+import { ChartData } from '../types';
 
-import { ChartData, Stock } from '../types';
+// Import our custom hooks
+import { useStockDataManager } from "../hooks/useStockDataManager";
+import { useStockAnalysisManager } from "../hooks/useStockAnalysisManager";
 
 const StockPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { symbol } = useParams<{ symbol: string }>();
-  const [stock, setStock] = useState<Stock | null>(null);
-  // Use radar scores passed from the main page; only fetch fresh if navigating directly by URL
-  const [radarScores, setRadarScores] = useState<Record<string, number> | null>(
-    (location.state as { radarScores?: Record<string, number> } | null)?.radarScores ?? null
-  );
-  const [summary, setSummary] = useState<string | null>(null);
-  const [, setLoading] = useState(false);
-  const [timeFrame, setTimeFrame] = useState('1D');
-  const [chartData, setChartData] = useState<any[]>([]);
+  
+  const initialRadarScores = (location.state as { radarScores?: Record<string, number> } | null)?.radarScores ?? null;
 
-  // Chat state
-  interface ChatMessage { role: 'user' | 'assistant'; content: string; }
-  const [showChat, setShowChat] = useState(false);
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-  const [chatInput, setChatInput] = useState('');
-  const [chatLoading, setChatLoading] = useState(false);
-  const chatEndRef = useRef<HTMLDivElement>(null);
+  // Use Custom Hooks
+  const { 
+    stock, radarScores, timeFrame, setTimeFrame, chartData 
+  } = useStockDataManager(symbol, initialRadarScores);
+  
+  const { 
+    summary, showChat, setShowChat, chatMessages, chatInput, setChatInput, chatLoading, chatEndRef, sendChat 
+  } = useStockAnalysisManager(symbol);
 
   // Compute ChartData for RadarGraph from radar scores
   const radarChartData: ChartData | null = useMemo(() => {
@@ -55,111 +49,10 @@ const StockPage: React.FC = () => {
     };
   }, [radarScores, stock]);
 
-  const fetchStock = async () => {
-    if (!symbol) return;
-    setLoading(true);
-    try {
-      const stockData = await authPost<Stock>(DATA_ENDPOINTS.STOCK, { symbol });
-      setStock(stockData);
-    } catch (error) {
-      console.error("Stock fetch failed:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchRadarScores = async () => {
-    if (!symbol) return;
-    try {
-      const data = await authPost<{ scores: Record<string, number>; symbol: string }>(
-        RADAR_ENDPOINTS.SINGLE,
-        { symbol, template: DEFAULT_TEMPLATE }
-      );
-      if (data?.scores) setRadarScores(data.scores);
-    } catch (error) {
-      console.error("Radar score fetch failed:", error);
-    }
-  };
-
-  const sendChat = async () => {
-    const trimmed = chatInput.trim();
-    if (!trimmed || !symbol || chatLoading) return;
-    const userMsg: ChatMessage = { role: 'user', content: trimmed };
-    setChatMessages(prev => [...prev, userMsg]);
-    setChatInput('');
-    setChatLoading(true);
-    try {
-      const data = await authPost<{ response: string }>(ALPHA_BOT_ENDPOINTS.USER_QUERY, {
-        stock_symbol: symbol,
-        user_query: trimmed,
-      });
-      setChatMessages(prev => [...prev, { role: 'assistant', content: data.response }]);
-    } catch (e) {
-      setChatMessages(prev => [...prev, { role: 'assistant', content: 'Error fetching response.' }]);
-    } finally {
-      setChatLoading(false);
-      setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
-    }
-  };
-
-  const fetchAlphaBotInDepthAnalysis = async () => {
-    if (!symbol) return;
-    try {
-      const response = await authPost<{ response: string }>(ALPHA_BOT_ENDPOINTS.IN_DEPTH, { stock_symbol: symbol });
-      if (response.response) {
-        setSummary(response.response);
-      }
-    } catch (error) {
-      console.error("Error fetching summary:", error);
-    }
-  };
-
-  const fetchInDepthData = async () => {
-    if (!symbol) return;
-    setLoading(true);
-    try {
-      const inDepthData = await authPost<Stock>(DATA_ENDPOINTS.IN_DEPTH, { symbol });
-      setStock(inDepthData);
-    } catch (error) {
-      console.error("In-depth data fetch failed:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchChartData = async () => {
-    if (!symbol) return;
-    try {
-      const data = await authPost<any[]>(DATA_ENDPOINTS.CHART, { symbol, timeFrame });
-      if (Array.isArray(data)) {
-        setChartData(data);
-      }
-    } catch (error) {
-      console.error("Chart data fetch failed:", error);
-    }
-  };
-
-  useEffect(() => {
-    void fetchStock();
-    void fetchInDepthData();
-    void fetchAlphaBotInDepthAnalysis();
-    // Only hit the radar endpoint if scores weren't passed from the main page
-    if (!radarScores) {
-      void fetchRadarScores();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [symbol]);
-
-  useEffect(() => {
-    void fetchChartData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [symbol, timeFrame]);
-
   const handleLogoClick = () => {
     navigate("/main");
   };
 
-    // --- Calculate Sentiment from Alpha Vantage article feed ---
   return (
     <div className="flex flex-col items-center min-h-screen p-0 font-sans bg-background text-text-main">
       <StockHeader stock={stock} onLogoClick={handleLogoClick} logo={logo} />
