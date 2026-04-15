@@ -13,6 +13,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 IN_DEPTH_PROMPT = os.path.join(BASE_DIR, "prompts/in_depth.md")
 COMPARE_PROMPT = os.path.join(BASE_DIR, "prompts/compare.md")
 USER_QUERY_PROMPT = os.path.join(BASE_DIR, "prompts/user_query.md")
+EVENT_PULSE_PROMPT = os.path.join(BASE_DIR, "prompts/event_pulse.md")
 NEWS_ANALYSIS_PROMPT = os.path.join(BASE_DIR, "prompts/news_analysis.md")
 MOAT_ANALYSIS_PROMPT = os.path.join(BASE_DIR, "prompts/moat_analysis.md")
 
@@ -48,18 +49,22 @@ class Routes:
     DATA_STOCK = "/data/stock_data"
     DATA_NEWS = "/data/news"
     DATA_IN_DEPTH = "/data/in_depth_data"
+    DATA_CHART = "/data/chart_data"
     
     # AlphaBot routes
     ALPHA_BOT = "/alphaBot"
     ALPHA_BOT_COMPARE = "/alphaBot/compare_analysis"
     ALPHA_BOT_IN_DEPTH = "/alphaBot/in_depth_analysis"
     ALPHA_BOT_USER_QUERY = "/alphaBot/user_query"
+    ALPHA_BOT_EVENT_PULSE = "/alphaBot/event_pulse"
 
 # Alpha Vantage API Functions
 class AlphaVantageFunction:
     NEWS_SENTIMENT = "NEWS_SENTIMENT"
     GLOBAL_QUOTE = "GLOBAL_QUOTE"
     TIME_SERIES_DAILY = "TIME_SERIES_DAILY"
+    TIME_SERIES_DAILY_ADJUSTED = "TIME_SERIES_DAILY_ADJUSTED"
+    TIME_SERIES_INTRADAY = "TIME_SERIES_INTRADAY"
     TIME_SERIES_INTRADAY = "TIME_SERIES_INTRADAY"
     TIME_SERIES_MONTHLY = "TIME_SERIES_MONTHLY"
     INSIDER_TRANSACTIONS = "INSIDER_TRANSACTIONS"

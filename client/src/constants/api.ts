@@ -23,6 +23,7 @@ export const DATA_ENDPOINTS = {
     STOCK: `${API_BASE_URL}/data/stock_data`,
     NEWS: `${API_BASE_URL}/data/news`,
     IN_DEPTH: `${API_BASE_URL}/data/in_depth_data`,
+    CHART: `${API_BASE_URL}/data/chart_data`,
 } as const;
 
 // AlphaBot endpoints
@@ -31,6 +32,7 @@ export const ALPHA_BOT_ENDPOINTS = {
     COMPARE: `${API_BASE_URL}/alphaBot/compare_analysis`,
     USER_QUERY: `${API_BASE_URL}/alphaBot/user_query`,
     IN_DEPTH: `${API_BASE_URL}/alphaBot/in_depth_analysis`,
+    EVENT_PULSE: `${API_BASE_URL}/alphaBot/event_pulse`,
 } as const;
 
 // Profile endpoints
