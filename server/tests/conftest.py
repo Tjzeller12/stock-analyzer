@@ -50,7 +50,7 @@ def auth_headers(client, app):
     an Authorization header containing a valid JWT token.
     """
     import uuid
-    unique_id = uuid.uuid4().hex[:8]
+    unique_id = str(uuid.uuid4()).split("-")[0]
     payload = {
         "username": f"testuser_{unique_id}",
         "password": "testpass123",
