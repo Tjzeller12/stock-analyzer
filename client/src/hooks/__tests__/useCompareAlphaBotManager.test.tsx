@@ -28,7 +28,7 @@ describe('useCompareAlphaBotManager', () => {
     
     await act(async () => {
       // Trying to cleanly map compare request with 0 formally selected stocks internally validated
-      await result.current.compareStocks(['AAPL', 'TSLA'], { templateName: 'test', equations: {} });
+      await result.current.compareStocks(['AAPL', 'TSLA'], { name: 'test', normalization_method: 'min-max', scope: 'global', equations: {} });
     });
     
     expect(result.current.compareError).toMatch(/Select at least 2/i);
