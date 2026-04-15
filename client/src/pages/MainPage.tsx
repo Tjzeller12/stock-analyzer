@@ -42,11 +42,6 @@ const MainPage: React.FC = () => {
     void fetchStocks();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sortBy]);
-  useEffect(() => {
-    // Called whenever newsFilter changes
-    void handleFilterChange(newsFilter);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [newsFilter]);
 
   useEffect(() => {
     // Fetch individual radar scores for the table whenever stocks or the template change

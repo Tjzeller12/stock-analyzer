@@ -14,7 +14,6 @@ bp = Blueprint('data', __name__)
 # Retrieves news data from Alpha Vantage API
 @bp.route('/news', methods=['POST'])
 @login_required
-@cache.memoize(timeout=900)
 def news_filter_selection():
 
 # ... (omitting body for brevity in tool call, but targeting the decorator lines)
