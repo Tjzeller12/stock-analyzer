@@ -1,0 +1,6 @@
+{
+  "pythonVersion": "3.12",
+  "pythonPlatform": "Windows",
+  "venvPath": "C:/Users/Michael/AppData/Local/Programs/Python/Python312",
+  "include": ["app", "tests"]
+}
