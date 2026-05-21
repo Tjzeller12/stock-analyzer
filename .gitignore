@@ -52,3 +52,6 @@ client/build/
 client/dist/
 server/flask_session/
 docker-compose.override.yml
+
+# Flask session storage (runtime data, not code)
+flask_session/
