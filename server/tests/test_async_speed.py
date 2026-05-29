@@ -1,7 +1,7 @@
 import unittest
 import asyncio
 import time
-from app.alphaBot import _execute_tool_calls
+from app.alphaBot.client import _execute_tool_calls
 
 # Mock objects
 class MockToolCall:
