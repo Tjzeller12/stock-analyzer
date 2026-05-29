@@ -7,6 +7,7 @@ import hashlib
 from app.constants import ALPHA_VANTAGE_MCP_URL, CLAUDE_MODEL, USER_QUERY_PROMPT, COMPARE_PROMPT, IN_DEPTH_PROMPT, EVENT_PULSE_PROMPT, MOAT_ANALYSIS_PROMPT, NEWS_ANALYSIS_PROMPT
 from app.utils.api import build_alpha_vantage_url
 from app.constants import AlphaVantageFunction
+from app.services.payload_stripper import AlphaVantagePayloadStripper
 from anthropic import AsyncAnthropic
 from app.models import StockMaster
 import asyncio
@@ -128,6 +129,24 @@ async def _execute_tool_calls(av_client, tool_calls):
                 else:
                     tool_output += str(block)
 
+            raw_len = len(tool_output)
+            # Strip the payload down to fields Claude actually needs.
+            # Prevents token-limit errors on large Alpha Vantage responses.
+            tool_output = AlphaVantagePayloadStripper.strip(item.name, tool_output)
+            stripped_len = len(tool_output)
+
+            # Hard per-result cap: if stripping didn't recognise the tool name
+            # (unknown/future tools), truncate to 12k chars (~3k tokens) so a
+            # single unrecognised tool can never blow the context window.
+            MAX_RESULT_CHARS = 12_000
+            if len(tool_output) > MAX_RESULT_CHARS:
+                tool_output = tool_output[:MAX_RESULT_CHARS] + "\n[...truncated]"
+
+            print(
+                f"TOOL: {item.name} | raw={raw_len:,} stripped={stripped_len:,} final={len(tool_output):,} chars",
+                flush=True
+            )
+
         tool_results.append({
             "role": "user",
             "content": [{
@@ -139,6 +158,52 @@ async def _execute_tool_calls(av_client, tool_calls):
 
     return tool_results
 
+def _estimate_context_chars(messages) -> int:
+    """
+    Character count of the full message history.
+
+    Uses json.dumps(default=str) so that Anthropic SDK objects (TextBlock,
+    ToolUseBlock, etc.) are serialized via their __repr__ rather than silently
+    skipped. This gives an accurate size estimate even for assistant turns
+    that contain non-dict content blocks.
+    """
+    try:
+        return len(json.dumps(messages, default=str))
+    except Exception:
+        return sum(len(str(msg)) for msg in messages)
+
+
+def _prune_old_tool_results(messages, max_chars: int) -> None:
+    """
+    When the accumulated message history exceeds max_chars, replace the
+    content of the oldest tool_result blocks with a short placeholder.
+
+    We always leave the first message (the user prompt) and the last four
+    messages (the most recent assistant thought + tool results) untouched
+    so Claude retains enough context to write its final answer.
+    """
+    if _estimate_context_chars(messages) <= max_chars:
+        return
+
+    PLACEHOLDER = "[Truncated — already incorporated into analysis]"
+
+    # Iterate over everything except the first and last 4 messages
+    for msg in messages[1: max(1, len(messages) - 4)]:
+        if msg.get("role") != "user":
+            continue
+        content = msg.get("content")
+        if not isinstance(content, list):
+            continue
+        for block in content:
+            if (isinstance(block, dict)
+                    and block.get("type") == "tool_result"
+                    and block.get("content") != PLACEHOLDER):
+                block["content"] = PLACEHOLDER
+                # Re-check after each replacement — stop as soon as we're under budget
+                if _estimate_context_chars(messages) <= max_chars:
+                    return
+
+
 async def _run_tool_loop(client, anthropic_tools, messages, av_client):
     """
     The main 'ReAct' loop (Reason + Act).
@@ -147,15 +212,51 @@ async def _run_tool_loop(client, anthropic_tools, messages, av_client):
     2. Checks if Claude wants to stop or use a tool.
     3. If tool use: executes tools -> adds results to history -> repeats loop.
     4. If stop: returns the final text response.
+
+    Context budget: ~80k tokens (320k chars at ~4 chars/token).
+    The remaining ~120k token buffer absorbs the tool-schema overhead
+    (~15-20k tokens for all AV MCP tools on every call) plus Claude's
+    8k max_tokens output, with room to spare.
+
+    Two-layer protection against token limit errors:
+      - Proactive: _prune_old_tool_results fires before every API call.
+      - Reactive: if the API still rejects with a prompt-too-long error,
+        we emergency-prune ALL old results and retry once before giving up.
     """
+    MAX_CONTEXT_CHARS = 320_000
+    # Emergency floor: keep only the prompt + last 4 messages
+    EMERGENCY_CONTEXT_CHARS = 40_000
+
     for i in range(50): # Safety limit to prevent infinite loops (cost protection)
-        response = await client.messages.create(
-            model=CLAUDE_MODEL,
-            max_tokens=8192,
-            messages=messages,
-            tools=anthropic_tools
-        )
-        
+        # Proactive prune: trim oldest tool results before sending
+        _prune_old_tool_results(messages, MAX_CONTEXT_CHARS)
+
+        try:
+            response = await client.messages.create(
+                model=CLAUDE_MODEL,
+                max_tokens=8192,
+                messages=messages,
+                tools=anthropic_tools
+            )
+        except Exception as e:
+            err = str(e)
+            if "prompt is too long" in err:
+                print(f"WARNING: Token limit hit — emergency pruning and retrying. ({err})", flush=True)
+                # Nuclear option: prune everything down to bare minimum
+                _prune_old_tool_results(messages, EMERGENCY_CONTEXT_CHARS)
+                try:
+                    response = await client.messages.create(
+                        model=CLAUDE_MODEL,
+                        max_tokens=8192,
+                        messages=messages,
+                        tools=anthropic_tools
+                    )
+                except Exception as retry_err:
+                    print(f"ERROR: Retry after emergency prune also failed: {retry_err}", flush=True)
+                    return "Analysis could not be completed: the requested time range is too large. Try selecting a shorter window."
+            else:
+                raise
+
         # Add Claude's "thought" (or tool request) to history
         messages.append({"role": "assistant", "content": response.content})
         
@@ -179,20 +280,22 @@ async def query_alpha_bot(prompt, include_tools):
 
     # Use our custom HTTP client
     av_client = HttpMCPClient(ALPHA_VANTAGE_MCP_URL, api_key)
-    
+
     try:
         anthropic_tools = []
         # Step 1: Discover tools
         if include_tools:
             anthropic_tools = await _discover_tools(av_client)
-        
-        # Step 2: Initialize Client
-        client = AsyncAnthropic()
-        messages = [{"role": "user", "content": prompt}]
-        
-        # Step 3: Run ReAct Loop
-        return await _run_tool_loop(client, anthropic_tools, messages, av_client)
-        
+
+        # Step 2: Use AsyncAnthropic as a context manager so the httpx
+        # transport and connection pool are properly closed after each request,
+        # preventing the connection-pool memory leak.
+        async with AsyncAnthropic() as client:
+            messages = [{"role": "user", "content": prompt}]
+
+            # Step 3: Run ReAct Loop
+            return await _run_tool_loop(client, anthropic_tools, messages, av_client)
+
     except Exception as e:
         print(f"CRITICAL ERROR in query_alpha_bot: {e}", flush=True)
         error_msg = str(e)
