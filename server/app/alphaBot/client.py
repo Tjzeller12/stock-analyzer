@@ -1,12 +1,16 @@
 """
 AlphaBot AI Client
 ------------------
-Owns everything related to talking to Claude via the Alpha Vantage MCP:
-  - HttpMCPClient   : low-level JSON-RPC over HTTP POST to mcp.alphavantage.co
-  - AlphaBotResult  : typed wrapper for a Claude response (text + cacheable flag)
-  - AlphaBotClient  : synchronous facade used by routes and analysis classes
-  - Internal async helpers: tool discovery, tool execution, context pruning,
-    and the main ReAct loop
+Owns the Claude conversation loop and exposes a clean synchronous facade.
+
+  AlphaBotResult          — typed wrapper for a Claude response
+  AlphaBotClient          — synchronous facade used by routes and analyses
+  _run_tool_loop()        — ReAct loop (Reason + Act)
+  _execute_tool_calls()   — parallel tool execution via MarketDataProvider
+  _query_alpha_bot()      — async entry point wired to AlphaVantageProvider
+
+The loop is fully vendor-agnostic: it depends only on MarketDataProvider,
+not on Alpha Vantage specifically. Swapping providers requires no changes here.
 """
 import asyncio
 import json
@@ -14,57 +18,10 @@ import os
 from dataclasses import dataclass
 from typing import Any
 
-import httpx
 from anthropic import AsyncAnthropic
 
-from app.constants import ALPHA_VANTAGE_MCP_URL, CLAUDE_MODEL
-from app.services.payload_stripper import AlphaVantagePayloadStripper
-
-
-# ------------------------------------------------------------------ #
-# HttpMCPClient                                                        #
-# ------------------------------------------------------------------ #
-
-class HttpMCPClient:
-    """
-    Custom HTTP client for the Alpha Vantage MCP server.
-
-    The AV MCP is stateless (HTTP POST + JSON-RPC).  The Anthropic MCP SDK
-    uses SSE/stdio transports which don't apply here, so we roll our own.
-    """
-
-    def __init__(self, base_url: str, api_key: str):
-        self.url = f"{base_url}?apikey={api_key}"
-        self.request_id = 0
-
-    async def call_method(self, method: str, params: dict | None = None) -> dict:
-        self.request_id += 1
-        payload = {
-            "jsonrpc": "2.0",
-            "method": method,
-            "params": params or {},
-            "id": self.request_id,
-        }
-        async with httpx.AsyncClient() as client:
-            try:
-                resp = await client.post(self.url, json=payload, timeout=30.0)
-                resp.raise_for_status()
-                data = resp.json()
-                if "error" in data:
-                    print(f"ERROR: MCP Protocol Error: {data['error']}", flush=True)
-                    raise Exception(f"MCP Error: {data['error']}")
-                return data.get("result", {})
-            except Exception as e:
-                print(f"ERROR: MCP Connection Error: {str(e)}", flush=True)
-                raise
-
-    async def list_tools(self) -> list[dict]:
-        res = await self.call_method("tools/list")
-        return res.get("tools", [])
-
-    async def call_tool(self, name: str, arguments: dict) -> list[dict]:
-        res = await self.call_method("tools/call", {"name": name, "arguments": arguments})
-        return res.get("content", [])
+from app.alphaBot.providers import AlphaVantageProvider, MarketDataProvider
+from app.constants import CLAUDE_MODEL
 
 
 # ------------------------------------------------------------------ #
@@ -76,8 +33,8 @@ class AlphaBotResult:
     """
     Typed wrapper around a raw Claude response string.
 
-    The ``cacheable`` property centralises the "is this a real result or an
-    error message?" check so routes never need to inspect string prefixes.
+    The ``cacheable`` property centralises the "real result vs error"
+    check so routes never inspect raw string prefixes directly.
     """
     text: str
 
@@ -102,7 +59,7 @@ class AlphaBotClient:
     """
     Synchronous facade over the async query pipeline.
 
-    Routes and analysis classes call ``run_sync`` and get back an
+    Routes and analysis classes call ``run_sync`` and receive an
     ``AlphaBotResult`` without ever touching asyncio directly.
     """
 
@@ -114,88 +71,16 @@ class AlphaBotClient:
 
 
 # ------------------------------------------------------------------ #
-# Internal async pipeline                                              #
+# Context management                                                   #
 # ------------------------------------------------------------------ #
-
-async def _discover_tools(av_client: HttpMCPClient) -> list[dict]:
-    """
-    Fetch available tools from the AV MCP server and convert them to the
-    format expected by the Anthropic messages API (snake_case schema keys).
-    """
-    available = await av_client.list_tools()
-    return [
-        {
-            "name":         tool.get("name"),
-            "description":  tool.get("description"),
-            "input_schema": tool.get("inputSchema"),
-        }
-        for tool in available
-    ]
-
-
-async def _execute_tool_calls(
-    av_client: HttpMCPClient, tool_calls: list[Any]
-) -> list[dict]:
-    """
-    Execute all tool-use blocks from a Claude response in parallel and
-    return them as a list of tool_result user messages.
-
-    Each raw result is passed through AlphaVantagePayloadStripper and capped
-    at 12k characters so no single tool response can blow the context window.
-    """
-    tool_use_items = [c for c in tool_calls if c.type == "tool_use"]
-    if not tool_use_items:
-        return []
-
-    results = await asyncio.gather(
-        *[av_client.call_tool(item.name, item.input) for item in tool_use_items],
-        return_exceptions=True,
-    )
-
-    tool_results = []
-    for item, raw_result in zip(tool_use_items, results):
-        tool_output = ""
-
-        if isinstance(raw_result, Exception):
-            print(f"ERROR: Tool execution failed for {item.name}: {raw_result}", flush=True)
-            tool_output = f"Error executing tool {item.name}: {str(raw_result)}"
-        else:
-            for block in raw_result:
-                if block.get("type") == "text":
-                    tool_output += block.get("text", "")
-                else:
-                    tool_output += str(block)
-
-            raw_len = len(tool_output)
-            tool_output = AlphaVantagePayloadStripper.strip(item.name, tool_output)
-            stripped_len = len(tool_output)
-
-            MAX_RESULT_CHARS = 12_000
-            if len(tool_output) > MAX_RESULT_CHARS:
-                tool_output = tool_output[:MAX_RESULT_CHARS] + "\n[...truncated]"
-
-            print(
-                f"TOOL: {item.name} | raw={raw_len:,} stripped={stripped_len:,} "
-                f"final={len(tool_output):,} chars",
-                flush=True,
-            )
-
-        tool_results.append({
-            "role": "user",
-            "content": [{"type": "tool_result", "tool_use_id": item.id, "content": tool_output}],
-        })
-
-    return tool_results
-
 
 def _estimate_context_chars(messages: list[dict]) -> int:
     """
     Character count of the full message history.
 
     Uses json.dumps(default=str) so Anthropic SDK objects (TextBlock,
-    ToolUseBlock, etc.) are serialized via their __repr__ rather than
-    silently skipped.  This gives an accurate size estimate even for
-    assistant turns that contain non-dict content blocks.
+    ToolUseBlock, etc.) are serialized via __repr__ rather than silently
+    skipped, giving an accurate size estimate for assistant turns.
     """
     try:
         return len(json.dumps(messages, default=str))
@@ -205,11 +90,11 @@ def _estimate_context_chars(messages: list[dict]) -> int:
 
 def _prune_old_tool_results(messages: list[dict], max_chars: int) -> None:
     """
-    When the accumulated message history exceeds max_chars, replace the
-    content of the oldest tool_result blocks with a short placeholder.
+    Replace the content of the oldest tool_result blocks with a placeholder
+    when the accumulated history exceeds max_chars.
 
-    The first message (user prompt) and the last 4 messages (most recent
-    assistant thought + tool results) are always preserved.
+    Always preserves the first message (user prompt) and the last 4 messages
+    (most recent assistant thought + tool results).
     """
     if _estimate_context_chars(messages) <= max_chars:
         return
@@ -231,24 +116,72 @@ def _prune_old_tool_results(messages: list[dict], max_chars: int) -> None:
                     return
 
 
+# ------------------------------------------------------------------ #
+# Tool execution                                                        #
+# ------------------------------------------------------------------ #
+
+async def _execute_tool_calls(
+    provider: MarketDataProvider, tool_calls: list[Any]
+) -> list[dict]:
+    """
+    Execute all tool-use blocks from a Claude response in parallel via
+    the provider adapter and return them as tool_result user messages.
+
+    The provider is responsible for stripping each result.  A hard 12k
+    character cap is applied here as a final safety net for any payload
+    the provider didn't recognise.
+    """
+    tool_use_items = [c for c in tool_calls if c.type == "tool_use"]
+    if not tool_use_items:
+        return []
+
+    results = await asyncio.gather(
+        *[provider.call_tool(item.name, item.input) for item in tool_use_items],
+        return_exceptions=True,
+    )
+
+    MAX_RESULT_CHARS = 12_000
+    tool_results = []
+
+    for item, result in zip(tool_use_items, results):
+        if isinstance(result, Exception):
+            print(f"ERROR: Tool execution failed for {item.name}: {result}", flush=True)
+            tool_output = f"Error executing tool {item.name}: {result}"
+        else:
+            tool_output = result
+            if len(tool_output) > MAX_RESULT_CHARS:
+                tool_output = tool_output[:MAX_RESULT_CHARS] + "\n[...truncated]"
+
+        tool_results.append({
+            "role": "user",
+            "content": [{"type": "tool_result", "tool_use_id": item.id, "content": tool_output}],
+        })
+
+    return tool_results
+
+
+# ------------------------------------------------------------------ #
+# ReAct loop                                                           #
+# ------------------------------------------------------------------ #
+
 async def _run_tool_loop(
     client: AsyncAnthropic,
     anthropic_tools: list[dict],
     messages: list[dict],
-    av_client: HttpMCPClient,
+    provider: MarketDataProvider,
 ) -> str:
     """
     The main ReAct loop (Reason + Act).
 
     1. Proactively prune old tool results before every API call.
     2. Send message history to Claude.
-    3. If Claude requests tools → execute → extend history → repeat.
+    3. If Claude requests tools → execute via provider → extend history → repeat.
     4. If Claude is done → return final text.
 
     Two-layer context protection:
       Proactive: _prune_old_tool_results fires before every call (320k chars).
-      Reactive:  if the API still rejects with prompt-too-long, emergency-prune
-                 to 40k chars and retry once before surfacing a clean message.
+      Reactive:  if the API still rejects, emergency-prune to 40k chars and
+                 retry once before returning a clean error message.
     """
     MAX_CONTEXT_CHARS = 320_000
     EMERGENCY_CONTEXT_CHARS = 40_000
@@ -289,29 +222,37 @@ async def _run_tool_loop(
         if response.stop_reason != "tool_use":
             return response.content[0].text
 
-        tool_results = await _execute_tool_calls(av_client, response.content)
+        tool_results = await _execute_tool_calls(provider, response.content)
         messages.extend(tool_results)
 
     return "Analysis timed out or reached max turns."
 
 
+# ------------------------------------------------------------------ #
+# Entry point                                                          #
+# ------------------------------------------------------------------ #
+
 async def _query_alpha_bot(prompt: str, include_tools: bool) -> str:
-    """Core async entry point. Run via AlphaBotClient.run_sync() from sync code."""
+    """
+    Core async entry point. Run via AlphaBotClient.run_sync() from sync code.
+
+    Instantiates the configured provider (Alpha Vantage by default) and
+    wires it into the ReAct loop.  Swapping providers means changing one
+    line here — nothing else in the codebase needs to change.
+    """
     api_key = os.getenv("ALPHA_VANTAGE_KEY")
     if not api_key:
         print("ERROR: Missing ALPHA_VANTAGE_KEY", flush=True)
         return "Error: Backend missing configuration."
 
-    av_client = HttpMCPClient(ALPHA_VANTAGE_MCP_URL, api_key)
+    provider: MarketDataProvider = AlphaVantageProvider(api_key)
 
     try:
-        anthropic_tools = []
-        if include_tools:
-            anthropic_tools = await _discover_tools(av_client)
+        anthropic_tools = await provider.get_tools() if include_tools else []
 
         async with AsyncAnthropic() as client:
             messages = [{"role": "user", "content": prompt}]
-            return await _run_tool_loop(client, anthropic_tools, messages, av_client)
+            return await _run_tool_loop(client, anthropic_tools, messages, provider)
 
     except Exception as e:
         print(f"CRITICAL ERROR in _query_alpha_bot: {e}", flush=True)
