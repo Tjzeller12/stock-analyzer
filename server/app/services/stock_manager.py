@@ -1,5 +1,4 @@
 import datetime
-import threading
 from app import db
 from app.models import Stock, StockMaster
 import concurrent.futures
@@ -8,6 +7,10 @@ from app.services.alpha_api import safe_float, get_av_json, get_stock_price
 from app.alphaBot import get_moat_analysis, get_news_analysis
 from flask import current_app
 from app.utils.normalization import update_global_and_sector_stats
+
+# Bounded thread pool for AI analysis background tasks.
+# Caps concurrent AI calls at 4 to prevent unbounded thread/memory growth.
+_ai_executor = concurrent.futures.ThreadPoolExecutor(max_workers=4)
 
 # Calculates the insider net volume by looping through eact transaction and addting it to the total volume
 def calculate_insider_volume(insider_data):
@@ -59,13 +62,11 @@ def add_to_master(symbol):
             with app.app_context():
                 return func(*args, **kwargs)
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
-            #Get stock data from API
+        with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
             future_overview = executor.submit(run_with_context, get_av_json, AlphaVantageFunction.OVERVIEW, symbol=symbol)
             future_quote = executor.submit(run_with_context, get_av_json, AlphaVantageFunction.GLOBAL_QUOTE, symbol=symbol)
             future_news = executor.submit(run_with_context, get_av_json, AlphaVantageFunction.NEWS_SENTIMENT, tickers=symbol, limit=30)
             future_insider = executor.submit(run_with_context, get_av_json, AlphaVantageFunction.INSIDER_TRANSACTIONS, symbol=symbol)
-            future_price = executor.submit(run_with_context, get_stock_price, symbol)
             future_bs = executor.submit(run_with_context, get_av_json, AlphaVantageFunction.BALANCE_SHEET, symbol=symbol)
             future_cf = executor.submit(run_with_context, get_av_json, AlphaVantageFunction.CASH_FLOW, symbol=symbol)
 
@@ -73,12 +74,27 @@ def add_to_master(symbol):
             quote = future_quote.result()
             news = future_news.result()
             insider = future_insider.result()
-            price = future_price.result()
             balance_sheet_json = future_bs.result()
             cash_flow_json = future_cf.result()
 
-        if not overview or price is None:
-            return {"error": f"API limit reached or data unavailable for symbol: {symbol}"}
+        # Derive price from GLOBAL_QUOTE (already fetched) instead of a
+        # separate TIME_SERIES_DAILY call, which was the 7th concurrent
+        # request and frequently triggered Alpha Vantage burst-rate limits.
+        global_quote_data = quote.get("Global Quote", {}) if quote else {}
+        price = safe_float(global_quote_data.get("05. price"))
+
+        # Price is the hard requirement — no price means invalid symbol or full rate limit.
+        if price is None:
+            return {"error": f"Price unavailable or API limit reached for symbol: {symbol}"}
+
+        # Overview is optional: ETFs (USO, SPY, etc.) return {} from AV.
+        # We still add them — they just won't have fundamental metrics.
+        overview_has_data = (
+            bool(overview)
+            and "Information" not in overview
+            and "Note" not in overview
+            and bool(overview.get("Name"))
+        )
 
         # Calculate everything using the raw JSON payloads
         insider_volume = calculate_insider_volume(insider)
@@ -88,15 +104,13 @@ def add_to_master(symbol):
         # Map overview attributes cleanly
         market_cap_val = overview.get("MarketCapitalization")
         market_cap = int(safe_float(market_cap_val)) if market_cap_val else None
-        
-        global_quote_data = quote.get("Global Quote", {})
+
         volume_val = global_quote_data.get("06. volume")
         volume = int(safe_float(volume_val)) if volume_val else None
 
         if stock_master:
             stock_master.price = price
-            # Protect against empty responses overriding cache
-            if overview and "Information" not in overview and "Note" not in overview and overview.get("Name"):
+            if overview_has_data:
                 stock_master.name = overview.get("Name")
                 stock_master.sector = overview.get("Sector")
                 stock_master.industry = overview.get("Industry")
@@ -143,33 +157,32 @@ def add_to_master(symbol):
                 stock_master.insider_volume = insider_volume
                 
             stock_master.last_stock_update = datetime.datetime.now()
-        else:   
-            # add to stock master    
+        else:
             stock_master = StockMaster(
                 symbol=symbol,
                 price=price,
-                name=overview.get("Name"),
-                sector=overview.get("Sector"),
-                industry=overview.get("Industry"),
-                description=overview.get("Description"),
-                market_cap=market_cap,
-                pe_ratio=safe_float(overview.get("PERatio")),
-                forward_pe=safe_float(overview.get("ForwardPE")),
-                peg_ratio=safe_float(overview.get("PEGRatio")),
-                ev_to_ebitda=safe_float(overview.get("EVToEBITDA")),
-                price_to_sales=safe_float(overview.get("PriceToSalesRatioTTM")),
-                price_to_book=safe_float(overview.get("PriceToBookRatio")),
-                dividend_yield=safe_float(overview.get("DividendYield")),
-                roe=safe_float(overview.get("ReturnOnEquityTTM")),
-                roa=safe_float(overview.get("ReturnOnAssetsTTM")),
-                operating_margin=safe_float(overview.get("OperatingMarginTTM")),
-                profit_margin=safe_float(overview.get("ProfitMargin")),
-                rev_growth_qoq=safe_float(overview.get("QuarterlyRevenueGrowthYOY")),
-                eps_growth_qoq=safe_float(overview.get("QuarterlyEarningsGrowthYOY")),
-                beta=safe_float(overview.get("Beta")),
-                buy_ratings_count=int(safe_float(overview.get("AnalystRatingBuy"))) + int(safe_float(overview.get("AnalystRatingStrongBuy"))),
-                hold_ratings_count=int(safe_float(overview.get("AnalystRatingHold"))),
-                sell_ratings_count=int(safe_float(overview.get("AnalystRatingSell"))) + int(safe_float(overview.get("AnalystRatingStrongSell"))),
+                name=overview.get("Name") if overview_has_data else symbol,
+                sector=overview.get("Sector") if overview_has_data else None,
+                industry=overview.get("Industry") if overview_has_data else None,
+                description=overview.get("Description") if overview_has_data else None,
+                market_cap=market_cap if overview_has_data else None,
+                pe_ratio=safe_float(overview.get("PERatio")) if overview_has_data else None,
+                forward_pe=safe_float(overview.get("ForwardPE")) if overview_has_data else None,
+                peg_ratio=safe_float(overview.get("PEGRatio")) if overview_has_data else None,
+                ev_to_ebitda=safe_float(overview.get("EVToEBITDA")) if overview_has_data else None,
+                price_to_sales=safe_float(overview.get("PriceToSalesRatioTTM")) if overview_has_data else None,
+                price_to_book=safe_float(overview.get("PriceToBookRatio")) if overview_has_data else None,
+                dividend_yield=safe_float(overview.get("DividendYield")) if overview_has_data else None,
+                roe=safe_float(overview.get("ReturnOnEquityTTM")) if overview_has_data else None,
+                roa=safe_float(overview.get("ReturnOnAssetsTTM")) if overview_has_data else None,
+                operating_margin=safe_float(overview.get("OperatingMarginTTM")) if overview_has_data else None,
+                profit_margin=safe_float(overview.get("ProfitMargin")) if overview_has_data else None,
+                rev_growth_qoq=safe_float(overview.get("QuarterlyRevenueGrowthYOY")) if overview_has_data else None,
+                eps_growth_qoq=safe_float(overview.get("QuarterlyEarningsGrowthYOY")) if overview_has_data else None,
+                beta=safe_float(overview.get("Beta")) if overview_has_data else None,
+                buy_ratings_count=int(safe_float(overview.get("AnalystRatingBuy", 0))) + int(safe_float(overview.get("AnalystRatingStrongBuy", 0))) if overview_has_data else 0,
+                hold_ratings_count=int(safe_float(overview.get("AnalystRatingHold", 0))) if overview_has_data else 0,
+                sell_ratings_count=int(safe_float(overview.get("AnalystRatingSell", 0))) + int(safe_float(overview.get("AnalystRatingStrongSell", 0))) if overview_has_data else 0,
                 price_change_percent=safe_float(global_quote_data.get("10. change percent", "0").replace('%', '')),
                 volume=volume,
                 free_cash_flow=fcf,
@@ -180,13 +193,10 @@ def add_to_master(symbol):
                 total_shareholder_equity=equity,
                 total_assets=assets,
                 cash_and_equiv=cash,
-
                 news_sentiment_data=news,
                 cash_flow_history=cash_flow_json,
                 insider_volume=insider_volume,
                 last_stock_update=datetime.datetime.now(),
-                
-                # Defaults for in-depth financials
                 income_statement_history={},
                 roic=0.0,
                 price_to_fc=0.0,
@@ -196,7 +206,7 @@ def add_to_master(symbol):
         db.session.commit()
 
         app = current_app._get_current_object()
-        threading.Thread(target=get_ai_analysis_metrics, args=(app, stock_master.id)).start()
+        _ai_executor.submit(get_ai_analysis_metrics, app, stock_master.id)
 
         db.session.expire_all()
         return stock_master

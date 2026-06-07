@@ -30,18 +30,19 @@ def process_news_data(data, filter_id):
             })
             stock_news = GeneralStockNews(
                 filter_id=filter_id,
-                title=title,
-                summary=article.get('summary', ''),
-                link=article.get('url', ''),
-                time_published=article.get('time_published', ''),   
-                news_company=article.get('source', ''),
-                image_link=article.get('banner_image', ''),
+                title=title[:254],
+                summary=article.get('summary', '')[:254],
+                link=article.get('url', '')[:254],
+                time_published=article.get('time_published', ''),
+                news_company=article.get('source', '')[:254],
+                image_link=(article.get('banner_image') or '')[:254],
                 bias_rating=None,
                 last_news_update=datetime.datetime.now()
             )
             db.session.add(stock_news)
-            db.session.commit()
-            db.session.expire_all()
+        # Commit once after all articles are added rather than once per article
+        db.session.commit()
+        db.session.expire_all()
         return processed_news
 
 def seed_filters():
