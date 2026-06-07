@@ -1,158 +1,101 @@
 """
-AlphaVantagePayloadStripper
-----------------------------
-Intercepts raw Alpha Vantage MCP tool responses and strips them down to only
-the fields and rows that Claude actually needs for analysis. This prevents
-token-limit errors and reduces cost without losing analytical signal.
+Payload Stripper — Strategy Pattern
+-------------------------------------
+Three-tier architecture:
 
-Usage (in _execute_tool_calls):
-    from app.services.payload_stripper import AlphaVantagePayloadStripper
-    tool_output = AlphaVantagePayloadStripper.strip(item.name, tool_output)
+  1. PayloadGoalStrategy (ABC)
+     The contract every strategy must satisfy. Defines match_condition()
+     for content-based autodetection and strip() for the transformation.
 
-Adding a new strip profile:
-    1. Add a _strip_<name> classmethod below.
-    2. Add a routing rule in the `strip` method's if/elif chain.
+  2. Concrete Goal Strategies
+     One class per data type (TimeSeriesStrategy, NewsStrategy, …).
+     Each class is fully isolated — changing news stripping never
+     touches balance-sheet stripping.
+
+  3. UniversalPayloadStripper (Engine)
+     Accepts any list of strategies and routes raw payloads through them.
+     Knows nothing about Alpha Vantage specifically.
+
+  4. AlphaVantagePayloadStripper (Facade)
+     Backwards-compatible entry point used by client.py.
+     Pre-registers all AV strategies so callers need zero changes.
+
+Adding a new data vendor (e.g. SEC Edgar, Plaid):
+    1. Write a new PayloadGoalStrategy subclass.
+    2. Instantiate a UniversalPayloadStripper with your new strategies.
+    Done — existing AV code is completely untouched.
+
+Adding a new Alpha Vantage endpoint:
+    1. Write a new PayloadGoalStrategy subclass.
+    2. Add it to AlphaVantagePayloadStripper._STRATEGIES.
+    Done — one line change.
 """
 import json
+from abc import ABC, abstractmethod
 
 
-class AlphaVantagePayloadStripper:
+# ================================================================== #
+# 1. Contract                                                          #
+# ================================================================== #
 
-    # ------------------------------------------------------------------ #
-    # Public entry point                                                   #
-    # ------------------------------------------------------------------ #
+class PayloadGoalStrategy(ABC):
+    """
+    Base class for all payload-stripping strategies.
 
-    @classmethod
-    def strip(cls, tool_name: str, raw_text: str) -> str:
-        """
-        Route the raw MCP tool response to the correct stripper and return
-        a compact JSON string.
+    Subclasses must implement:
+      target_keys     — list of tool-name substrings this strategy handles
+                        (used as a name-based fallback when content detection fails)
+      match_condition — returns True if the data dict looks like this strategy's
+                        data type (content-based autodetection)
+      strip           — performs the actual data transformation
+    """
 
-        Routing priority:
-        1. Content-based: inspect the JSON structure to detect the data type.
-           This handles generic MCP tool names like TOOL_CALL / TOOL_GET where
-           the meaningful AV function name is not exposed in the tool name.
-        2. Name-based fallback: for well-named tools that content detection
-           might miss (e.g. an all-empty overview).
+    @property
+    @abstractmethod
+    def target_keys(self) -> list[str]:
+        """Tool-name keywords that identify this strategy (e.g. ['news', 'sentiment'])."""
 
-        Falls back to the original text if the payload is not JSON or if
-        neither routing path finds a match.
-        """
-        try:
-            data = json.loads(raw_text)
-        except (json.JSONDecodeError, TypeError):
-            return raw_text
+    @abstractmethod
+    def match_condition(self, data: dict) -> bool:
+        """Return True if data's JSON structure matches this strategy."""
 
-        # 1. Content-based routing (works regardless of tool name)
-        stripped = cls._strip_by_content(data)
-        if stripped is not None:
-            return json.dumps(stripped, default=str)
+    @abstractmethod
+    def strip(self, data: dict) -> dict:
+        """Return a leaner version of data containing only what Claude needs."""
 
-        # 2. Name-based fallback for well-named tools
-        name = tool_name.lower()
 
-        if any(k in name for k in ("time_series_daily", "time_series_weekly",
-                                    "time_series_monthly", "intraday")):
-            stripped = cls._strip_time_series(data)
+# ================================================================== #
+# 2. Concrete Strategies                                               #
+# ================================================================== #
 
-        elif "news" in name:
-            stripped = cls._strip_news(data)
+class TimeSeriesStrategy(PayloadGoalStrategy):
+    """Daily / weekly / monthly OHLCV price data."""
 
-        elif "overview" in name:
-            stripped = cls._strip_overview(data)
+    target_keys = ["time_series_daily", "time_series_weekly",
+                   "time_series_monthly", "intraday"]
 
-        elif "balance_sheet" in name:
-            stripped = cls._strip_balance_sheet(data)
-
-        elif "income_statement" in name:
-            stripped = cls._strip_income_statement(data)
-
-        elif "cash_flow" in name:
-            stripped = cls._strip_cash_flow(data)
-
-        elif "earnings" in name:
-            stripped = cls._strip_earnings(data)
-
-        elif "insider" in name:
-            stripped = cls._strip_insider_transactions(data)
-
-        else:
-            return raw_text
-
-        return json.dumps(stripped, default=str)
-
-    @classmethod
-    def _strip_by_content(cls, data: dict):
-        """
-        Detect the Alpha Vantage data type by inspecting the JSON structure
-        rather than the tool name. Returns the stripped dict, or None if the
-        structure is not recognised.
-        """
-        if not isinstance(data, dict):
-            return None
-
-        # Time series: any key whose name contains "time series" or known
-        # interval keywords, and whose value is a dict-of-dicts (OHLCV rows).
+    def match_condition(self, data: dict) -> bool:
         for key in data:
             key_lower = key.lower()
             if any(k in key_lower for k in ("time series", "weekly", "monthly", "intraday")):
-                if isinstance(data[key], dict):
-                    return cls._strip_time_series(data)
+                if isinstance(data[key], dict) and data[key] and \
+                        isinstance(next(iter(data[key].values())), dict):
+                    return True
+        return False
 
-        # News sentiment: top-level "feed" list
-        if "feed" in data and isinstance(data.get("feed"), list):
-            return cls._strip_news(data)
-
-        # Company overview: has Symbol + Description but no nested reports
-        if ("Symbol" in data and "Description" in data
-                and "annualReports" not in data and "quarterlyEarnings" not in data):
-            return cls._strip_overview(data)
-
-        # Earnings: has quarterlyEarnings list
-        if "quarterlyEarnings" in data:
-            return cls._strip_earnings(data)
-
-        # Balance sheet / income statement / cash flow: all use annualReports
-        reports = data.get("annualReports") or []
-        if reports and isinstance(reports, list) and isinstance(reports[0], dict):
-            first = reports[0]
-            if "totalAssets" in first:
-                return cls._strip_balance_sheet(data)
-            if "totalRevenue" in first:
-                return cls._strip_income_statement(data)
-            if "operatingCashflow" in first:
-                return cls._strip_cash_flow(data)
-
-        # Insider transactions: top-level "data" list with transaction_date
-        transactions = data.get("data") or []
-        if (transactions and isinstance(transactions, list)
-                and isinstance(transactions[0], dict)
-                and "transaction_date" in transactions[0]):
-            return cls._strip_insider_transactions(data)
-
-        return None
-
-    # ------------------------------------------------------------------ #
-    # Per-type strip profiles                                              #
-    # ------------------------------------------------------------------ #
-
-    @classmethod
-    def _strip_time_series(cls, data: dict, max_entries: int = 30) -> dict:
+    def strip(self, data: dict, max_entries: int = 30) -> dict:
         """
         Keep only the N most-recent trading days and reduce each OHLCV row
-        to close and volume. High/low/open add noise for swing classification
-        and this keeps each tool result small across multi-tool ReAct loops.
+        to close + volume.  High/low/open add noise for swing classification.
         """
         result = {}
         for key, value in data.items():
-            # Only process keys that look like time series data (dict of dicts).
-            # Meta Data is also a dict but its values are plain strings, so we
-            # check that the first child value is itself a dict before stripping.
-            if isinstance(value, dict) and value and isinstance(next(iter(value.values())), dict):
+            if isinstance(value, dict) and value and \
+                    isinstance(next(iter(value.values())), dict):
                 recent = dict(list(value.items())[:max_entries])
                 result[key] = {
                     date: {
-                        "close":  row.get("4. close")  or row.get("5. adjusted close", ""),
+                        "close":  row.get("4. close") or row.get("5. adjusted close", ""),
                         "volume": row.get("5. volume") or row.get("6. volume", ""),
                     }
                     for date, row in recent.items()
@@ -161,33 +104,39 @@ class AlphaVantagePayloadStripper:
                 result[key] = value
         return result
 
-    @classmethod
-    def _strip_news(cls, data: dict, max_articles: int = 5,
-                    summary_chars: int = 120) -> dict:
+
+class NewsStrategy(PayloadGoalStrategy):
+    """Alpha Vantage news sentiment feed."""
+
+    target_keys = ["news", "sentiment"]
+
+    def match_condition(self, data: dict) -> bool:
+        return "feed" in data and isinstance(data.get("feed"), list)
+
+    def strip(self, data: dict, max_articles: int = 5, summary_chars: int = 120) -> dict:
         """
         Limit to N articles and keep only the fields that matter for
-        event correlation: title, publish time, a truncated summary,
-        and sentiment scores.
+        event correlation: title, publish time, truncated summary, sentiment scores.
         """
         articles = data.get("feed", [])[:max_articles]
         return {
-            "items":      data.get("items"),
+            "items":                     data.get("items"),
             "sentiment_score_definition": data.get("sentiment_score_definition"),
             "relevance_score_definition": data.get("relevance_score_definition"),
             "feed": [
                 {
-                    "title":                    a.get("title"),
-                    "time_published":           a.get("time_published"),
-                    "summary":                  (a.get("summary") or "")[:summary_chars],
-                    "source":                   a.get("source"),
-                    "overall_sentiment_label":  a.get("overall_sentiment_label"),
-                    "overall_sentiment_score":  a.get("overall_sentiment_score"),
+                    "title":                   a.get("title"),
+                    "time_published":          a.get("time_published"),
+                    "summary":                 (a.get("summary") or "")[:summary_chars],
+                    "source":                  a.get("source"),
+                    "overall_sentiment_label": a.get("overall_sentiment_label"),
+                    "overall_sentiment_score": a.get("overall_sentiment_score"),
                     "ticker_sentiment": [
                         {
-                            "ticker":                   ts.get("ticker"),
-                            "relevance_score":          ts.get("relevance_score"),
-                            "ticker_sentiment_label":   ts.get("ticker_sentiment_label"),
-                            "ticker_sentiment_score":   ts.get("ticker_sentiment_score"),
+                            "ticker":                 ts.get("ticker"),
+                            "relevance_score":        ts.get("relevance_score"),
+                            "ticker_sentiment_label": ts.get("ticker_sentiment_label"),
+                            "ticker_sentiment_score": ts.get("ticker_sentiment_score"),
                         }
                         for ts in a.get("ticker_sentiment", [])[:4]
                     ],
@@ -196,91 +145,243 @@ class AlphaVantagePayloadStripper:
             ],
         }
 
-    @classmethod
-    def _strip_overview(cls, data: dict) -> dict:
-        """
-        Keep only the ~25 fields that drive fundamental analysis.
-        Drops hundreds of redundant or rarely-used metrics.
-        """
-        KEEP = {
-            "Symbol", "Name", "Description", "Sector", "Industry",
-            "MarketCapitalization", "PERatio", "PEGRatio", "EPS",
-            "RevenuePerShareTTM", "ProfitMargin", "OperatingMarginTTM",
-            "ReturnOnEquityTTM", "RevenueTTM", "GrossProfitTTM",
-            "DilutedEPSTTM", "QuarterlyEarningsGrowthYOY",
-            "QuarterlyRevenueGrowthYOY", "AnalystTargetPrice",
-            "52WeekHigh", "52WeekLow", "Beta",
-            "ForwardPE", "PriceToBookRatio", "EVToRevenue", "EVToEBITDA",
-        }
-        return {k: v for k, v in data.items() if k in KEEP}
 
-    @classmethod
-    def _strip_balance_sheet(cls, data: dict, max_reports: int = 2) -> dict:
-        """Keep the two most-recent annual reports, strip to key line items."""
-        KEEP = {
-            "fiscalDateEnding", "totalAssets", "totalCurrentAssets",
-            "totalLiabilities", "totalCurrentLiabilities",
-            "totalShareholderEquity", "longTermDebt", "cashAndCashEquivalentsAtCarryingValue",
-            "retainedEarnings", "commonStockSharesOutstanding",
-        }
-        reports = data.get("annualReports", [])[:max_reports]
-        return {
-            "symbol":         data.get("symbol"),
-            "annualReports":  [{k: v for k, v in r.items() if k in KEEP} for r in reports],
-        }
+class OverviewStrategy(PayloadGoalStrategy):
+    """Company overview / fundamentals snapshot."""
 
-    @classmethod
-    def _strip_income_statement(cls, data: dict, max_reports: int = 2) -> dict:
-        """Keep the two most-recent annual reports, strip to key line items."""
-        KEEP = {
-            "fiscalDateEnding", "totalRevenue", "grossProfit",
-            "operatingIncome", "netIncome", "ebitda",
-            "researchAndDevelopment", "operatingExpenses",
-            "incomeBeforeTax", "incomeTaxExpense", "eps", "epsDiluted",
-        }
-        reports = data.get("annualReports", [])[:max_reports]
-        return {
-            "symbol":        data.get("symbol"),
-            "annualReports": [{k: v for k, v in r.items() if k in KEEP} for r in reports],
-        }
+    target_keys = ["overview"]
 
-    @classmethod
-    def _strip_cash_flow(cls, data: dict, max_reports: int = 2) -> dict:
-        """Keep the two most-recent annual reports, strip to key line items."""
-        KEEP = {
-            "fiscalDateEnding", "operatingCashflow", "capitalExpenditures",
-            "freeCashFlow", "cashflowFromInvestment", "cashflowFromFinancing",
-            "dividendPayout", "netIncome",
-        }
+    _KEEP = {
+        "Symbol", "Name", "Description", "Sector", "Industry",
+        "MarketCapitalization", "PERatio", "PEGRatio", "EPS",
+        "RevenuePerShareTTM", "ProfitMargin", "OperatingMarginTTM",
+        "ReturnOnEquityTTM", "RevenueTTM", "GrossProfitTTM",
+        "DilutedEPSTTM", "QuarterlyEarningsGrowthYOY",
+        "QuarterlyRevenueGrowthYOY", "AnalystTargetPrice",
+        "52WeekHigh", "52WeekLow", "Beta",
+        "ForwardPE", "PriceToBookRatio", "EVToRevenue", "EVToEBITDA",
+    }
+
+    def match_condition(self, data: dict) -> bool:
+        return (
+            "Symbol" in data and "Description" in data
+            and "annualReports" not in data
+            and "quarterlyEarnings" not in data
+        )
+
+    def strip(self, data: dict) -> dict:
+        """Keep only the ~25 fields that drive fundamental analysis."""
+        return {k: v for k, v in data.items() if k in self._KEEP}
+
+
+class BalanceSheetStrategy(PayloadGoalStrategy):
+    """Annual balance sheet reports."""
+
+    target_keys = ["balance_sheet"]
+
+    _KEEP = {
+        "fiscalDateEnding", "totalAssets", "totalCurrentAssets",
+        "totalLiabilities", "totalCurrentLiabilities",
+        "totalShareholderEquity", "longTermDebt",
+        "cashAndCashEquivalentsAtCarryingValue",
+        "retainedEarnings", "commonStockSharesOutstanding",
+    }
+
+    def match_condition(self, data: dict) -> bool:
+        reports = data.get("annualReports") or []
+        return (
+            bool(reports)
+            and isinstance(reports, list)
+            and isinstance(reports[0], dict)
+            and "totalAssets" in reports[0]
+        )
+
+    def strip(self, data: dict, max_reports: int = 2) -> dict:
         reports = data.get("annualReports", [])[:max_reports]
         return {
             "symbol":        data.get("symbol"),
-            "annualReports": [{k: v for k, v in r.items() if k in KEEP} for r in reports],
+            "annualReports": [{k: v for k, v in r.items() if k in self._KEEP}
+                              for r in reports],
         }
 
-    @classmethod
-    def _strip_earnings(cls, data: dict, max_quarters: int = 4) -> dict:
-        """Keep the four most-recent quarterly earnings reports."""
-        KEEP = {
-            "fiscalDateEnding", "reportedDate", "reportedEPS",
-            "estimatedEPS", "surprise", "surprisePercentage",
+
+class IncomeStatementStrategy(PayloadGoalStrategy):
+    """Annual income statement reports."""
+
+    target_keys = ["income_statement"]
+
+    _KEEP = {
+        "fiscalDateEnding", "totalRevenue", "grossProfit",
+        "operatingIncome", "netIncome", "ebitda",
+        "researchAndDevelopment", "operatingExpenses",
+        "incomeBeforeTax", "incomeTaxExpense", "eps", "epsDiluted",
+    }
+
+    def match_condition(self, data: dict) -> bool:
+        reports = data.get("annualReports") or []
+        return (
+            bool(reports)
+            and isinstance(reports, list)
+            and isinstance(reports[0], dict)
+            and "totalRevenue" in reports[0]
+        )
+
+    def strip(self, data: dict, max_reports: int = 2) -> dict:
+        reports = data.get("annualReports", [])[:max_reports]
+        return {
+            "symbol":        data.get("symbol"),
+            "annualReports": [{k: v for k, v in r.items() if k in self._KEEP}
+                              for r in reports],
         }
+
+
+class CashFlowStrategy(PayloadGoalStrategy):
+    """Annual cash flow reports."""
+
+    target_keys = ["cash_flow"]
+
+    _KEEP = {
+        "fiscalDateEnding", "operatingCashflow", "capitalExpenditures",
+        "freeCashFlow", "cashflowFromInvestment", "cashflowFromFinancing",
+        "dividendPayout", "netIncome",
+    }
+
+    def match_condition(self, data: dict) -> bool:
+        reports = data.get("annualReports") or []
+        return (
+            bool(reports)
+            and isinstance(reports, list)
+            and isinstance(reports[0], dict)
+            and "operatingCashflow" in reports[0]
+        )
+
+    def strip(self, data: dict, max_reports: int = 2) -> dict:
+        reports = data.get("annualReports", [])[:max_reports]
+        return {
+            "symbol":        data.get("symbol"),
+            "annualReports": [{k: v for k, v in r.items() if k in self._KEEP}
+                              for r in reports],
+        }
+
+
+class EarningsStrategy(PayloadGoalStrategy):
+    """Quarterly and annual earnings surprises."""
+
+    target_keys = ["earnings"]
+
+    _KEEP = {
+        "fiscalDateEnding", "reportedDate", "reportedEPS",
+        "estimatedEPS", "surprise", "surprisePercentage",
+    }
+
+    def match_condition(self, data: dict) -> bool:
+        return "quarterlyEarnings" in data
+
+    def strip(self, data: dict, max_quarters: int = 4) -> dict:
         quarters = data.get("quarterlyEarnings", [])[:max_quarters]
         return {
             "symbol":            data.get("symbol"),
             "annualEarnings":    data.get("annualEarnings", [])[:2],
-            "quarterlyEarnings": [{k: v for k, v in q.items() if k in KEEP} for q in quarters],
+            "quarterlyEarnings": [{k: v for k, v in q.items() if k in self._KEEP}
+                                  for q in quarters],
         }
 
-    @classmethod
-    def _strip_insider_transactions(cls, data: dict, max_transactions: int = 15) -> dict:
-        """Keep the N most-recent insider transactions, drop boilerplate fields."""
-        KEEP = {
-            "transaction_date", "ticker", "executive", "executive_title",
-            "security_type", "transaction_type", "acquisition_or_disposal",
-            "shares", "share_price",
-        }
+
+class InsiderTransactionsStrategy(PayloadGoalStrategy):
+    """Recent insider buy/sell transactions."""
+
+    target_keys = ["insider"]
+
+    _KEEP = {
+        "transaction_date", "ticker", "executive", "executive_title",
+        "security_type", "transaction_type", "acquisition_or_disposal",
+        "shares", "share_price",
+    }
+
+    def match_condition(self, data: dict) -> bool:
+        transactions = data.get("data") or []
+        return (
+            bool(transactions)
+            and isinstance(transactions, list)
+            and isinstance(transactions[0], dict)
+            and "transaction_date" in transactions[0]
+        )
+
+    def strip(self, data: dict, max_transactions: int = 15) -> dict:
         transactions = data.get("data", [])[:max_transactions]
         return {
-            "data": [{k: v for k, v in t.items() if k in KEEP} for t in transactions],
+            "data": [{k: v for k, v in t.items() if k in self._KEEP}
+                     for t in transactions],
         }
+
+
+# ================================================================== #
+# 3. Engine                                                            #
+# ================================================================== #
+
+class UniversalPayloadStripper:
+    """
+    Vendor-agnostic stripping engine.
+
+    Accepts any list of PayloadGoalStrategy instances and routes raw
+    JSON payloads through them.  The engine itself has no knowledge of
+    Alpha Vantage, SEC Edgar, or any other data provider.
+
+    Routing order:
+      1. Content-based:  iterate strategies, call match_condition().
+      2. Name-based:     iterate strategies, match tool_name substrings.
+      3. Passthrough:    return raw_text unchanged if no strategy matches.
+    """
+
+    def __init__(self, strategies: list[PayloadGoalStrategy]):
+        self.strategies = strategies
+
+    def process(self, context_name: str, raw_text: str) -> str:
+        """Strip raw_text using the registered strategies. Returns a JSON string."""
+        try:
+            data = json.loads(raw_text)
+        except (json.JSONDecodeError, TypeError):
+            return raw_text
+
+        if not isinstance(data, dict):
+            return raw_text
+
+        for strategy in self.strategies:
+            if strategy.match_condition(data):
+                return json.dumps(strategy.strip(data), default=str)
+
+        name_lower = context_name.lower()
+        for strategy in self.strategies:
+            if any(k in name_lower for k in strategy.target_keys):
+                return json.dumps(strategy.strip(data), default=str)
+
+        return raw_text
+
+
+# ================================================================== #
+# 4. Alpha Vantage Facade (backwards-compatible)                       #
+# ================================================================== #
+
+_AV_STRIPPER = UniversalPayloadStripper([
+    TimeSeriesStrategy(),
+    NewsStrategy(),
+    OverviewStrategy(),
+    BalanceSheetStrategy(),
+    IncomeStatementStrategy(),
+    CashFlowStrategy(),
+    EarningsStrategy(),
+    InsiderTransactionsStrategy(),
+])
+
+
+class AlphaVantagePayloadStripper:
+    """
+    Drop-in replacement for the original monolithic stripper.
+
+    client.py calls AlphaVantagePayloadStripper.strip(tool_name, raw_text)
+    exactly as before — this facade simply delegates to the engine.
+    """
+
+    @staticmethod
+    def strip(tool_name: str, raw_text: str) -> str:
+        return _AV_STRIPPER.process(tool_name, raw_text)

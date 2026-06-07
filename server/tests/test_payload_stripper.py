@@ -1,13 +1,27 @@
 """
-test_payload_stripper.py — unit tests for AlphaVantagePayloadStripper.
+test_payload_stripper.py — unit tests for the payload stripper architecture.
 
-These tests are pure unit tests: no Flask app context, no database,
-no API keys. They verify that each stripper method correctly reduces
-a realistic Alpha Vantage response to only the fields Claude needs.
+Three layers are tested:
+  1. Individual strategy classes (match_condition + strip)
+  2. UniversalPayloadStripper engine (routing logic)
+  3. AlphaVantagePayloadStripper facade (backwards-compatible API)
+
+Pure unit tests: no Flask app context, no database, no API keys.
 """
 import json
 import pytest
-from app.services.payload_stripper import AlphaVantagePayloadStripper
+from app.services.payload_stripper import (
+    AlphaVantagePayloadStripper,
+    UniversalPayloadStripper,
+    TimeSeriesStrategy,
+    NewsStrategy,
+    OverviewStrategy,
+    BalanceSheetStrategy,
+    IncomeStatementStrategy,
+    CashFlowStrategy,
+    EarningsStrategy,
+    InsiderTransactionsStrategy,
+)
 
 
 # ------------------------------------------------------------------ #
@@ -201,6 +215,62 @@ def make_earnings_response(num_quarters=8):
         ],
         "quarterlyEarnings": quarters,
     }
+
+
+def make_income_statement_response(num_reports=4):
+    reports = []
+    for i in range(num_reports):
+        reports.append({
+            "fiscalDateEnding": f"202{3 - i}-12-31",
+            "totalRevenue": str(380_000_000_000 - i * 10_000_000_000),
+            "grossProfit": str(170_000_000_000 - i * 5_000_000_000),
+            "operatingIncome": str(115_000_000_000 - i * 3_000_000_000),
+            "netIncome": str(97_000_000_000 - i * 2_000_000_000),
+            "ebitda": str(125_000_000_000 - i * 4_000_000_000),
+            "researchAndDevelopment": str(29_000_000_000 + i * 500_000_000),
+            "operatingExpenses": str(55_000_000_000 + i * 1_000_000_000),
+            "incomeBeforeTax": str(113_000_000_000 - i * 3_000_000_000),
+            "incomeTaxExpense": str(16_000_000_000 - i * 500_000_000),
+            "eps": str(round(6.42 - i * 0.3, 2)),
+            "epsDiluted": str(round(6.40 - i * 0.3, 2)),
+            "extraNoise": "should be dropped",
+        })
+    return {"symbol": "AAPL", "annualReports": reports}
+
+
+def make_cash_flow_response(num_reports=4):
+    reports = []
+    for i in range(num_reports):
+        reports.append({
+            "fiscalDateEnding": f"202{3 - i}-12-31",
+            "operatingCashflow": str(110_000_000_000 - i * 5_000_000_000),
+            "capitalExpenditures": str(11_000_000_000 + i * 500_000_000),
+            "freeCashFlow": str(99_000_000_000 - i * 5_500_000_000),
+            "cashflowFromInvestment": str(-22_000_000_000 - i * 1_000_000_000),
+            "cashflowFromFinancing": str(-95_000_000_000 + i * 2_000_000_000),
+            "dividendPayout": str(-15_000_000_000 - i * 200_000_000),
+            "netIncome": str(97_000_000_000 - i * 2_000_000_000),
+            "extraNoise": "should be dropped",
+        })
+    return {"symbol": "AAPL", "annualReports": reports}
+
+
+def make_insider_response(num_transactions=20):
+    transactions = []
+    for i in range(num_transactions):
+        transactions.append({
+            "transaction_date": f"2024-{str((i % 12) + 1).zfill(2)}-15",
+            "ticker": "AAPL",
+            "executive": f"Executive {i}",
+            "executive_title": "CEO" if i % 3 == 0 else "CFO",
+            "security_type": "Common Stock",
+            "transaction_type": "Buy" if i % 2 == 0 else "Sell",
+            "acquisition_or_disposal": "A" if i % 2 == 0 else "D",
+            "shares": str(10000 + i * 500),
+            "share_price": str(round(175.0 + i * 0.5, 2)),
+            "extra_noise": "should be dropped",
+        })
+    return {"data": transactions}
 
 
 # ------------------------------------------------------------------ #
@@ -576,3 +646,145 @@ class TestFallbackAndEdgeCases:
         result_upper = AlphaVantagePayloadStripper.strip("TIME_SERIES_DAILY", raw)
         result_lower = AlphaVantagePayloadStripper.strip("time_series_daily", raw)
         assert result_upper == result_lower
+
+
+# ================================================================== #
+# Strategy pattern architecture tests                                  #
+# ================================================================== #
+
+class TestStrategyMatchCondition:
+    """Each strategy's match_condition() must fire on the right payload."""
+
+    def test_time_series_matches(self):
+        assert TimeSeriesStrategy().match_condition(make_time_series_daily(5)) is True
+
+    def test_news_matches(self):
+        assert NewsStrategy().match_condition(make_news_response(3)) is True
+
+    def test_overview_matches(self):
+        assert OverviewStrategy().match_condition(make_overview_response()) is True
+
+    def test_balance_sheet_matches(self):
+        assert BalanceSheetStrategy().match_condition(make_balance_sheet_response(2)) is True
+
+    def test_income_statement_matches(self):
+        assert IncomeStatementStrategy().match_condition(make_income_statement_response(2)) is True
+
+    def test_cash_flow_matches(self):
+        assert CashFlowStrategy().match_condition(make_cash_flow_response(2)) is True
+
+    def test_earnings_matches(self):
+        assert EarningsStrategy().match_condition(make_earnings_response(4)) is True
+
+    def test_insider_matches(self):
+        assert InsiderTransactionsStrategy().match_condition(make_insider_response(5)) is True
+
+    def test_no_cross_matches(self):
+        """A news payload must not match a time-series strategy, etc."""
+        news_data = make_news_response(3)
+        assert TimeSeriesStrategy().match_condition(news_data) is False
+        assert BalanceSheetStrategy().match_condition(news_data) is False
+        assert EarningsStrategy().match_condition(news_data) is False
+
+
+class TestStrategyStripIsolation:
+    """Calling strip() directly on a strategy must produce the expected shape."""
+
+    def test_time_series_strip_direct(self):
+        result = TimeSeriesStrategy().strip(make_time_series_daily(50))
+        series = result["Time Series (Daily)"]
+        assert len(series) == 30
+        first = next(iter(series.values()))
+        assert set(first.keys()) == {"close", "volume"}
+
+    def test_news_strip_direct(self):
+        result = NewsStrategy().strip(make_news_response(10))
+        assert len(result["feed"]) == 5
+        assert len(result["feed"][0]["summary"]) <= 120
+
+    def test_overview_strip_direct(self):
+        result = OverviewStrategy().strip(make_overview_response())
+        assert "Symbol" in result
+        assert "Address" not in result
+
+    def test_earnings_strip_direct(self):
+        result = EarningsStrategy().strip(make_earnings_response(8))
+        assert len(result["quarterlyEarnings"]) == 4
+
+
+class TestUniversalPayloadStripperEngine:
+    """Test the engine's routing logic independently of AV strategies."""
+
+    def _make_engine(self):
+        return UniversalPayloadStripper([
+            TimeSeriesStrategy(),
+            NewsStrategy(),
+            OverviewStrategy(),
+            BalanceSheetStrategy(),
+            IncomeStatementStrategy(),
+            CashFlowStrategy(),
+            EarningsStrategy(),
+            InsiderTransactionsStrategy(),
+        ])
+
+    def test_content_routing_takes_priority(self):
+        """Content detection fires before name matching."""
+        engine = self._make_engine()
+        raw = json.dumps(make_news_response(10))
+        # Even with a totally unrelated tool name, content detection wins
+        result = json.loads(engine.process("SOME_RANDOM_TOOL", raw))
+        assert len(result["feed"]) == 5
+
+    def test_name_fallback_fires_when_content_misses(self):
+        """Name-based fallback catches payloads content-detection can't identify."""
+        engine = self._make_engine()
+        # Build a near-empty overview (no Description key) — content won't match
+        sparse = {"Symbol": "AAPL"}
+        raw = json.dumps(sparse)
+        result = json.loads(engine.process("overview", raw))
+        assert "Symbol" in result
+
+    def test_unknown_payload_passes_through(self):
+        engine = self._make_engine()
+        raw = json.dumps({"completely_unknown": "data"})
+        assert engine.process("TOOL_CALL", raw) == raw
+
+    def test_non_json_passes_through(self):
+        engine = self._make_engine()
+        raw = "this is not json"
+        assert engine.process("any_tool", raw) == raw
+
+    def test_custom_strategy_registered_at_runtime(self):
+        """A new strategy can be injected without touching existing code."""
+        from app.services.payload_stripper import PayloadGoalStrategy as _Base
+
+        class CustomStrategy(_Base):
+            target_keys = ["custom"]
+
+            def match_condition(self, data):
+                return "custom_key" in data
+
+            def strip(self, data):
+                return {"custom_key": data["custom_key"]}
+
+        engine = UniversalPayloadStripper([CustomStrategy()])
+        raw = json.dumps({"custom_key": "value", "noise": "drop this"})
+        result = json.loads(engine.process("TOOL_CALL", raw))
+        assert result == {"custom_key": "value"}
+        assert "noise" not in result
+
+
+class TestAlphaVantageStripperFacade:
+    """The facade must behave identically to the old monolithic API."""
+
+    def test_facade_delegates_to_engine(self):
+        raw = json.dumps(make_time_series_daily(50))
+        result = json.loads(AlphaVantagePayloadStripper.strip("TOOL_CALL", raw))
+        assert len(result["Time Series (Daily)"]) == 30
+
+    def test_facade_static_method_callable(self):
+        """No instantiation needed — static method API preserved."""
+        raw = json.dumps(make_news_response(10))
+        result = AlphaVantagePayloadStripper.strip("TOOL_CALL", raw)
+        assert isinstance(result, str)
+        assert len(json.loads(result)["feed"]) == 5
