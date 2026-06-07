@@ -4,6 +4,8 @@ from app import db
 from app.models import GeneralStockNews, Filter
 
 def get_filter_id(filter):
+    if not filter:
+        return None
     filter_object = Filter.query.filter(db.func.lower(Filter.filter_name) == filter.lower()).first()
     if not filter_object:
         # return jsonify({"error": "Filter not found"}), 404
@@ -20,22 +22,28 @@ def process_news_data(data, filter_id):
                 continue
             
             # Use f-string for safe printing
+            raw_ts = article.get('time_published', '')
+            try:
+                parsed_ts = datetime.datetime.strptime(raw_ts, '%Y%m%dT%H%M%S')
+            except (ValueError, TypeError):
+                parsed_ts = None
+
             processed_news.append({
                 "image_link": article.get('banner_image', ''),
                 "link": article.get('url', ''),
                 "title": title,
                 "news_company": article.get('source', ''),
-                "time_published": article.get('time_published', ''),
+                "time_published": parsed_ts,
                 "summary": article.get('summary', '')
             })
             stock_news = GeneralStockNews(
                 filter_id=filter_id,
-                title=title[:254],
-                summary=article.get('summary', '')[:254],
-                link=article.get('url', '')[:254],
-                time_published=article.get('time_published', ''),
+                title=title[:500],
+                summary=article.get('summary', ''),
+                link=article.get('url', ''),
+                time_published=parsed_ts,
                 news_company=article.get('source', '')[:254],
-                image_link=(article.get('banner_image') or '')[:254],
+                image_link=article.get('banner_image') or '',
                 bias_rating=None,
                 last_news_update=datetime.datetime.now()
             )
