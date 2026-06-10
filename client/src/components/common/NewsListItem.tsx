@@ -12,7 +12,10 @@ export interface NewsListItemProps {
 const NewsListItem = (props: NewsListItemProps) => {
 
     return (
-        <div className="flex p-[15px] relative min-h-[80px] w-full items-start gap-4 transition-all duration-300 ease hover:scale-[1.025] hover:bg-black/5 dark:hover:bg-white/5 border-b border-border-main/10 last:border-0 cursor-pointer">
+        <div
+            className="flex p-[15px] relative min-h-[80px] w-full items-start gap-4 transition-all duration-300 ease hover:scale-[1.025] hover:bg-black/5 dark:hover:bg-white/5 border-b border-border-main/10 last:border-0 cursor-pointer"
+            onClick={() => props.article.link && window.open(props.article.link, "_blank", "noopener,noreferrer")}
+        >
             <div className="flex-none w-[100px] h-[75px] overflow-hidden bg-background shrink-0">
                 <img className="w-full h-full object-cover" src={props.article.image_link} alt={props.article.title || "News article decoration"} />
             </div>
