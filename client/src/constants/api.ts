@@ -33,6 +33,11 @@ export const ALPHA_BOT_ENDPOINTS = {
     USER_QUERY: `${API_BASE_URL}/alphaBot/user_query`,
     IN_DEPTH: `${API_BASE_URL}/alphaBot/in_depth_analysis`,
     EVENT_PULSE: `${API_BASE_URL}/alphaBot/event_pulse`,
+    // Streaming SSE variants
+    COMPARE_STREAM: `${API_BASE_URL}/alphaBot/compare_analysis/stream`,
+    USER_QUERY_STREAM: `${API_BASE_URL}/alphaBot/user_query/stream`,
+    IN_DEPTH_STREAM: `${API_BASE_URL}/alphaBot/in_depth_analysis/stream`,
+    EVENT_PULSE_STREAM: `${API_BASE_URL}/alphaBot/event_pulse/stream`,
 } as const;
 
 // Profile endpoints
