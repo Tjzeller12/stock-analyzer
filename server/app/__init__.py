@@ -34,7 +34,12 @@ def create_app(config_class=Config):
     # Allow frontend origin from config
     CORS(app, resources={r"/*": {"origins": app.config.get('FRONTEND_ORIGIN')}})
 
-    cache.init_app(app, config={'CACHE_TYPE': 'simple'})
+    cache.init_app(app, config={
+        'CACHE_TYPE': 'SimpleCache',
+        'CACHE_DEFAULT_TIMEOUT': 900,
+        # Cap at 500 entries to prevent unbounded memory growth from large API responses
+        'CACHE_THRESHOLD': 500,
+    })
 
     #simple test route
     @app.route('/api/test', methods=['GET'])

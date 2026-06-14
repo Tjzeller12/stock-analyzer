@@ -63,7 +63,6 @@ def stock_data():
         print(f"Stock {symbol} not found in StockMaster or missing flat data")  # Debug log
         # Try to add it to master (or update existing)
         stock_master = add_to_master(symbol)
-        stock_master = add_to_master(symbol)
         if isinstance(stock_master, dict) and "error" in stock_master:
             return jsonify({"error": stock_master["error"]}), 404
 
@@ -77,7 +76,6 @@ def stock_data():
                 new_price = safe_float(global_quote.get("05. price"))
                 if new_price > 0:
                     stock_master.price = new_price
-                    stock_master.global_quote = quote_data
                     stock_master.last_stock_update = datetime.datetime.now()
                     db.session.commit()
 

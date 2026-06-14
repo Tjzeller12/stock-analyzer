@@ -1,5 +1,3 @@
-import axios from "axios";
-import { useEffect } from "react";
 import {
     Navigate,
     Route,
@@ -16,20 +14,6 @@ import PrivateRoute from "../components/PrivateRoute";
 
 // App.tsx is the main component that renders the entire application.
 function App() {
-  const testAPI = async () => {
-    console.log("Sending GET request to /api/test_db");
-    try {
-      const response = await axios.get("/api/test_db");
-      console.log("API test response:", response.data);
-    } catch (error) {
-      console.error("API test error:", error);
-    }
-  };
-
-  // UseEffect is used to call the testAPI function when the component is mounted.
-  useEffect(() => {
-    void testAPI();
-  }, []);
   return (
     <Router>
       <div className="text-center bg-background text-text-main min-h-screen">

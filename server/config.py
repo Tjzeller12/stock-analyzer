@@ -12,7 +12,7 @@ class Config:
         'postgresql://localhost/stock_analyzer_database'
     # Tracking modifications can be reasorce-intensive so we will turn it off
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_ECHO = True
+    SQLALCHEMY_ECHO = False  # Was True — logging every SQL query causes excessive memory buffering under load
 
     SESSION_TYPE = 'filesystem'
     SESSION_PERMANENT = False
