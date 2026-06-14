@@ -31,9 +31,10 @@ const RegisterPage: React.FC = () => {
       // Set token in local storage
       const token = response.data.token;
       localStorage.setItem("token", token);
-      console.log("Token:", token);
-      console.log(response.data);
-      navigate("/main");
+      // New users go through onboarding first (skippable). Clear any stale
+      // dismissal so the flow is presented for this fresh account.
+      sessionStorage.removeItem("alphabot.onboarding.dismissed");
+      navigate("/onboarding");
     } catch (error: unknown) {
       console.error("Registration failed:", error);
       if (axios.isAxiosError(error)) {

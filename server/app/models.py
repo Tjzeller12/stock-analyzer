@@ -27,10 +27,66 @@ class User(db.Model):
 
     #relationships
     portfolio = db.relationship('Portfolio', backref='owner', uselist=False, cascade='all, delete-orphan')
-    
+    investor_profile = db.relationship('InvestorProfile', backref='user', uselist=False, cascade='all, delete-orphan')
+
     #Represent with the users username
     def __repr__(self):
         return f'<User {self.username}>'
+
+
+# Investor profile table. 1:1 with User. Source of truth for the onboarding-derived
+# personalization data (risk, horizon, budget, preferred sectors). The two scalar columns
+# on User (budget, risk_tolerance_score) are kept denormalized and synced from here.
+class InvestorProfile(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.String(32), db.ForeignKey('user.id'), unique=True, nullable=False)
+
+    # --- Deterministic derived values ---
+    risk_tolerance_score = db.Column(db.Float, default=50.0)   # 0-100
+    risk_tag = db.Column(db.String(20))                        # Conservative..Aggressive
+    time_horizon_years = db.Column(db.Integer)                 # raw answer, e.g. 12
+    horizon_tag = db.Column(db.String(20))                     # Short..Very Long
+
+    # --- Direct inputs ---
+    budget = db.Column(db.Float, default=0.0)                  # denormalized to User.budget
+    preferred_sectors = db.Column(db.JSON, default=list)       # <= 3 canonical sector keys
+
+    # --- Audit / resume ---
+    raw_answers = db.Column(db.JSON, default=dict)             # {questionId: optionId}
+    onboarding_completed = db.Column(db.Boolean, default=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def __repr__(self):
+        return f'<InvestorProfile user={self.user_id} risk={self.risk_tag}>'
+
+    @classmethod
+    def empty_for(cls, user):
+        """Return a transient (unsaved) completed=False shell profile for a user
+        who has not finished onboarding. Never added to the session."""
+        return cls(
+            user_id=user.id,
+            risk_tolerance_score=50.0,
+            risk_tag=None,
+            time_horizon_years=None,
+            horizon_tag=None,
+            budget=user.budget or 0.0,
+            preferred_sectors=[],
+            raw_answers={},
+            onboarding_completed=False,
+            updated_at=None,
+        )
+
+    def to_dict(self):
+        return {
+            'risk_tolerance_score': self.risk_tolerance_score,
+            'risk_tag': self.risk_tag,
+            'time_horizon_years': self.time_horizon_years,
+            'horizon_tag': self.horizon_tag,
+            'budget': self.budget,
+            'preferred_sectors': self.preferred_sectors or [],
+            'onboarding_completed': self.onboarding_completed,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+        }
 
 # Portfolio table. Contains all portfolio information.
 class Portfolio(db.Model):
