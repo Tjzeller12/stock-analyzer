@@ -1,0 +1,30 @@
+# Local dev with hot reload. Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up db backend frontend-dev
+# Then open http://localhost:5173
+#
+# Or run only backend in Docker and Vite on the host:
+#   docker compose up db backend -d
+#   docker compose stop frontend
+#   cd client && npm start
+
+services:
+  frontend:
+    profiles: ["prod"]
+    # Disabled when using frontend-dev; keeps plain `docker compose up` unchanged.
+
+  frontend-dev:
+    build:
+      context: ./client
+      dockerfile: Dockerfile.dev
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_BASE_URL=http://${APP_HOST:-localhost}:5001
+    volumes:
+      - ./client:/app
+      - client_node_modules:/app/node_modules
+    depends_on:
+      - backend
+
+volumes:
+  client_node_modules:
