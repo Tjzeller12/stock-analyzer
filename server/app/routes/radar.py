@@ -20,8 +20,6 @@ def get_single_radar_scores():
         symbol = data.get('symbol')
         template = data.get('template')
 
-        is_relative = data.get('is_relative', False)
-
         if not symbol or not template:
             return jsonify({'error': 'Missing required fields: symbol and template'}), 400
 
@@ -30,7 +28,7 @@ def get_single_radar_scores():
             return jsonify({'error': 'Stock not found'}), 404
 
         # Pass to the score engine
-        scores = calculate_single_stock_scores(stock, template, is_relative)
+        scores = calculate_single_stock_scores(stock, template)
         
         return jsonify({'scores': scores, 'symbol': symbol}), 200
 
