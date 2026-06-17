@@ -1,0 +1,48 @@
+# Production override for docker-compose.yml.
+# Use with:
+#   docker compose -f docker-compose.yml -f deploy/docker-compose.prod.yml --env-file .env up -d --build
+#
+# What this overrides from docker-compose.yml:
+#   - Backend runs gunicorn instead of the Flask dev server.
+#   - No source bind-mounts (the image's code is what runs, not your local files).
+#   - All services restart automatically unless explicitly stopped.
+#   - FLASK_ENV=production, FRONTEND_ORIGIN points at the public domain.
+#
+# Port security: ports from docker-compose.yml (5001, 5173) are kept as-is.
+# They bind to 0.0.0.0 but the EC2 security group only allows 80/443 inbound,
+# so neither port is reachable from the internet. Nginx on the host proxies
+# 443 → 127.0.0.1:5173 and 127.0.0.1:5001.
+#
+# Required env vars on the server (.env):
+#   PUBLIC_DOMAIN=alphabot-app.com
+
+version: "3.8"
+
+services:
+  backend:
+    restart: unless-stopped
+    environment:
+      - FLASK_ENV=production
+      - FLASK_DEBUG=0
+      - FRONTEND_ORIGIN=https://${PUBLIC_DOMAIN}
+    volumes: []
+    command: gunicorn --bind 0.0.0.0:5000 --workers 3 --timeout 120 --access-logfile - --error-logfile - run:app
+
+  frontend:
+    build:
+      context: ./client
+      args:
+        - VITE_API_BASE_URL=https://${PUBLIC_DOMAIN}/api
+    restart: unless-stopped
+
+  db:
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  postgres_data:

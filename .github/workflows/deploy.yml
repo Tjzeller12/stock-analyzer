@@ -1,0 +1,62 @@
+# Auto-deploy to EC2 on every push to main.
+#
+# Required GitHub Actions secrets (Settings → Secrets and variables → Actions):
+#   EC2_HOST            e.g. app.yourdomain.com  (or the Elastic IP)
+#   EC2_USER            e.g. ubuntu
+#   EC2_SSH_KEY         contents of the .pem private key for the instance
+#   EC2_APP_DIR         absolute path of the cloned repo on the box, e.g. /opt/stock-analyzer
+#
+# This workflow does a pull-and-rebuild on the server itself. That keeps the
+# pipeline simple — no ECR or external registry needed. Once you outgrow that
+# (slow rebuilds, multi-instance, blue/green) the natural next step is to
+# build images in CI, push to ECR, and have the EC2 just `docker compose pull`.
+
+name: Deploy to EC2
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:  # lets you trigger a manual deploy from the Actions tab
+
+concurrency:
+  # Never run two deploys to the same environment in parallel.
+  group: deploy-prod
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script_stop: true   # bail on first failed line
+          script: |
+            set -euo pipefail
+            cd "${{ secrets.EC2_APP_DIR }}"
+
+            echo "==> Fetching latest main"
+            git fetch origin main
+            git checkout main
+            git reset --hard origin/main
+
+            echo "==> Building & restarting containers"
+            docker compose \
+              -f docker-compose.yml \
+              -f deploy/docker-compose.prod.yml \
+              --env-file .env \
+              up -d --build --remove-orphans
+
+            echo "==> Cleaning up dangling images"
+            docker image prune -f
+
+            echo "==> Deploy complete"
+            docker compose \
+              -f docker-compose.yml \
+              -f deploy/docker-compose.prod.yml \
+              ps
