@@ -37,6 +37,14 @@ export const authGet = async <T>(url: string): Promise<T> => {
     return response.data;
 };
 
+/**
+ * Make an authenticated PUT request
+ */
+export const authPut = async <T>(url: string, data?: unknown): Promise<T> => {
+    const response = await axios.put<T>(url, data, createAuthConfig());
+    return response.data;
+};
+
 // Add a response interceptor to handle 401 Unauthorized errors globally
 axios.interceptors.response.use(
   (response) => {
