@@ -27,13 +27,17 @@
     "web-vitals": "^2.1.4"
   },
   "type": "module",
+  "engines": {
+    "node": ">=20 <23"
+  },
   "scripts": {
     "start": "vite",
+    "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "lint": "eslint \"src/**/*.{js,jsx,ts,tsx}\"",
     "lint:fix": "eslint \"src/**/*.{js,jsx,ts,tsx}\" --fix",
-    "test": "vitest"
+    "test": "vitest --config vitest.config.ts"
   },
   "browserslist": {
     "production": [

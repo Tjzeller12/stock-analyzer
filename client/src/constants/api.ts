@@ -45,6 +45,7 @@ export const PROFILE_ENDPOINTS = {
     RESET_PASSWORD: `${API_BASE_URL}/profile/reset`,
     SAVE: `${API_BASE_URL}/profile/save`,
     INFO: `${API_BASE_URL}/profile/info`,
+    INVESTOR: `${API_BASE_URL}/profile/investor`,
 } as const;
 
 // Radar endpoints

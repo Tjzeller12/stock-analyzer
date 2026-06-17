@@ -54,7 +54,7 @@ describe('RegisterPage', () => {
     expect(passwordInput).toHaveAttribute('type', 'password');
   });
 
-  it('submits registration and navigates to /main on success', async () => {
+  it('submits registration and navigates to /onboarding on success', async () => {
     (axios.post as any).mockResolvedValueOnce({ data: { token: 'reg-token-xyz' } });
     renderRegister();
 
@@ -65,7 +65,7 @@ describe('RegisterPage', () => {
 
     await waitFor(() => {
       expect(localStorage.getItem('token')).toBe('reg-token-xyz');
-      expect(mockNavigate).toHaveBeenCalledWith('/main');
+      expect(mockNavigate).toHaveBeenCalledWith('/onboarding');
     });
   });
 

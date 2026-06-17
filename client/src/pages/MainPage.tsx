@@ -18,11 +18,15 @@ import StockTable from '../components/common/StockTable';
 import { NEWS_FILTER_OPTIONS } from "../constants/filters";
 import { useCompareAlphaBotManager } from '../hooks/useCompareAlphaBotManager';
 import { useNewsListManager } from '../hooks/useNewsListManager';
+import { useOnboardingGate } from '../hooks/useOnboardingGate';
 import { useStockTableManager } from '../hooks/useStockTableManager';
 import { Article } from '../types';
 
 // MainPage component: Serves as the dashboard for the stock analyzer application
 const MainPage: React.FC = () => {
+
+  // Soft-redirect to onboarding if the user hasn't completed it (skippable).
+  useOnboardingGate();
 
   const [activeTemplate, setActiveTemplate] = useState<RadarTemplate>(DEFAULT_TEMPLATE);
 

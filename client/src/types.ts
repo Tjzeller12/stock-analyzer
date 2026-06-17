@@ -194,3 +194,55 @@ export interface ChartData {
         fill?: boolean;
     }[];
 }
+
+// --- Investor profile (mirrors server InvestorProfile.to_dict()) ---
+export type RiskTag = "Conservative" | "Balanced" | "Growth" | "Aggressive";
+export type HorizonTag = "Short" | "Medium" | "Long" | "Very Long"; // <2y / 2-5y / 5-10y / 10y+
+export type BudgetBand = "micro" | "standard" | "high";
+
+export interface InvestorProfile {
+  risk_tolerance_score: number;        // 0-100, deterministic
+  risk_tag: RiskTag | null;
+  time_horizon_years: number | null;   // raw answer, e.g. 12
+  horizon_tag: HorizonTag | null;
+  budget: number;                      // USD, >= 0
+  preferred_sectors: string[];         // <= 3 canonical sector keys
+  onboarding_completed: boolean;
+  updated_at: string | null;           // ISO 8601
+}
+
+// --- Questionnaire config (static, drives the UI generically) ---
+export type ScoringDimension = "risk" | "horizon";
+
+export interface AnswerOption {
+  id: string;                          // stable key, persisted in raw answers
+  label: string;                       // e.g. "Buy more - it's on sale"
+  /** Points contributed per dimension when this option is chosen. */
+  weights: Partial<Record<ScoringDimension, number>>;
+}
+
+export interface ScenarioQuestion {
+  id: string;                          // stable key, e.g. "q_market_crash"
+  prompt: string;                      // scenario text
+  helper?: string;                     // optional sub-text
+  options: AnswerOption[];             // single-select
+  dimension: ScoringDimension;         // which axis this question scores
+}
+
+export interface SectorInfo {
+  key: string;                         // canonical key matching StockMaster.sector
+  label: string;                       // display name, e.g. "Technology"
+  icon?: string;                       // optional emoji/asset id
+  pitch: string[];                     // Pros - bullet points
+  realityCheck: string[];              // Cons - bullet points
+}
+
+// --- The mutable draft held during onboarding ---
+export interface OnboardingDraft {
+  version: 1;
+  answers: Record<string, string>;     // questionId -> selected optionId
+  timeHorizonYears: number | null;
+  budget: number | null;
+  selectedSectors: string[];           // ordered, <= 3
+  stepIndex: number;                   // for resume
+}

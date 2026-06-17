@@ -6,6 +6,7 @@ import {
 } from "react-router-dom";
 import LoginPage from "./LoginPage";
 import MainPage from "./MainPage";
+import OnboardingPage from "./OnboardingPage";
 import ProfilePage from "./Profile";
 import RegisterPage from "./RegisterPage";
 import StockPage from "./StockPage";
@@ -22,6 +23,14 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           
           {/* Protected Routes */}
+          <Route 
+            path="/onboarding" 
+            element={
+              <PrivateRoute>
+                <OnboardingPage />
+              </PrivateRoute>
+            } 
+          />
           <Route 
             path="/profile" 
             element={
