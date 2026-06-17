@@ -4,6 +4,22 @@ venv/
 server/.venv/
 server/venv/
 server/myenv/
+docs/
+.DS_Store
+.vscode/
+.idea/
+.pytest_cache/
+.coverage
+.coverage.*
+.agents/
+
+# Client build files
+client/build/
+client/dist/
+
+# Server build files
+server/flask_session/
+docker-compose.override.yml
 
 # Python bytecode and caches
 *.pyc
@@ -17,6 +33,10 @@ __pycache__/
 .env.development.local
 .env.test.local
 .env.production.local
+
+# Secrets / auth debug artifacts (never commit)
+token.json
+login_response.json
 
 # Database files
 *.db
