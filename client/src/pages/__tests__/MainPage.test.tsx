@@ -6,6 +6,9 @@ import MainPage from '../MainPage';
 
 vi.mock('../../utils/api', () => ({
   authPost: vi.fn().mockResolvedValue([]),
+  // The onboarding soft-gate calls authGet on mount; resolve as "completed"
+  // so MainPage renders without redirecting.
+  authGet: vi.fn().mockResolvedValue({ onboarding_completed: true }),
 }));
 vi.mock('ag-grid-react', () => ({ AgGridReact: () => <div data-testid="stock-grid" /> }));
 vi.mock('react-router-dom', async (importOriginal) => {

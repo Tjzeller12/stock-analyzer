@@ -6,6 +6,7 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import Card from "../components/common/Card";
 import Header from "../components/common/Header";
+import InvestorProfileSection from "../components/onboarding/InvestorProfileSection";
 import { PROFILE_ENDPOINTS } from "../constants/api";
 type PasswordField = {
   value: string;
@@ -133,8 +134,16 @@ const Profile: React.FC = () => {
   return (
     <div className="flex flex-col p-0 font-sans bg-background text-white min-h-screen w-full">
       <Header title="AlphaBot Profile Settings" />
-      <div className="flex justify-center items-start pt-[20px] flex-1 w-full">
-        <Card title="Profile" variant="glass" className="!w-[20%] min-w-[450px] max-w-[600px] mx-auto flex flex-col items-center justify-center">
+      <div className="flex flex-col items-center pt-[20px] flex-1 w-full pb-10 px-5">
+        <div className="flex flex-col lg:flex-row items-start justify-center gap-6 w-full max-w-[1200px] mx-auto">
+          <div className="w-full lg:flex-1 min-w-[320px] max-w-[600px]">
+            <InvestorProfileSection />
+          </div>
+          <Card
+            title="Profile"
+            variant="glass"
+            className="w-full lg:flex-1 min-w-[320px] max-w-[600px] flex flex-col items-center justify-center"
+          >
           <form className="flex flex-col items-center w-full mx-auto" onSubmit={(e: React.FormEvent<HTMLFormElement>) => { void handleSave(e); }}>
             <div className="flex items-center mb-[15px] w-full">
               <label className="flex-none w-[100px] text-left mr-[10px] font-semibold text-sm">Username: </label>
@@ -232,6 +241,7 @@ const Profile: React.FC = () => {
             </div>
           </form>
         </Card>
+        </div>
       </div>
     </div>
   );
