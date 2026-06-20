@@ -100,6 +100,7 @@ export const authStreamPost = async (
             }
         }
     }
+};
 /**
  * Make an authenticated PUT request
  */
