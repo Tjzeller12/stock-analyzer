@@ -11,9 +11,10 @@ def get_uuid():
 # User table. Contains all user information.
 class User(db.Model):
     id = db.Column(db.String(32), primary_key=True, unique=True, default=get_uuid)
-    username = db.Column(db.String(64), index=True, unique=True)
+    username = db.Column(db.String(64), index=True, unique=True, nullable=True)
     email = db.Column(db.String(120), index=True, unique=True)
-    password_hash = db.Column(db.String(128))
+    password_hash = db.Column(db.String(128), nullable=True)
+    google_id = db.Column(db.String(128), unique=True, nullable=True)
     budget = db.Column(db.Float)
     risk_tolerance_score = db.Column(db.Float)
     time_created = db.Column(db.DateTime, default=datetime.utcnow)
