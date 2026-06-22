@@ -1,3 +1,6 @@
+import os
+import dataclasses
+from app.services.search_provider import AlphaVantageStockSearchProvider
 import datetime
 from flask import jsonify, Blueprint, request, current_app
 from app import db, cache
@@ -163,3 +166,12 @@ def chart_data():
     except Exception as e:
         current_app.logger.error(f"Error fetching chart data: {str(e)}")
         return jsonify({"error": str(e)}), 500
+@bp.route('/search', methods=['GET'])
+@login_required
+def search():
+    q = request.args.get('q', '').strip()
+    if not q:
+        return jsonify({'error': 'q is required'}), 400
+    provider = AlphaVantageStockSearchProvider(api_key=os.getenv('ALPHA_VANTAGE_KEY'))
+    results = provider.search(q)
+    return jsonify([dataclasses.asdict(result) for result in results]), 200
