@@ -248,7 +248,16 @@ export const useCompareAlphaBotManager = () => {
             
         } catch (err: unknown) {
             console.error("Comparison failed:", err);
-            setCompareError("Comparison failed. Please try again.");
+            if (
+                typeof err === "object" &&
+                err !== null &&
+                "response" in err &&
+                (err as { response?: { status?: number } }).response?.status === 429
+            ) {
+                setCompareError("You've used all 3 of your free AlphaBot queries for today. Come back tomorrow!");
+            } else {
+                setCompareError("Comparison failed. Please try again.");
+            }
         } finally {
             setCompareLoading(false);
         }

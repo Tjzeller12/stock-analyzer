@@ -65,9 +65,14 @@ export const useEventPulseManager = (symbol: string | undefined, windowOverlayRe
                     if (response.response) {
                         setAnalysisResult(response.response);
                     }
-                } catch (err) {
-                    console.error("Forensic analysis failed", err);
-                    setAnalysisResult("System Error: Failed to analyze this highlighted range. Please try again.");
+                } catch (err: unknown) {
+                    const status = (err as { response?: { status?: number } })?.response?.status;
+                    if (status === 429) {
+                        setAnalysisResult("**Daily limit reached.** You've used all 3 of your free AlphaBot queries for today. Come back tomorrow!");
+                    } else {
+                        console.error("Forensic analysis failed", err);
+                        setAnalysisResult("System Error: Failed to analyze this highlighted range. Please try again.");
+                    }
                 } finally {
                     setIsAnalyzing(false);
                 }

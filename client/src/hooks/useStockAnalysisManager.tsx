@@ -30,8 +30,13 @@ export const useStockAnalysisManager = (symbol: string | undefined) => {
       if (response.response) {
         setSummary(response.response);
       }
-    } catch (error) {
-      console.error("Error fetching summary:", error);
+    } catch (error: unknown) {
+      const status = (error as { response?: { status?: number } })?.response?.status;
+      if (status === 429) {
+        setSummary("**Daily limit reached.** You've used all 3 of your free AlphaBot queries for today. Come back tomorrow!");
+      } else {
+        console.error("Error fetching summary:", error);
+      }
     }
   };
 
@@ -59,8 +64,12 @@ export const useStockAnalysisManager = (symbol: string | undefined) => {
         user_query: trimmed,
       });
       setChatMessages(prev => [...prev, { role: 'assistant', content: data.response }]);
-    } catch (e) {
-      setChatMessages(prev => [...prev, { role: 'assistant', content: 'Error fetching response.' }]);
+    } catch (e: unknown) {
+      const status = (e as { response?: { status?: number } })?.response?.status;
+      const msg = status === 429
+        ? "You've used all 3 of your free AlphaBot queries for today. Come back tomorrow!"
+        : "Error fetching response.";
+      setChatMessages(prev => [...prev, { role: 'assistant', content: msg }]);
     } finally {
       setChatLoading(false);
       setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);

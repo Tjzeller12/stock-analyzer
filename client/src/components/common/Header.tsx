@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { AUTH_ENDPOINTS } from '../../constants/api';
 import logo from "../../resources/alphaBotLogo.png";
 import { ThemeContext } from "../../ThemeContext";
+import UsageBadge from './UsageBadge';
 interface HeaderProps {
     title: string;
 }
@@ -55,6 +56,7 @@ const handleNavButtonClick = (path: string) => {
             </div>
             
             <div className="flex items-center gap-[15px] flex-wrap justify-end mr-[15px]">
+                <UsageBadge />
                 {[{ label: "Profile", path: "/profile" }].map((button) => (
                     <button
                         key={button.path}

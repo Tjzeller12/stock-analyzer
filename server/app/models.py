@@ -18,6 +18,9 @@ class User(db.Model):
     budget = db.Column(db.Float)
     risk_tolerance_score = db.Column(db.Float)
     time_created = db.Column(db.DateTime, default=datetime.utcnow)
+    tier = db.Column(db.String(20), nullable=False, default='free')
+    alphabot_daily_uses = db.Column(db.Integer, default=0, nullable=False)
+    alphabot_last_use_date = db.Column(db.Date, nullable=True)
     def to_dict(self):
         return {
             'username' : self.username,
