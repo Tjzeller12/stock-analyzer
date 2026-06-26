@@ -28,7 +28,8 @@ const EventPulseChart: React.FC<EventPulseChartProps> = ({ symbol, data, activeT
         selectionPhase, setSelectionPhase, selectionPhaseRef,
         anchorStart, setAnchorStart, anchorStartRef,
         anchorEnd, setAnchorEnd, anchorEndRef, hoverTimeRef,
-        selectionError, setSelectionError, isAnalyzing, analysisResult, setAnalysisResult, clearPulse
+        selectionError, setSelectionError,
+        isAnalyzing, analysisResult, isStreaming, toolsRunning, toolMessage, clearPulse
     } = useEventPulseManager(symbol, windowOverlayRef);
 
     useEffect(() => {
@@ -173,7 +174,6 @@ const EventPulseChart: React.FC<EventPulseChartProps> = ({ symbol, data, activeT
                 setSelectionPhase('selecting');
                 setAnchorStart({ time, price, rawDateStr });
                 setAnchorEnd(null);
-                setAnalysisResult(null);
                 setSelectionError(null);
                 hoverTimeRef.current = time;
                 selectionPhaseRef.current = 'selecting';
@@ -310,12 +310,15 @@ const EventPulseChart: React.FC<EventPulseChartProps> = ({ symbol, data, activeT
                     ></div>
                 </div>
 
-                <ForensicAnalysisPanel 
+                <ForensicAnalysisPanel
                     selectionPhase={selectionPhase}
                     anchorStart={anchorStart}
                     anchorEnd={anchorEnd}
                     isAnalyzing={isAnalyzing}
                     analysisResult={analysisResult}
+                    isStreaming={isStreaming}
+                    toolsRunning={toolsRunning}
+                    toolMessage={toolMessage}
                     clearPulse={clearPulse}
                 />
             </div>
