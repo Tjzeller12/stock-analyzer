@@ -55,7 +55,7 @@ const handleNavButtonClick = (path: string) => {
             </div>
             
             <div className="flex items-center gap-[15px] flex-wrap justify-end mr-[15px]">
-                {[{ label: "Profile", path: "/profile" }].map((button) => (
+                {[{ label: "Discovery", path: "/discovery" }, { label: "Profile", path: "/profile" }].map((button) => (
                     <button
                         key={button.path}
                         className={buttonClass}
