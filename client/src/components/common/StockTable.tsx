@@ -389,12 +389,7 @@ const StockTable: React.FC<StockTableProps> = ({
 
     return (
         <ControlPanel
-            actionInputBar={{
-                onClick: (symbol: string) => { void onAdd(symbol); },
-                disabled: false,
-                placeholder: "Symbol i.e. NVDA",
-                buttonLabel: "Add"
-            }}
+            onStockSelect={(symbol: string) => { void onAdd(symbol); }}
             buttons={[{
                 label: "Refresh",
                 onClick: () => { void onRefresh(); },
