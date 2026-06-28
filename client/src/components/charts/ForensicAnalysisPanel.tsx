@@ -8,6 +8,9 @@ interface ForensicAnalysisPanelProps {
     anchorEnd: ClickedPoint | null;
     isAnalyzing: boolean;
     analysisResult: string | null;
+    isStreaming?: boolean;
+    toolsRunning?: number;
+    toolMessage?: string;
     clearPulse: () => void;
 }
 
@@ -17,7 +20,10 @@ const ForensicAnalysisPanel: React.FC<ForensicAnalysisPanelProps> = ({
     anchorEnd,
     isAnalyzing,
     analysisResult,
-    clearPulse
+    isStreaming = false,
+    toolsRunning = 0,
+    toolMessage = '',
+    clearPulse,
 }) => {
     if (selectionPhase !== 'selected' || !anchorStart || !anchorEnd) return null;
     
@@ -54,20 +60,33 @@ const ForensicAnalysisPanel: React.FC<ForensicAnalysisPanelProps> = ({
                 </div>
 
                 <div className="bg-form-bg rounded-xl p-5 border border-border-main/10 shadow-inner min-h-[120px]">
-                    {isAnalyzing ? (
-                        <div className="flex flex-col items-center justify-center space-y-4 h-full py-4">
+                    {/* Tool-fetching / initialising phase */}
+                    {isAnalyzing && !analysisResult && (
+                        <div className="flex flex-col items-center justify-center space-y-3 h-full py-4">
                             <div className="flex justify-center space-x-2 w-full">
-                                <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                                <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                                <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce"></div>
+                                <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                                <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                                <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce" />
                             </div>
-                            <span className="text-sm font-semibold text-blue-500 animate-pulse">Running Bounded Sector Context Queries...</span>
+                            <span className="text-sm font-semibold text-blue-500 animate-pulse">
+                                {toolMessage || (toolsRunning > 0
+                                    ? `Fetching ${toolsRunning} data source${toolsRunning !== 1 ? 's' : ''}…`
+                                    : 'Initialising analysis…'
+                                )}
+                            </span>
                         </div>
-                    ) : analysisResult ? (
+                    )}
+
+                    {/* Streaming / final result */}
+                    {analysisResult && (
                         <div className="text-sm prose prose-invert max-w-none prose-p:leading-relaxed prose-headings:text-text-main prose-a:text-blue-400">
                             <StyledMarkdown>{analysisResult}</StyledMarkdown>
+                            {/* Blinking cursor while streaming */}
+                            {isStreaming && (
+                                <span className="inline-block w-0.5 h-4 bg-blue-400 ml-0.5 align-middle animate-pulse" />
+                            )}
                         </div>
-                    ) : null}
+                    )}
                 </div>
             </div>
         </div>

@@ -37,6 +37,70 @@ export const authGet = async <T>(url: string): Promise<T> => {
     return response.data;
 };
 
+// ------------------------------------------------------------------ //
+// Streaming support                                                    //
+// ------------------------------------------------------------------ //
+
+/** Parsed payload from a single SSE ``data:`` line. */
+export interface StreamEventPayload {
+    type: 'chunk' | 'tool_running' | 'done' | 'error';
+    text?: string;
+    count?: number;
+    message?: string;
+}
+
+/**
+ * POST to an SSE streaming endpoint and invoke ``onEvent`` for each parsed
+ * event as it arrives.  Uses the native ``fetch`` API (not axios) so the
+ * response body can be consumed as a ``ReadableStream``.
+ *
+ * Throws on HTTP errors (non-2xx) so callers can catch normally.
+ */
+export const authStreamPost = async (
+    url: string,
+    payload: unknown,
+    onEvent: (event: StreamEventPayload) => void,
+): Promise<void> => {
+    const token = localStorage.getItem('token');
+
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token ?? ''}`,
+        },
+        body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+    }
+
+    const reader = response.body!.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        // Keep the last (possibly incomplete) segment in the buffer
+        buffer = lines.pop() ?? '';
+
+        for (const line of lines) {
+            if (line.startsWith('data: ')) {
+                try {
+                    const data = JSON.parse(line.slice(6)) as StreamEventPayload;
+                    onEvent(data);
+                } catch {
+                    // Ignore malformed SSE lines
+                }
+            }
+        }
+    }
+};
 /**
  * Make an authenticated PUT request
  */

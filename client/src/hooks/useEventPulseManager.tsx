@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { authPost } from '../utils/api';
 import { ALPHA_BOT_ENDPOINTS } from '../constants/api';
+import { useAlphaBotStream } from './useAlphaBotStream';
 
 export type TimeFrame = '1D' | '1W' | '1M' | '3M' | '6M' | '1Y' | '5Y' | 'MAX';
 export const timeFrames: TimeFrame[] = ['1D', '1W', '1M', '3M', '6M', '1Y', '5Y', 'MAX'];
@@ -33,53 +33,33 @@ export const useEventPulseManager = (symbol: string | undefined, windowOverlayRe
     
     // Status / Error / AI State
     const [selectionError, setSelectionError] = useState<string | null>(null);
-    const [isAnalyzing, setIsAnalyzing] = useState(false);
-    const [analysisResult, setAnalysisResult] = useState<string | null>(null);
+    const stream = useAlphaBotStream();
 
     // Update tracking Refs immediately
     useEffect(() => { selectionPhaseRef.current = selectionPhase; }, [selectionPhase]);
     useEffect(() => { anchorStartRef.current = anchorStart; }, [anchorStart]);
     useEffect(() => { anchorEndRef.current = anchorEnd; }, [anchorEnd]);
 
-    // Fetch forensic analysis when the range is firmly selected
+    // Stream forensic analysis when the range is firmly selected
     useEffect(() => {
         if (selectionPhase === 'selected' && anchorStart && anchorEnd && symbol) {
-            const fetchAnalysis = async () => {
-                setIsAnalyzing(true);
-                setAnalysisResult(null); 
-                setSelectionError(null);
-                
-                // Dynamically deduce if it was a rally or crash
-                const swingType = anchorEnd.price > anchorStart.price ? 'Massive Rally' : 'Major Sell-off';
+            stream.reset();
+            setSelectionError(null);
 
-                try {
-                    const response = await authPost<{ response: string }>(ALPHA_BOT_ENDPOINTS.EVENT_PULSE, {
-                        stock_symbol: symbol,
-                        start_date_str: anchorStart.rawDateStr,
-                        start_price: anchorStart.price,
-                        date_str: anchorEnd.rawDateStr,
-                        price: anchorEnd.price,
-                        swing_type: swingType,
-                        timestamp: anchorEnd.time // Legacy pass-through
-                    });
-                    if (response.response) {
-                        setAnalysisResult(response.response);
-                    }
-                } catch (err: unknown) {
-                    const status = (err as { response?: { status?: number } })?.response?.status;
-                    if (status === 429) {
-                        setAnalysisResult("**Daily limit reached.** You've used all 3 of your free AlphaBot queries for today. Come back tomorrow!");
-                    } else {
-                        console.error("Forensic analysis failed", err);
-                        setAnalysisResult("System Error: Failed to analyze this highlighted range. Please try again.");
-                    }
-                } finally {
-                    setIsAnalyzing(false);
-                }
-            };
+            const swingType =
+                anchorEnd.price > anchorStart.price ? 'Massive Rally' : 'Major Sell-off';
 
-            void fetchAnalysis();
+            void stream.start(ALPHA_BOT_ENDPOINTS.EVENT_PULSE_STREAM, {
+                stock_symbol: symbol,
+                start_date_str: anchorStart.rawDateStr,
+                start_price: anchorStart.price,
+                date_str: anchorEnd.rawDateStr,
+                price: anchorEnd.price,
+                swing_type: swingType,
+                timestamp: anchorEnd.time,
+            });
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectionPhase, anchorStart, anchorEnd, symbol]);
 
     /**
@@ -89,8 +69,7 @@ export const useEventPulseManager = (symbol: string | undefined, windowOverlayRe
         setSelectionPhase('idle');
         setAnchorStart(null);
         setAnchorEnd(null);
-        setAnalysisResult(null);
-        setIsAnalyzing(false);
+        stream.reset();
         setSelectionError(null);
         if (windowOverlayRef.current) {
             windowOverlayRef.current.style.display = 'none';
@@ -110,9 +89,12 @@ export const useEventPulseManager = (symbol: string | undefined, windowOverlayRe
         hoverTimeRef,
         selectionError,
         setSelectionError,
-        isAnalyzing,
-        analysisResult,
-        setAnalysisResult,
+        // Stream-derived state (replaces isAnalyzing / analysisResult)
+        isAnalyzing: stream.isLoading,
+        analysisResult: stream.streamingText || null,
+        isStreaming: stream.isStreaming,
+        toolsRunning: stream.toolsRunning,
+        toolMessage: stream.toolMessage,
         clearPulse
     };
 };
