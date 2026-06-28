@@ -57,3 +57,8 @@ export const RADAR_ENDPOINTS = {
     COMPARE: `${API_BASE_URL}/radar/compare`,
 } as const;
 
+// Discovery endpoints
+export const DISCOVERY_ENDPOINTS = {
+    GENERATE: `${API_BASE_URL}/discovery/generate`,
+} as const;
+

@@ -4,6 +4,7 @@ import {
     BrowserRouter as Router,
     Routes,
 } from "react-router-dom";
+import DiscoveryPage from "./DiscoveryPage";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import LoginPage from "./LoginPage";
 import MainPage from "./MainPage";
@@ -48,6 +49,14 @@ function App() {
             element={
               <PrivateRoute>
                 <MainPage />
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/discovery" 
+            element={
+              <PrivateRoute>
+                <DiscoveryPage />
               </PrivateRoute>
             } 
           />

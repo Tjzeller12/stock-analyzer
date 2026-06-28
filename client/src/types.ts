@@ -246,3 +246,23 @@ export interface OnboardingDraft {
   selectedSectors: string[];           // ordered, <= 3
   stepIndex: number;                   // for resume
 }
+
+// --- Discovery engine (feature 02) ---
+export interface DiscoveryRecommendation {
+  ticker: string;                      // uppercased, validated
+  company_name: string;
+  rationale: string;                   // <= 2 sentences (bounded server-side)
+  sector?: string | null;              // optional, if Claude supplies it
+}
+
+export interface DiscoverySession {
+  refinements: string[];               // ordered, append-only, capped
+}
+
+export interface DiscoveryResponse {
+  recommendations: DiscoveryRecommendation[];
+  generated_from: {
+    has_profile: boolean;              // false → generic fallback was used
+    refinement_count: number;
+  };
+}
