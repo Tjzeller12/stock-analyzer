@@ -16,13 +16,13 @@ from app.models import User, Portfolio
 
 DEV_ACCOUNTS = [
     {
-        "username": "michael_zeller",
-        "email": "mzeller@alphabot.dev",
+        "username": "mrzeller",
+        "email": "michaelzllr1@gmail.com",
         "password": os.environ.get("MICHAEL_PW"),
     },
     {
-        "username": "thomas_zeller",
-        "email": "tzeller@alphabot.dev",
+        "username": "Tjzeller12",
+        "email": "Tjzeller12@gmail.com",
         "password": os.environ.get("THOMAS_PW"),
     },
 ]
