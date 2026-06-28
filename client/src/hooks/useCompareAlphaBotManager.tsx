@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { RadarTemplate } from "../components/common/AdvancedSettingsPanel";
 import { ALPHA_BOT_ENDPOINTS, RADAR_ENDPOINTS } from "../constants/api";
 import { CHART_COLORS } from "../constants/chartColors";
-import { AlphaBotResponse, ChartData, CompareResponse } from "../types";
+import { ChartData, CompareResponse } from "../types";
 import { authPost } from "../utils/api";
+import { useAlphaBotStream } from "./useAlphaBotStream";
 
 /**
  * Custom hook to manage the "Compare" functionality using the AlphaBot LLM.
@@ -20,6 +21,22 @@ export const useCompareAlphaBotManager = () => {
     });
     const [compareLoading, setCompareLoading] = useState(false);
     const [compareError, setCompareError] = useState<string | null>(null);
+    const [compareToolsRunning, setCompareToolsRunning] = useState(0);
+
+    // Stream-based compare — onDone receives the full JSON text for parsing
+    const compareStream = useAlphaBotStream(
+        useCallback((fullText: string) => {
+            const result = parseCompareResponse(fullText);
+            if (result) {
+                setCompareResult(result);
+            } else {
+                setCompareError("Failed to parse AI analysis.");
+            }
+            setCompareLoading(false);
+        // parseCompareResponse is defined later in the same closure; stable ref via useCallback
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        }, [])
+    );
     const [compareResult, setCompareResult] = useState<CompareResponse | null>(() => {
         const saved = localStorage.getItem("compareResult");
         return saved ? (JSON.parse(saved) as CompareResponse) : null;
@@ -224,43 +241,29 @@ export const useCompareAlphaBotManager = () => {
                 setCompareRadarScores(chartData);
             }
 
-            // 2. SECOND: Fire off the LLM request, injecting the equations and the newly calculated scores!
-            const alphaBotResult = await authPost<AlphaBotResponse>(
-                ALPHA_BOT_ENDPOINTS.COMPARE, 
-                { 
-                    stock_symbols: symbols,
-                    equations: template.equations, // <--- Injecting the rules
-                    scores: calculatedScores       // <--- Injecting the results
-                }
-            );
-            
-            // 3. Process LLM Text + Doughnut Data
-            if (alphaBotResult && alphaBotResult.response) {
-                const result = parseCompareResponse(alphaBotResult.response);
-                if (result) {
-                    setCompareResult(result);
-                } else {
-                    setCompareError("Failed to parse AI analysis. The AI service may be temporarily unavailable.");
-                }
-            } else {
-                setCompareError("AI comparison failed. You may be out of credits or the service is down.");
-            }
-            
+            // 2. SECOND: Stream the LLM request — onDone (above) handles parsing
+            void compareStream.start(ALPHA_BOT_ENDPOINTS.COMPARE_STREAM, {
+                stock_symbols: symbols,
+                equations: template.equations,
+                scores: calculatedScores,
+            });
+            // Note: compareLoading is cleared in onDone / compareStream error handler
+
         } catch (err: unknown) {
             console.error("Comparison failed:", err);
             setCompareError("Comparison failed. Please try again.");
-        } finally {
             setCompareLoading(false);
         }
     };
     return {
         selectedSymbols,
         setSelectedSymbols,
-        compareLoading,
-        compareError,
+        compareLoading: compareLoading || compareStream.isLoading,
+        compareError: compareError ?? compareStream.error,
         compareResult,
         compareStocks,
         toggleSelectSymbol,
-        compareRadarScores
+        compareRadarScores,
+        compareToolsRunning: compareStream.toolsRunning,
     }
 }

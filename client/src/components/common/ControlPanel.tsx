@@ -1,5 +1,7 @@
 import React from "react";
 import ActionInputBar, { ActionInputBarProps } from "./ActionInputBar";
+import StockSearchInput from "./StockSearchInput";
+
 interface ButtonProps {
     label: string;
     onClick: () => void;
@@ -9,6 +11,7 @@ interface ButtonProps {
 export interface ControlPanelProps {
     buttons?: ButtonProps[];
     actionInputBar?: ActionInputBarProps;
+    onStockSelect?: (symbol: string) => void;
     children: React.ReactNode;
     info?: string;
 }
@@ -26,11 +29,10 @@ const ControlPanel = (props: ControlPanelProps) => {
         <div className="flex flex-col gap-3 w-full">
             <div className="flex flex-col md:flex-row items-center justify-between gap-3 w-full bg-form-bg p-3 rounded-lg shadow-inner border border-border-main/10">
                 <div className="flex-1 w-full md:max-w-[400px]">
-                {props.actionInputBar && (
-                    <ActionInputBar
-                        {...props.actionInputBar}
-                    />
-                )}
+                {props.onStockSelect
+                    ? <StockSearchInput onStockSelect={props.onStockSelect} />
+                    : props.actionInputBar && <ActionInputBar {...props.actionInputBar} />
+                }
                 </div>
                 {props.buttons && (
                     <div className="flex items-center gap-3 flex-wrap justify-center">

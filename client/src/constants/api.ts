@@ -7,6 +7,7 @@ export const AUTH_ENDPOINTS = {
     LOGIN: `${API_BASE_URL}/auth/login`,
     LOGOUT: `${API_BASE_URL}/auth/logout`,
     REGISTER: `${API_BASE_URL}/auth/register`,
+    GOOGLE: `${API_BASE_URL}/auth/google`,
 } as const;
 
 // Portfolio endpoints
@@ -24,6 +25,7 @@ export const DATA_ENDPOINTS = {
     NEWS: `${API_BASE_URL}/data/news`,
     IN_DEPTH: `${API_BASE_URL}/data/in_depth_data`,
     CHART: `${API_BASE_URL}/data/chart_data`,
+    SEARCH: `${API_BASE_URL}/data/search`,
 } as const;
 
 // AlphaBot endpoints
@@ -33,6 +35,11 @@ export const ALPHA_BOT_ENDPOINTS = {
     USER_QUERY: `${API_BASE_URL}/alphaBot/user_query`,
     IN_DEPTH: `${API_BASE_URL}/alphaBot/in_depth_analysis`,
     EVENT_PULSE: `${API_BASE_URL}/alphaBot/event_pulse`,
+    // Streaming SSE variants
+    COMPARE_STREAM: `${API_BASE_URL}/alphaBot/compare_analysis/stream`,
+    USER_QUERY_STREAM: `${API_BASE_URL}/alphaBot/user_query/stream`,
+    IN_DEPTH_STREAM: `${API_BASE_URL}/alphaBot/in_depth_analysis/stream`,
+    EVENT_PULSE_STREAM: `${API_BASE_URL}/alphaBot/event_pulse/stream`,
 } as const;
 
 // Profile endpoints

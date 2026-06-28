@@ -5,7 +5,11 @@ Owns the Claude conversation loop and exposes a clean synchronous facade.
 
   AlphaBotResult          — typed wrapper for a Claude response
   AlphaBotClient          — synchronous facade used by routes and analyses
-  _run_tool_loop()        — ReAct loop (Reason + Act)
+  AlphaBotStreamer         — SSE streaming facade (async → sync bridge)
+  StreamEvent             — typed SSE payload
+  _ToolCall               — lightweight tool-call descriptor for the streaming path
+  _run_tool_loop()        — ReAct loop (Reason + Act) for non-streaming endpoints
+  _stream_alpha_bot()     — streaming ReAct loop (one API call per turn)
   _execute_tool_calls()   — parallel tool execution via MarketDataProvider
   _query_alpha_bot()      — async entry point wired to AlphaVantageProvider
 
@@ -15,8 +19,10 @@ not on Alpha Vantage specifically. Swapping providers requires no changes here.
 import asyncio
 import json
 import os
-from dataclasses import dataclass
-from typing import Any
+import queue
+import threading
+from dataclasses import dataclass, field
+from typing import Any, AsyncGenerator, Generator
 
 from anthropic import AsyncAnthropic
 
@@ -55,6 +61,62 @@ class AlphaBotResult:
 # AlphaBotClient                                                       #
 # ------------------------------------------------------------------ #
 
+# ------------------------------------------------------------------ #
+# StreamEvent                                                          #
+# ------------------------------------------------------------------ #
+
+@dataclass
+class StreamEvent:
+    """
+    A typed Server-Sent Event payload for AlphaBot streaming responses.
+
+    Types
+    -----
+    tool_running — Claude is executing external tool calls.
+                   ``count`` = number of parallel calls in this batch.
+    chunk        — A text delta from the final generation pass.
+    done         — Stream is complete; clients should stop listening.
+    error        — A non-retryable error; ``message`` contains details.
+    """
+    type: str
+    text: str = field(default="")
+    count: int = field(default=0)
+    message: str = field(default="")
+
+    def to_sse(self) -> str:
+        """Encode as a Server-Sent Event line."""
+        payload = {"type": self.type}
+        if self.text:
+            payload["text"] = self.text
+        if self.count:
+            payload["count"] = self.count
+        if self.message:
+            payload["message"] = self.message
+        return f"data: {json.dumps(payload)}\n\n"
+
+    # ── Factory methods ──────────────────────────────────────────── #
+
+    @classmethod
+    def chunk(cls, text: str) -> "StreamEvent":
+        return cls(type="chunk", text=text)
+
+    @classmethod
+    def tool_running(cls, count: int, message: str = "") -> "StreamEvent":
+        return cls(type="tool_running", count=count, message=message)
+
+    @classmethod
+    def done(cls) -> "StreamEvent":
+        return cls(type="done")
+
+    @classmethod
+    def error(cls, message: str) -> "StreamEvent":
+        return cls(type="error", message=message)
+
+
+# ------------------------------------------------------------------ #
+# AlphaBotClient / AlphaBotStreamer                                   #
+# ------------------------------------------------------------------ #
+
 class AlphaBotClient:
     """
     Synchronous facade over the async query pipeline.
@@ -68,6 +130,54 @@ class AlphaBotClient:
         """Run a prompt through Claude (blocking). Returns AlphaBotResult."""
         text = asyncio.run(_query_alpha_bot(prompt, include_tools))
         return AlphaBotResult(text=text)
+
+
+class AlphaBotStreamer:
+    """
+    Streams AlphaBot responses as Server-Sent Events.
+
+    Bridges the async ReAct pipeline to Flask's synchronous response
+    streaming via a background thread + blocking queue.
+
+    Usage (in a Flask route)::
+
+        return Response(
+            stream_with_context(AlphaBotStreamer.stream_sync(prompt, True)),
+            mimetype="text/event-stream",
+            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        )
+    """
+
+    @staticmethod
+    def stream_sync(
+        prompt: str, *, include_tools: bool = False
+    ) -> Generator[str, None, None]:
+        """
+        Synchronous SSE generator. Yields raw ``data: ...`` SSE lines.
+
+        - Yields ``tool_running`` events while Claude executes tools.
+        - Yields real-time ``chunk`` events from Anthropic's streaming API
+          once the final generation turn begins.
+        - Yields a final ``done`` event on success.
+        """
+        event_queue: "queue.Queue[StreamEvent | None]" = queue.Queue()
+
+        def _run_in_thread() -> None:
+            async def _async_run() -> None:
+                async for event in _stream_alpha_bot(prompt, include_tools):
+                    event_queue.put(event)
+                event_queue.put(None)  # sentinel
+
+            asyncio.run(_async_run())
+
+        thread = threading.Thread(target=_run_in_thread, daemon=True)
+        thread.start()
+
+        while True:
+            event = event_queue.get()
+            if event is None:
+                break
+            yield event.to_sse()
 
 
 # ------------------------------------------------------------------ #
@@ -124,14 +234,15 @@ async def _execute_tool_calls(
     provider: MarketDataProvider, tool_calls: list[Any]
 ) -> list[dict]:
     """
-    Execute all tool-use blocks from a Claude response in parallel via
-    the provider adapter and return them as tool_result user messages.
+    Execute all tool-use blocks in parallel via the provider adapter.
 
-    The provider is responsible for stripping each result.  A hard 12k
-    character cap is applied here as a final safety net for any payload
-    the provider didn't recognise.
+    Accepts both Anthropic SDK ToolUseBlock objects (from the non-streaming
+    ReAct loop) and ``_ToolCall`` dataclass instances (from the streaming loop).
+    Both expose ``.id``, ``.name``, ``.input``, and ``.type`` attributes.
+
+    A hard 12k character cap is applied as a final safety net.
     """
-    tool_use_items = [c for c in tool_calls if c.type == "tool_use"]
+    tool_use_items = [c for c in tool_calls if getattr(c, "type", None) == "tool_use"]
     if not tool_use_items:
         return []
 
@@ -229,7 +340,246 @@ async def _run_tool_loop(
 
 
 # ------------------------------------------------------------------ #
-# Entry point                                                          #
+# _ToolCall — lightweight descriptor for the streaming path            #
+# ------------------------------------------------------------------ #
+
+@dataclass
+class _ToolCall:
+    """
+    Holds one tool-use block collected from the Anthropic streaming API.
+
+    Attribute names match what ``_execute_tool_calls`` and ``_describe_tools``
+    expect (``id``, ``name``, ``input``, ``type``), so both helpers work with
+    this dataclass and with the real Anthropic SDK tool_use objects.
+    """
+    id: str
+    name: str
+    input: dict
+    type: str = "tool_use"
+
+
+# ------------------------------------------------------------------ #
+# Streaming entry point                                                #
+# ------------------------------------------------------------------ #
+
+async def _stream_alpha_bot(
+    prompt: str, include_tools: bool
+) -> AsyncGenerator[StreamEvent, None]:
+    """
+    Async generator: one Anthropic streaming API call per turn.
+
+    Each turn:
+      • Streams the response into a local buffer — nothing reaches the
+        client during tool-use turns.
+      • If the turn contains tool_use blocks → emit ``tool_running`` with
+        a human-readable description, execute tools, loop.
+      • If the turn has no tool_use (final turn) → emit the buffered text
+        as smooth word-level chunks, then ``done``.
+
+    One API call per turn — same as the original non-streaming code.
+    No extra latency.  No spaghetti.
+    """
+    api_key = os.getenv("ALPHA_VANTAGE_KEY")
+    if not api_key:
+        yield StreamEvent.error("Backend missing configuration.")
+        return
+
+    provider: MarketDataProvider = AlphaVantageProvider(api_key)
+    MAX_CONTEXT_CHARS = 320_000
+    EMERGENCY_CONTEXT_CHARS = 40_000
+
+    try:
+        anthropic_tools = await provider.get_tools() if include_tools else []
+
+        async with AsyncAnthropic() as claude:
+            messages: list[dict] = [{"role": "user", "content": prompt}]
+
+            for _ in range(50):
+                _prune_old_tool_results(messages, MAX_CONTEXT_CHARS)
+
+                text_buf = ""
+                tool_calls: list[_ToolCall] = []
+                tool_json_bufs: dict[str, str] = {}  # tool_id → partial input JSON
+
+                # ── Stream this turn into a local buffer ──────────────── #
+                stream_kwargs: dict[str, Any] = dict(
+                    model=CLAUDE_MODEL,
+                    max_tokens=8192,
+                    messages=messages,
+                )
+                if anthropic_tools:
+                    stream_kwargs["tools"] = anthropic_tools
+
+                try:
+                    async with claude.messages.stream(**stream_kwargs) as stream:
+                        async for event in stream:
+                            etype = event.type
+
+                            if etype == "content_block_start":
+                                b = event.content_block
+                                if b.type == "tool_use":
+                                    tool_calls.append(
+                                        _ToolCall(id=b.id, name=b.name, input={})
+                                    )
+                                    tool_json_bufs[b.id] = ""
+
+                            elif etype == "content_block_delta":
+                                d = event.delta
+                                if d.type == "text_delta":
+                                    text_buf += d.text
+                                elif d.type == "input_json_delta" and tool_calls:
+                                    tool_json_bufs[tool_calls[-1].id] += d.partial_json
+
+                except Exception as e:
+                    err = str(e)
+                    if "prompt is too long" in err:
+                        print("WARNING: Token limit hit — emergency pruning.", flush=True)
+                        _prune_old_tool_results(messages, EMERGENCY_CONTEXT_CHARS)
+                        # retry the same turn at reduced context
+                        text_buf = ""
+                        tool_calls = []
+                        tool_json_bufs = {}
+                        try:
+                            async with claude.messages.stream(**stream_kwargs) as stream:
+                                async for event in stream:
+                                    etype = event.type
+                                    if etype == "content_block_start":
+                                        b = event.content_block
+                                        if b.type == "tool_use":
+                                            tool_calls.append(
+                                                _ToolCall(id=b.id, name=b.name, input={})
+                                            )
+                                            tool_json_bufs[b.id] = ""
+                                    elif etype == "content_block_delta":
+                                        d = event.delta
+                                        if d.type == "text_delta":
+                                            text_buf += d.text
+                                        elif d.type == "input_json_delta" and tool_calls:
+                                            tool_json_bufs[tool_calls[-1].id] += d.partial_json
+                        except Exception as retry_err:
+                            print(f"ERROR: Retry failed: {retry_err}", flush=True)
+                            yield StreamEvent.error(
+                                "Context too large — try a shorter time window."
+                            )
+                            return
+                    else:
+                        raise
+
+                # Parse accumulated JSON inputs for each tool call
+                for tc in tool_calls:
+                    try:
+                        tc.input = json.loads(tool_json_bufs.get(tc.id, "{}"))
+                    except json.JSONDecodeError:
+                        tc.input = {}
+
+                if tool_calls:
+                    # ── Tool-use turn ─────────────────────────────────── #
+                    # Build assistant content for the message history
+                    content: list[dict] = []
+                    if text_buf:
+                        content.append({"type": "text", "text": text_buf})
+                    for tc in tool_calls:
+                        content.append({
+                            "type": "tool_use",
+                            "id": tc.id,
+                            "name": tc.name,
+                            "input": tc.input,
+                        })
+                    messages.append({"role": "assistant", "content": content})
+
+                    yield StreamEvent.tool_running(
+                        len(tool_calls),
+                        message=_describe_tools(tool_calls),
+                    )
+                    tool_results = await _execute_tool_calls(provider, tool_calls)
+                    messages.extend(tool_results)
+
+                else:
+                    # ── Final turn: stream as smooth word-level chunks ─── #
+                    for chunk in _word_chunks(text_buf):
+                        yield StreamEvent.chunk(chunk)
+                        await asyncio.sleep(0.02)   # ~50 words/sec — smooth appearance
+                    yield StreamEvent.done()
+                    return
+
+            yield StreamEvent.error("Analysis timed out — reached maximum turns.")
+
+    except Exception as e:
+        print(f"CRITICAL ERROR in _stream_alpha_bot: {e}", flush=True)
+        err_msg = str(e)
+        if "credit balance is too low" in err_msg:
+            yield StreamEvent.error(
+                "Alpha Bot is temporarily unavailable due to high usage."
+            )
+        else:
+            yield StreamEvent.error(err_msg)
+
+
+_TOOL_LABELS: dict[str, str] = {
+    # Alpha Vantage function names → human-readable labels
+    "NEWS_SENTIMENT": "news sentiment",
+    "GLOBAL_QUOTE": "live price",
+    "TIME_SERIES_DAILY": "price history",
+    "TIME_SERIES_DAILY_ADJUSTED": "price history",
+    "TIME_SERIES_INTRADAY": "intraday price data",
+    "OVERVIEW": "company overview",
+    "BALANCE_SHEET": "balance sheet",
+    "INCOME_STATEMENT": "income statement",
+    "CASH_FLOW": "cash flow statement",
+    "INSIDER_TRANSACTIONS": "insider transactions",
+    "EARNINGS": "earnings history",
+    # MCP meta-tools
+    "TOOL_LIST": "available data sources",
+    "TOOL_GET": "data schema",
+    "TOOL_CALL": "market data",
+}
+
+
+def _describe_tools(tool_items: list[Any]) -> str:
+    """
+    Turn a list of tool_use content blocks into a friendly progress message.
+
+    Tries to extract the Alpha Vantage function name from the ``input`` dict
+    (e.g. ``input.function_name = "NEWS_SENTIMENT"``); falls back to the raw
+    tool name if not present.
+    """
+    labels: list[str] = []
+    for item in tool_items:
+        fn_name: str | None = None
+        if hasattr(item, "input") and isinstance(item.input, dict):
+            fn_name = (
+                item.input.get("function_name")
+                or item.input.get("name")
+            )
+
+        key = fn_name or (item.name if hasattr(item, "name") else "")
+        label = _TOOL_LABELS.get(key, key.lower().replace("_", " "))
+        if label and label not in labels:
+            labels.append(label)
+
+    if not labels:
+        return "Gathering market data…"
+    if len(labels) == 1:
+        return f"Grabbing {labels[0]}…"
+    if len(labels) == 2:
+        return f"Grabbing {labels[0]} & {labels[1]}…"
+    return f"Grabbing {', '.join(labels[:-1])} & {labels[-1]}…"
+
+
+def _word_chunks(text: str, batch_size: int = 6) -> list[str]:
+    """Split text into small word batches for simulated streaming fallback."""
+    words = text.split(" ")
+    chunks = []
+    for i in range(0, len(words), batch_size):
+        part = " ".join(words[i : i + batch_size])
+        if i + batch_size < len(words):
+            part += " "
+        chunks.append(part)
+    return chunks
+
+
+# ------------------------------------------------------------------ #
+# Entry point (non-streaming)                                          #
 # ------------------------------------------------------------------ #
 
 async def _query_alpha_bot(prompt: str, include_tools: bool) -> str:
