@@ -22,7 +22,8 @@ from app.constants import (
     USER_QUERY_PROMPT,
 )
 from app.models import StockMaster
-from app.routes.auth import login_required
+from app.routes.auth import get_current_user, login_required
+from app.services.usage_limiter import alphabot_rate_limit, DAILY_LIMITS
 
 alphaBot_bp = Blueprint("alphaBot", __name__)
 
@@ -121,7 +122,24 @@ def alphaBot_endpoint():
     return jsonify({"message": "AlphaBot is running"}), 200
 
 
+@alphaBot_bp.route("/alphaBot/usage", methods=["GET"])
+@login_required
+def get_usage():
+    """Return the current user's AlphaBot usage stats for the day."""
+    user = get_current_user()
+    from datetime import date
+    today = date.today()
+    uses = user.alphabot_daily_uses if user.alphabot_last_use_date == today else 0
+    limit = DAILY_LIMITS.get(user.tier, 3)
+    return jsonify({
+        "uses": uses,
+        "limit": limit,
+        "tier": user.tier,
+    }), 200
+
+
 @alphaBot_bp.route("/alphaBot/in_depth_analysis", methods=["POST"])
+@alphabot_rate_limit
 def get_in_depth_analysis():
     data = request.json
     symbol = data.get("stock_symbol")
@@ -141,6 +159,7 @@ def get_in_depth_analysis():
 
 
 @alphaBot_bp.route("/alphaBot/compare_analysis", methods=["POST"])
+@alphabot_rate_limit
 def get_compare_analysis():
     data = request.json
     stock_symbols = data.get("stock_symbols")
@@ -197,6 +216,7 @@ def get_compare_analysis():
 
 
 @alphaBot_bp.route("/alphaBot/user_query", methods=["POST"])
+@alphabot_rate_limit
 def get_user_query():
     data = request.json
     user_query = data.get("user_query")
@@ -221,6 +241,7 @@ def get_user_query():
 
 
 @alphaBot_bp.route("/alphaBot/event_pulse", methods=["POST"])
+@alphabot_rate_limit
 def get_event_pulse_analysis():
     data = request.json
     stock_symbol = data.get("stock_symbol")

@@ -1,11 +1,24 @@
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useEventPulseManager } from '../useEventPulseManager';
+import { ALPHA_BOT_ENDPOINTS } from '../../constants/api';
 import React from 'react';
-import { authPost } from '../../utils/api';
 
-vi.mock('../../utils/api', () => ({
-  authPost: vi.fn(),
+const mockStart = vi.fn();
+const mockReset = vi.fn();
+
+vi.mock('../useAlphaBotStream', () => ({
+  useAlphaBotStream: vi.fn(() => ({
+    streamingText: '',
+    isLoading: false,
+    isStreaming: false,
+    toolsRunning: 0,
+    toolMessage: '',
+    error: null,
+    start: mockStart,
+    reset: mockReset,
+    getFullText: vi.fn(() => ''),
+  })),
 }));
 
 describe('useEventPulseManager', () => {
@@ -24,12 +37,12 @@ describe('useEventPulseManager', () => {
 
   it('transitions properly into selecting and clears pulse constraints successfully', () => {
     const { result } = renderHook(() => useEventPulseManager('TSLA', mockRef));
-    
+
     act(() => {
       result.current.setSelectionPhase('selecting');
       result.current.setAnchorStart({ time: 100, price: 50, rawDateStr: '' });
     });
-    
+
     expect(result.current.selectionPhase).toBe('selecting');
     expect(result.current.anchorStart?.price).toBe(50);
 
@@ -41,24 +54,27 @@ describe('useEventPulseManager', () => {
     expect(result.current.anchorStart).toBeNull();
   });
 
-  it('dispatches the forensic analysis endpoint instantly when both valid anchors are dynamically selected', async () => {
-    (authPost as any).mockResolvedValueOnce({ response: 'Swing Analysis Success!' });
-    
+  it('calls stream.start with the event-pulse stream endpoint when both valid anchors are selected', async () => {
     const { result } = renderHook(() => useEventPulseManager('TSLA', mockRef));
-    
-    // Simulate completing the boundary slice
+
     await act(async () => {
       result.current.setAnchorStart({ time: 100, price: 50, rawDateStr: '2022-01-01' });
       result.current.setAnchorEnd({ time: 200, price: 150, rawDateStr: '2022-02-01' });
       result.current.setSelectionPhase('selected');
     });
-    
-    // Wait for the internal async task to fire
+
     await act(async () => {
       await new Promise(resolve => setTimeout(resolve, 0));
     });
 
-    expect(result.current.isAnalyzing).toBe(false);
-    expect(result.current.analysisResult).toBe('Swing Analysis Success!');
+    expect(mockStart).toHaveBeenCalledWith(
+      ALPHA_BOT_ENDPOINTS.EVENT_PULSE_STREAM,
+      expect.objectContaining({
+        stock_symbol: 'TSLA',
+        start_date_str: '2022-01-01',
+        date_str: '2022-02-01',
+        swing_type: 'Massive Rally', // 150 > 50
+      }),
+    );
   });
 });

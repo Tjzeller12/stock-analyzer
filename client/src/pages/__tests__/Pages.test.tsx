@@ -10,6 +10,11 @@ import MainPage from '../MainPage';
 import Profile from '../Profile';
 import StockPage from '../StockPage';
 
+vi.mock('@react-oauth/google', () => ({
+  useGoogleLogin: () => vi.fn(),
+  GoogleOAuthProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
+
 // Massive global mocking array overriding DOM limits structurally required natively
 vi.mock('../../utils/api', () => ({
   authPost: vi.fn().mockResolvedValue([]),
