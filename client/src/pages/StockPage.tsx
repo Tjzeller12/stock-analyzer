@@ -7,9 +7,9 @@ import React, { useMemo } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import StyledMarkdown from "../components/common/StyledMarkdown";
 import StockHeader from "../components/StockHeader";
+import Header from "../components/common/Header";
 import StockMetricsTable from "../components/common/StockMetricsTable";
 import RadarGraph from "../components/common/RadarGraph";
-import logo from "../resources/alphaBotLogo.png";
 import EventPulseChart from "../components/charts";
 import { ChartData } from '../types';
 
@@ -50,13 +50,11 @@ const StockPage: React.FC = () => {
     };
   }, [radarScores, stock]);
 
-  const handleLogoClick = () => {
-    navigate("/main");
-  };
 
   return (
     <div className="flex flex-col items-center min-h-screen p-0 font-sans bg-background text-text-main">
-      <StockHeader stock={stock} onLogoClick={handleLogoClick} logo={logo} />
+      <Header title={`${stock?.symbol} - ${stock?.name || 'Unknown Company'}`} />
+      <StockHeader stock={stock ?? undefined} />
       <EventPulseChart 
         symbol={symbol || ''} 
         data={chartData} 

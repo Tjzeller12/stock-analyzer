@@ -1,10 +1,12 @@
 import axios from 'axios';
+import { authPost } from '../../utils/api';
 import { useContext } from "react";
 import { useNavigate } from 'react-router-dom';
-import { AUTH_ENDPOINTS } from '../../constants/api';
+import { AUTH_ENDPOINTS, PORTFOLIO_ENDPOINTS } from '../../constants/api';
 import logo from "../../resources/alphaBotLogo.png";
 import { ThemeContext } from "../../ThemeContext";
 import UsageBadge from './UsageBadge';
+import StockSearchInput from './StockSearchInput';
 interface HeaderProps {
     title: string;
 }
@@ -22,6 +24,10 @@ const Header = (props: HeaderProps) => {
     const handleLogoClick = () => {
         navigate("/main");
     }
+
+const handleAddStock = async (symbol: string) => {
+    await authPost(PORTFOLIO_ENDPOINTS.ADD, { symbol });
+}
 
   const handleLogout = async () => {
     try {
@@ -44,7 +50,7 @@ const handleNavButtonClick = (path: string) => {
     const buttonClass = "px-4 py-1.5 text-sm bg-btn-bg text-white font-semibold my-[6px] mx-[4px] border border-white/10 rounded-md cursor-pointer hover:shadow-lg hover:shadow-btn-bg/30 hover:-translate-y-0.5 active:scale-95 transition-all duration-300";
 
     return (
-        <header className="flex justify-between items-center w-full min-h-[60px] bg-primary text-white font-bold px-[20px] py-[6px] box-border shadow-md">
+        <header className="flex justify-between items-center w-full min-h-[60px] bg-primary text-white font-bold px-[20px] py-[6px] box-border shadow-md relative z-50">
             <div className="flex items-center gap-[12px] flex-1">
                 <img
                     className="max-h-[40px] w-auto cursor-pointer hover:scale-105 transition-transform duration-300 ease-in-out"
@@ -54,7 +60,13 @@ const handleNavButtonClick = (path: string) => {
                 />
                 <h1 className="text-white text-xl font-extrabold m-0 whitespace-nowrap tracking-tight drop-shadow-sm">{props.title}</h1>
             </div>
-            
+            <div className="w-[340px] mx-6">
+                <StockSearchInput
+                    onStockSelect={handleAddStock}
+                    className="bg-white/10 backdrop-blur-sm border-white/30 shadow-[0_0_0px_rgba(255,255,255,0)] hover:bg-white/15 hover:border-white/50 hover:shadow-[0_0_14px_rgba(255,255,255,0.2)] focus-within:bg-white/20 focus-within:border-white/70 focus-within:shadow-[0_0_20px_rgba(255,255,255,0.35)] transition-all duration-300"
+                    inputClassName="text-white placeholder-white/50"
+                />
+            </div>
             <div className="flex items-center gap-[15px] flex-wrap justify-end mr-[15px]">
                 <UsageBadge />
                 {[{ label: "Discovery", path: "/discovery" }, { label: "Profile", path: "/profile" }].map((button) => (

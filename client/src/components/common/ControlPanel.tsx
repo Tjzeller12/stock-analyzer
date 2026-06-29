@@ -27,6 +27,7 @@ export interface ControlPanelProps {
 const ControlPanel = (props: ControlPanelProps) => {
     return (
         <div className="flex flex-col gap-3 w-full">
+<<<<<<< HEAD
             <div className="flex flex-col md:flex-row items-center justify-between gap-3 w-full bg-form-bg p-3 rounded-lg shadow-inner border border-border-main/10">
                 <div className="flex items-center gap-3 flex-wrap w-full md:w-auto">
                     {props.onStockSelect ? (
@@ -62,6 +63,38 @@ const ControlPanel = (props: ControlPanelProps) => {
                         </div>
                     )}
                     {props.extra}
+=======
+            <div className="flex flex-col md:flex-row items-center justify-start gap-3 w-full bg-form-bg p-3 rounded-lg shadow-inner border border-border-main/10">
+                {props.onStockSelect && (
+                    <div className="w-full md:max-w-[400px]">
+                        <StockSearchInput onStockSelect={props.onStockSelect} />
+                    </div>
+                )}
+                {props.actionInputBar && <ActionInputBar {...props.actionInputBar} />}
+                {props.buttons && (
+                    <div className="flex items-center gap-3 flex-wrap justify-start">
+                        {
+                            props.buttons.map(button => (
+                                <button 
+                                    key={button.label} 
+                                    onClick={button.onClick}
+                                    disabled={button.disabled}
+                                    className={`px-3 py-1.5 font-semibold text-xs rounded-md transition-all duration-200 ${
+                                        button.disabled 
+                                        ? 'bg-list-bg text-text-main/50 cursor-not-allowed border border-white/5 shadow-none' 
+                                        : 'bg-gradient-to-r from-primary to-[#057a37] text-white hover:shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5 active:scale-95 border border-primary/30 shadow-md'
+                                    }`}
+                                >
+                                    {button.label}
+                                </button>
+                            ))
+                        }
+                    </div>
+                )}
+            {props.info && (
+                <div className="text-sm font-medium text-text-main/70 px-2 flex justify-end">
+                    {props.info}
+>>>>>>> 70cb36a (feat(ui): move stock search to global header and unify stock page layout)
                 </div>
             </div>
 

@@ -46,13 +46,20 @@ class AlphaVantageStockSearchProvider(StockSearchProvider):
             raise Exception(f"Failed to search for {query}: {response.status_code} {response.text}")
 
         data = response.json()
-        return [SearchResult(
-            symbol=result["1. symbol"], 
-            name=result["2. name"], 
-            type=result["3. type"], 
-            exchange=result["4. region"]
-            ) 
-            for result in data.get("bestMatches", [])
-            if result.get("4. region") == "United States"
-        ]
+        seen_names = set()
+        results = []
+        for result in data.get("bestMatches", []):
+            if result.get("4. region") != "United States":
+                continue
+            name = result["2. name"]
+            if name in seen_names:
+                continue
+            seen_names.add(name)
+            results.append(SearchResult(
+                symbol=result["1. symbol"],
+                name=name,
+                type=result["3. type"],
+                exchange=result["4. region"]
+            ))
+        return results
 

@@ -12,9 +12,11 @@ interface SearchResult {
 interface StockSearchInputProps {
     onStockSelect: (symbol: string) => void;
     disabled?: boolean;
+    className?: string;
+    inputClassName?: string;
 }
 
-const StockSearchInput = ({ onStockSelect, disabled }: StockSearchInputProps) => {
+const StockSearchInput = ({ onStockSelect, disabled, className, inputClassName }: StockSearchInputProps) => {
     const [query, setQuery] = useState("");
     const [results, setResults] = useState<SearchResult[]>([]);
     const [loading, setLoading] = useState(false);
@@ -39,9 +41,12 @@ const StockSearchInput = ({ onStockSelect, disabled }: StockSearchInputProps) =>
         return () => clearTimeout(timeout);
     }, [query]);
     return (
-        <div className="relative bg-input-bg border border-border-main/40 rounded-lg px-2 py-0.5 my-0.5 flex items-center shadow-inner transition-all hover:border-primary/50 focus-within:ring-2 focus-within:ring-primary/50 focus-within:border-primary">
+        <div className={`relative border rounded-lg px-2 py-0.5 my-0.5 flex items-center ${className ?? 'bg-input-bg border-border-main/40 shadow-inner transition-all'}`}>
+            <svg className="w-3.5 h-3.5 shrink-0 opacity-50 ml-1" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+            </svg>
             <input 
-                className="mr-0 h-8 border-none bg-transparent outline-none flex-1 text-sm text-text-main placeholder-text-main/50 px-2"
+                className={`h-8 border-none bg-transparent outline-none flex-1 text-sm px-2 ${inputClassName ?? 'text-text-main placeholder-text-main/50'}`}
                 type="text" 
                 placeholder="Search for a stock"
                 value={query}
@@ -58,11 +63,11 @@ const StockSearchInput = ({ onStockSelect, disabled }: StockSearchInputProps) =>
                         results.map(result => (
                             <div
                                 key={result.symbol}
-                                className="px-4 py-2 text-sm text-text-main hover:bg-row-hover flex items-center justify-between gap-2"
+                                className="px-3 py-1.5 text-text-main hover:bg-row-hover flex items-center justify-between gap-2"
                             >
-                                <span className="truncate">{result.name}</span>
-                                <div className="flex items-center gap-2 shrink-0">
-                                    <span className="text-text-main/50 font-mono text-xs">{result.symbol}</span>
+                                <span className="truncate text-xs font-normal">{result.name}</span>
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                    <span className="text-primary font-mono text-xs font-semibold">{result.symbol}</span>
                                     <button
                                         onMouseDown={(e) => { e.preventDefault(); onStockSelect(result.symbol); setQuery(""); setResults([]); }}
                                         className="w-5 h-5 rounded-full border-2 border-primary hover:bg-primary/10 active:scale-90 flex items-center justify-center transition-all"
