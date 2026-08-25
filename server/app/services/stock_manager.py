@@ -81,10 +81,12 @@ def add_to_master(symbol):
         # separate TIME_SERIES_DAILY call, which was the 7th concurrent
         # request and frequently triggered Alpha Vantage burst-rate limits.
         global_quote_data = quote.get("Global Quote", {}) if quote else {}
-        price = safe_float(global_quote_data.get("05. price"))
+        # default=None (not 0.0) so a missing/rate-limited quote is detectable and
+        # we DON'T overwrite a previously-good price with 0 below (P: no false zeros).
+        price = safe_float(global_quote_data.get("05. price"), default=None)
 
         # Price is the hard requirement — no price means invalid symbol or full rate limit.
-        if price is None:
+        if not price:
             return {"error": f"Price unavailable or API limit reached for symbol: {symbol}"}
 
         # Overview is optional: ETFs (USO, SPY, etc.) return {} from AV.

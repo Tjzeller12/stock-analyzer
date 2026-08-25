@@ -19,7 +19,7 @@ psycopg2-binary==2.9.9
 python-dotenv==1.0.1
 requests==2.32.3
 SQLAlchemy==2.0.32
-typing_extensions==4.12.2
+typing_extensions==4.15.0
 urllib3==2.2.2
 Werkzeug==3.0.3
 PyJWT==2.8.0
@@ -29,6 +29,12 @@ anthropic==0.76.0
 numpy==2.4.3
 asteval==1.0.8
 gunicorn==23.0.0
+
+# Brokerage import (feature 10)
+# Pinned to 45.0.7: cryptography 49.x SIGILLs (Illegal instruction) inside Docker
+# Desktop's aarch64 linuxkit VM. 45.0.7 is the newest that runs there and locally.
+cryptography==45.0.7
+snaptrade-python-sdk==11.0.210
 
 # Testing
 pytest==9.0.3

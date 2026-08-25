@@ -162,6 +162,15 @@ export interface Stock extends AlphaVantageData {
   roic?: number;
   price_to_fc?: number;
   cashAndCashEquivalents?: number;
+
+  // Position fields — only populated for real brokerage holdings (feature 10).
+  quantity?: number;
+  avg_cost?: number;
+  market_value?: number | null;
+  cost_basis?: number;
+  unrealized_pnl?: number | null;
+  unrealized_pnl_pct?: number | null;
+  current_price?: number | null;
 }
 
 export interface Article {
@@ -245,4 +254,37 @@ export interface OnboardingDraft {
   budget: number | null;
   selectedSectors: string[];           // ordered, <= 3
   stepIndex: number;                   // for resume
+}
+
+// --- Brokerage import (feature 10) ---
+// A real brokerage holding: full stock data (so it renders in the same table +
+// radar as the watchlist) plus broker-provided position fields.
+export interface PortfolioHolding extends Stock {
+  quantity: number;
+  avg_cost: number;
+  market_value: number | null;
+  cost_basis: number;
+  unrealized_pnl: number | null;
+  unrealized_pnl_pct: number | null;
+  current_price: number | null;
+}
+
+export interface PerformanceSummary {
+  total_value: number;
+  total_cost_basis: number;
+  total_return: number;
+  total_return_pct: number;
+  last_synced: string | null;
+}
+
+export interface BrokerageConnectionStatus {
+  connected: boolean;
+  brokerage_name?: string | null;
+  last_synced?: string | null;
+}
+
+export interface BrokerageHoldingsResponse {
+  status: BrokerageConnectionStatus;
+  holdings: PortfolioHolding[];
+  performance: PerformanceSummary;
 }

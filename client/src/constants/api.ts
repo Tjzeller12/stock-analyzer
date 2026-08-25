@@ -49,3 +49,13 @@ export const RADAR_ENDPOINTS = {
     COMPARE: `${API_BASE_URL}/radar/compare`,
 } as const;
 
+// Brokerage import endpoints
+export const BROKERAGE_ENDPOINTS = {
+    CONNECT_START: `${API_BASE_URL}/brokerage/connect/start`,
+    CONNECT_CALLBACK: `${API_BASE_URL}/brokerage/connect/callback`,
+    SYNC: `${API_BASE_URL}/brokerage/sync`,
+    HOLDINGS: `${API_BASE_URL}/brokerage/holdings`,
+    DISCONNECT: `${API_BASE_URL}/brokerage/disconnect`,
+    PUBLISH: `${API_BASE_URL}/brokerage/publish`,
+} as const;
+
