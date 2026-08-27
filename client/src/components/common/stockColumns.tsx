@@ -16,6 +16,29 @@ import RadarGraph from './RadarGraph';
  */
 
 type RadarScores = Record<string, Record<string, number>>;
+type StockField = keyof Stock;
+
+const fmtFixed = (digits: number) => (value: number) => value.toFixed(digits);
+const fmtPct = (value: number) => `${(value * 100).toFixed(1)}%`;
+const fmtCap = (value: number) => formatMarketCap(value);
+const fmtMoney = (value: number) => `$${value.toFixed(2)}`;
+
+/** Shared metric column: header + field + formatter. Missing values render as "N/A". */
+const metricCol = (
+    headerName: string,
+    field: StockField,
+    format: (value: number) => string,
+    width: number,
+    extra: Partial<ColDef<Stock>> = {},
+): ColDef<Stock> => ({
+    headerName,
+    colId: String(field),
+    valueGetter: (params) => params.data?.[field] as number | undefined,
+    valueFormatter: (params: ValueFormatterParams<Stock, number>) =>
+        params.value == null ? "N/A" : format(params.value),
+    width,
+    ...extra,
+});
 
 // Green for gains, red for losses. AG Grid's CellStyle index signature rejects
 // `undefined`, so only set `color` when there's a sign to show.
@@ -139,144 +162,26 @@ export const metricColumns = (): ColDef<Stock>[] => ([
         valueGetter: (params) => params.data?.name || "N/A",
         width: 200
     },
-    {
-        field: "price",
-        headerName: "Price",
-        valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value != null ? `$${params.value.toFixed(2)}` : "N/A",
-        width: 100
-    },
-    {
-        headerName: "Market Cap",
-        valueGetter: (params) => params.data?.market_cap,
-        valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value ? formatMarketCap(params.value) : "N/A",
-        width: 150
-    },
-    {
-        headerName: "P/E",
-        valueGetter: (params) => params.data?.pe_ratio,
-        valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value != null ? params.value.toFixed(2) : "N/A",
-        width: 100
-    },
-    {
-        headerName: "Fwd P/E",
-        valueGetter: (params) => params.data?.forward_pe,
-        valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value != null ? params.value.toFixed(2) : "N/A",
-        width: 120
-    },
-    {
-        headerName: "EV/EBITDA",
-        valueGetter: (params) => params.data?.ev_to_ebitda,
-        valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value != null ? params.value.toFixed(2) : "N/A",
-        width: 120
-    },
-    {
-        headerName: "P/S",
-        valueGetter: (params) => params.data?.price_to_sales,
-        valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value != null ? params.value.toFixed(2) : "N/A",
-        width: 100
-    },
-    {
-        headerName: "PEG",
-        valueGetter: (params) => params.data?.peg_ratio,
-        valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value != null ? params.value.toFixed(3) : "N/A",
-        width: 100
-    },
-    {
-        headerName: "ROE",
-        valueGetter: (params) => params.data?.roe,
-        valueFormatter: (params: ValueFormatterParams<Stock, number>) => {
-            if (params.value === undefined || params.value === null) return "N/A";
-            return `${(params.value * 100).toFixed(1)}%`;
-        },
-        width: 100
-    },
-    {
-        headerName: "Op Margin",
-        valueGetter: (params) => params.data?.operating_margin,
-        valueFormatter: (params: ValueFormatterParams<Stock, number>) => {
-            if (params.value === undefined || params.value === null) return "N/A";
-            return `${(params.value * 100).toFixed(1)}%`;
-        },
-        width: 120
-    },
-    {
-        headerName: "Profit Margin",
-        valueGetter: (params) => params.data?.profit_margin,
-        valueFormatter: (params: ValueFormatterParams<Stock, number>) => {
-            if (params.value === undefined || params.value === null) return "N/A";
-            return `${(params.value * 100).toFixed(1)}%`;
-        },
-        width: 140
-    },
-    {
-        headerName: "ROA",
-        valueGetter: (params) => params.data?.roa,
-        valueFormatter: (params: ValueFormatterParams<Stock, number>) => {
-            if (params.value === undefined || params.value === null) return "N/A";
-            return `${(params.value * 100).toFixed(1)}%`;
-        },
-        width: 100
-    },
-    {
-        headerName: "Rev Growth (QoQ)",
-        valueGetter: (params) => params.data?.rev_growth_qoq,
-        valueFormatter: (params: ValueFormatterParams<Stock, number>) => {
-            if (params.value === undefined || params.value === null) return "N/A";
-            return `${(params.value * 100).toFixed(1)}%`;
-        },
-        width: 160
-    },
-    {
-        headerName: "EPS Growth (QoQ)",
-        valueGetter: (params) => params.data?.eps_growth_qoq,
-        valueFormatter: (params: ValueFormatterParams<Stock, number>) => {
-            if (params.value === undefined || params.value === null) return "N/A";
-            return `${(params.value * 100).toFixed(1)}%`;
-        },
-        width: 160
-    },
-    {
-        headerName: "Total Assets",
-        valueGetter: (params) => params.data?.total_assets,
-        valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value != null ? formatMarketCap(params.value) : "N/A",
-        width: 140
-    },
-    {
-        headerName: "Total Liab.",
-        valueGetter: (params) => params.data?.total_liabilities,
-        valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value != null ? formatMarketCap(params.value) : "N/A",
-        width: 140
-    },
-    {
-        headerName: "Op. Cash Flow",
-        valueGetter: (params) => params.data?.operating_cash_flow,
-        valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value != null ? formatMarketCap(params.value) : "N/A",
-        width: 140
-    },
-    {
-        headerName: "CapEx",
-        valueGetter: (params) => params.data?.capital_expenditures,
-        valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value != null ? formatMarketCap(params.value) : "N/A",
-        width: 120
-    },
-    {
-        headerName: "Free Cash Flow",
-        valueGetter: (params) => params.data?.free_cash_flow,
-        valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value != null ? formatMarketCap(params.value) : "N/A",
-        width: 150
-    },
-    {
-        headerName: "Debt/Equity",
-        valueGetter: (params) => params.data?.debt_to_equity,
-        valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value != null ? params.value.toFixed(2) : "N/A",
-        width: 130
-    },
-    {
-        headerName: "Beta",
-        valueGetter: (params) => params.data?.beta,
-        valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value != null ? params.value.toFixed(3) : "N/A",
-        width: 100
-    },
+    metricCol("Price", "price", fmtMoney, 100),
+    metricCol("Market Cap", "market_cap", fmtCap, 150),
+    metricCol("P/E", "pe_ratio", fmtFixed(2), 100),
+    metricCol("Fwd P/E", "forward_pe", fmtFixed(2), 120),
+    metricCol("EV/EBITDA", "ev_to_ebitda", fmtFixed(2), 120),
+    metricCol("P/S", "price_to_sales", fmtFixed(2), 100),
+    metricCol("PEG", "peg_ratio", fmtFixed(3), 100),
+    metricCol("ROE", "roe", fmtPct, 100),
+    metricCol("Op Margin", "operating_margin", fmtPct, 120),
+    metricCol("Profit Margin", "profit_margin", fmtPct, 140),
+    metricCol("ROA", "roa", fmtPct, 100),
+    metricCol("Rev Growth (QoQ)", "rev_growth_qoq", fmtPct, 160),
+    metricCol("EPS Growth (QoQ)", "eps_growth_qoq", fmtPct, 160),
+    metricCol("Total Assets", "total_assets", fmtCap, 140),
+    metricCol("Total Liab.", "total_liabilities", fmtCap, 140),
+    metricCol("Op. Cash Flow", "operating_cash_flow", fmtCap, 140),
+    metricCol("CapEx", "capital_expenditures", fmtCap, 120),
+    metricCol("Free Cash Flow", "free_cash_flow", fmtCap, 150),
+    metricCol("Debt/Equity", "debt_to_equity", fmtFixed(2), 130),
+    metricCol("Beta", "beta", fmtFixed(3), 100),
     {
         headerName: "Buy Ratings",
         valueGetter: (params) => params.data?.buy_ratings_count || 0,
