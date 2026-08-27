@@ -29,8 +29,12 @@ const StockPage: React.FC = () => {
     stock, radarScores, timeFrame, setTimeFrame, chartData 
   } = useStockDataManager(symbol, initialRadarScores);
   
-  const { 
-    summary, showChat, setShowChat, chatMessages, chatInput, setChatInput, chatLoading, chatEndRef, sendChat 
+  const {
+    summary, summaryIsLoading, summaryIsStreaming, summaryToolsRunning, summaryToolMessage,
+    showChat, setShowChat,
+    chatMessages, chatInput, setChatInput,
+    chatLoading, chatIsStreaming, chatToolsRunning, chatToolMessage,
+    chatEndRef, sendChat,
   } = useStockAnalysisManager(symbol);
 
   // Compute ChartData for RadarGraph from radar scores
@@ -91,7 +95,27 @@ const StockPage: React.FC = () => {
           {/* Analysis view */}
           {!showChat && (
             <div className="flex flex-col items-start gap-4 bg-form-bg p-4 rounded-lg w-full min-h-[300px] h-full text-left shadow-inner border border-border-main/10 overflow-y-auto">
-              {summary ? <StyledMarkdown>{summary}</StyledMarkdown> : <span className="text-text-main/40 text-sm">Loading analysis...</span>}
+              {summaryIsLoading && !summary ? (
+                <div className="flex flex-col items-center justify-center w-full h-full gap-3 py-8">
+                  <span className="alpha-bot-spinner" />
+                  <p className="text-sm font-semibold text-primary animate-pulse">
+                    {summaryToolMessage || (summaryToolsRunning > 0
+                      ? `Fetching ${summaryToolsRunning} data source${summaryToolsRunning !== 1 ? 's' : ''}…`
+                      : 'Generating analysis… may take up to two minutes.'
+                    )}
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {summary && <StyledMarkdown>{summary}</StyledMarkdown>}
+                  {summaryIsStreaming && (
+                    <span className="inline-block w-0.5 h-4 bg-primary ml-0.5 align-middle animate-pulse" />
+                  )}
+                  {!summary && !summaryIsLoading && (
+                    <span className="text-text-main/40 text-sm">No analysis available.</span>
+                  )}
+                </>
+              )}
             </div>
           )}
 
@@ -112,22 +136,32 @@ const StockPage: React.FC = () => {
                         ? 'bg-primary text-white rounded-br-sm'
                         : 'bg-list-bg border border-border-main/15 text-text-main rounded-bl-sm'
                     }`}>
-                      {msg.role === 'assistant'
-                        ? <StyledMarkdown>{msg.content}</StyledMarkdown>
-                        : msg.content
-                      }
+                      {msg.role === 'assistant' ? (
+                        msg.content ? (
+                          <>
+                            <StyledMarkdown>{msg.content}</StyledMarkdown>
+                            {msg.isStreaming && (
+                              <span className="inline-block w-0.5 h-3.5 bg-primary ml-0.5 align-middle animate-pulse" />
+                            )}
+                          </>
+                        ) : (
+                          /* Empty placeholder while first chunk hasn't arrived yet */
+                          chatToolsRunning > 0 || chatToolMessage ? (
+                            <span className="text-xs text-text-main/50 animate-pulse">
+                              {chatToolMessage || `Fetching ${chatToolsRunning} source${chatToolsRunning !== 1 ? 's' : ''}…`}
+                            </span>
+                          ) : (
+                            <span className="flex gap-1 items-center">
+                              <span className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce [animation-delay:0ms]" />
+                              <span className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce [animation-delay:150ms]" />
+                              <span className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce [animation-delay:300ms]" />
+                            </span>
+                          )
+                        )
+                      ) : msg.content}
                     </div>
                   </div>
                 ))}
-                {chatLoading && (
-                  <div className="flex justify-start">
-                    <div className="bg-list-bg border border-border-main/15 px-4 py-3 rounded-2xl rounded-bl-sm flex gap-1.5 items-center">
-                      <span className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce [animation-delay:0ms]" />
-                      <span className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce [animation-delay:150ms]" />
-                      <span className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce [animation-delay:300ms]" />
-                    </div>
-                  </div>
-                )}
                 <div ref={chatEndRef} />
               </div>
 

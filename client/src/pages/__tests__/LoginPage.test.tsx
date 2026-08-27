@@ -6,8 +6,11 @@ import axios from 'axios';
 import LoginPage from '../LoginPage';
 
 vi.mock('axios');
-// Mock logo import
 vi.mock('../../resources/alphaBotLogo.png', () => ({ default: 'logo.png' }));
+vi.mock('@react-oauth/google', () => ({
+  useGoogleLogin: () => vi.fn(),
+  GoogleOAuthProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
 
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async (importOriginal) => {

@@ -69,6 +69,9 @@ def create_app(config_class=Config):
     from app.routes.brokerage import brokerage_bp
     app.register_blueprint(brokerage_bp)
 
+    from app.routes.discovery import discovery_bp
+    app.register_blueprint(discovery_bp)
+
     from app.alphaBot import alphaBot_bp
     app.register_blueprint(alphaBot_bp)
 

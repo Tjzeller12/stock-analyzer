@@ -3,10 +3,11 @@ from flask import Blueprint, request, jsonify, current_app
 from app.models import User, Portfolio
 from app import bcrypt
 from app import db
-#from __init__ import app
 import jwt
+import os
 from datetime import datetime, timedelta
 from functools import wraps
+import requests as http_requests
 
 # Make auth blueprint
 auth = Blueprint('auth', __name__)
@@ -28,14 +29,11 @@ def create_token(user_id):
     return token
 
 # creates a new user and adds it to the database
-def create_user(username, password_hash, email, longterm_investor = False):
+def create_user(username, email, password_hash=None):
     new_user = User(username=username, password_hash=password_hash, email=email)
     db.session.add(new_user)
     db.session.commit()
-    token = create_token(new_user.id)
-    #initialize the users portfolio and wishlist
     portfolio = Portfolio(owner=new_user)
-    #Add and commit the user, protfollio, and wishlist to the database
     db.session.add(portfolio)
     db.session.commit()
 
@@ -104,8 +102,79 @@ def login():
 # Logout route
 @auth.route('/logout', methods=['POST'])
 def logout():
-    
     return jsonify({"message": "Logout successful"}), 200
+
+
+@auth.route('/google', methods=['POST'])
+def google_login():
+    """
+    Exchange a Google ID token for our own JWT.
+
+    Flow:
+      1. Frontend signs in with Google and receives an ID token from Google.
+      2. Frontend POSTs that token here.
+      3. We verify it with Google's servers (catches fakes/replays).
+      4. We find or create the user by email.
+      5. We return our own JWT — the rest of the app is unchanged.
+    """
+    token = request.json.get("token")
+    if not token:
+        return jsonify({"error": "Google token is required"}), 400
+
+    try:
+        # Exchange the access token for the user's profile info.
+        # Google's userinfo endpoint verifies the token and returns
+        # the user's email, name, and unique Google ID ("sub").
+        response = http_requests.get(
+            "https://www.googleapis.com/oauth2/v3/userinfo",
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=10,
+        )
+        response.raise_for_status()
+        user_info = response.json()
+    except Exception as e:
+        return jsonify({"error": f"Failed to verify Google token: {str(e)}"}), 401
+
+    email = user_info.get("email")
+    google_id = user_info.get("sub")   # Google's permanent unique user ID
+    name = user_info.get("name", "")
+
+    if not email or not google_id:
+        return jsonify({"error": "Google account missing email"}), 400
+
+    # Find existing user by Google ID first, then fall back to email
+    # (handles the case where someone registered with email/password before)
+    user = User.query.filter_by(google_id=google_id).first()
+
+    if not user:
+        user = User.query.filter_by(email=email).first()
+        if user:
+            # Existing email/password user — link their Google account
+            user.google_id = google_id
+            db.session.commit()
+        else:
+            # Brand new user — create an account automatically
+            base_username = name.replace(" ", "").lower() or email.split("@")[0]
+            username = base_username
+            counter = 1
+            while User.query.filter_by(username=username).first():
+                username = f"{base_username}{counter}"
+                counter += 1
+
+            user = User(username=username, email=email, google_id=google_id)
+            db.session.add(user)
+            db.session.commit()
+            portfolio = Portfolio(owner=user)
+            db.session.add(portfolio)
+            db.session.commit()
+
+    token = create_token(user.id)
+    return jsonify({
+        "token": token,
+        "username": user.username,
+        "email": user.email,
+        "message": "Google login successful",
+    }), 200
 
 # Attemps to recieve user token from front-end. Quereys that user by ID and returns it.
 def get_current_user():

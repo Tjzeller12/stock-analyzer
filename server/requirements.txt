@@ -29,6 +29,7 @@ anthropic==0.76.0
 numpy==2.4.3
 asteval==1.0.8
 gunicorn==23.0.0
+google-auth==2.55.0
 
 # Brokerage import (feature 10)
 # Pinned to 45.0.7: cryptography 49.x SIGILLs (Illegal instruction) inside Docker

@@ -16,6 +16,7 @@ USER_QUERY_PROMPT = os.path.join(BASE_DIR, "prompts/user_query.md")
 EVENT_PULSE_PROMPT = os.path.join(BASE_DIR, "prompts/event_pulse.md")
 NEWS_ANALYSIS_PROMPT = os.path.join(BASE_DIR, "prompts/news_analysis.md")
 MOAT_ANALYSIS_PROMPT = os.path.join(BASE_DIR, "prompts/moat_analysis.md")
+SUPER_PROMPT_PROMPT = os.path.join(BASE_DIR, "prompts/super_prompt.md")
 
 # Scope types for Radar stats
 

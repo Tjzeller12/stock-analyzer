@@ -1,6 +1,6 @@
 import React, { ReactNode } from "react";
 import { PerformanceSummary as PerformanceSummaryData, Stock } from "../../types";
-import ActionInputBar from "./ActionInputBar";
+import StockSearchInput from "./StockSearchInput";
 import { RadarTemplate } from "./AdvancedSettingsPanel";
 import Card from "./Card";
 import CompareControlBar from "./CompareControlBar";
@@ -105,12 +105,7 @@ const StocksCard: React.FC<StocksCardProps> = ({
             actions={
               <div className="flex items-center gap-2">
                 <div className="w-[240px] sm:w-[300px]">
-                  <ActionInputBar
-                    onClick={(symbol) => { void onAdd(symbol); }}
-                    disabled={false}
-                    placeholder="Add symbol i.e. NVDA"
-                    buttonLabel="Add"
-                  />
+                  <StockSearchInput onStockSelect={(symbol) => { void onAdd(symbol); }} />
                 </div>
                 <button type="button" onClick={() => { void onRefresh(); }} className={`${TABLE_ACTION_BTN} shrink-0`}>
                   Refresh

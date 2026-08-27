@@ -1,5 +1,7 @@
 import React from "react";
 import ActionInputBar, { ActionInputBarProps } from "./ActionInputBar";
+import StockSearchInput from "./StockSearchInput";
+
 interface ButtonProps {
     label: string;
     onClick: () => void;
@@ -9,24 +11,28 @@ interface ButtonProps {
 export interface ControlPanelProps {
     buttons?: ButtonProps[];
     actionInputBar?: ActionInputBarProps;
+    onStockSelect?: (symbol: string) => void;
     children: React.ReactNode;
     info?: string;
 }
 
 /**
  * ControlPanel Component
- * 
+ *
  * A versatile layout component designed to sit above lists, tables, or complex visualizations.
- * It can render an `ActionInputBar` (for things like searching or adding items by ID), 
- * a row of customizable `buttons` (for sorting, filtering, reloading), and an optional 
- * `info` text block, all positioned nicely within a flex container.
+ * It can render a live stock search, an `ActionInputBar`, a row of customizable buttons,
+ * and an optional `info` text block.
  */
 const ControlPanel = (props: ControlPanelProps) => {
     return (
         <div className="flex flex-col gap-3 w-full">
             <div className="flex flex-col md:flex-row items-center justify-between gap-3 w-full bg-form-bg p-3 rounded-lg shadow-inner border border-border-main/10">
                 <div className="flex items-center gap-3 flex-wrap w-full md:w-auto">
-                    {props.actionInputBar && (
+                    {props.onStockSelect ? (
+                        <div className="w-full md:w-[300px]">
+                            <StockSearchInput onStockSelect={props.onStockSelect} />
+                        </div>
+                    ) : props.actionInputBar && (
                         <div className="w-full md:w-[300px]">
                             <ActionInputBar
                                 {...props.actionInputBar}
@@ -60,4 +66,4 @@ const ControlPanel = (props: ControlPanelProps) => {
     );
 }
 
-export default ControlPanel; 
+export default ControlPanel;
