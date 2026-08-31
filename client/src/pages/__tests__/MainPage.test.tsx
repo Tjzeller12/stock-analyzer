@@ -27,7 +27,8 @@ describe('MainPage', () => {
   it('renders the header and main card titles', async () => {
     await act(async () => { renderMain(); });
     expect(screen.getByText(/AlphaBot Dashboard/i)).toBeInTheDocument();
-    expect(screen.getByText(/My Stocks/i)).toBeInTheDocument();
+    expect(screen.getByText('Watchlist')).toBeInTheDocument();
+    expect(screen.getByText('My Portfolio')).toBeInTheDocument();
     // 'News' appears in both the card title and the filter dropdown, use getAllByText
     expect(screen.getAllByText(/News/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/Comparison Analysis/i)).toBeInTheDocument();
