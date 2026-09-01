@@ -1,6 +1,6 @@
 # Design — Contextual News (NEWS_SENTIMENT Integration)
 
-> **Status:** Design (awaiting alignment) · **Owner:** TBD · **Last updated:** 2026-06-13
+> **Status:** After 06/08 (and likely 07) · **Owner:** TBD · **Last updated:** 2026-08-27
 >
 > Scope: make the MainPage news feed reflect the stocks the user actually cares about. Replace the generic category feed with Alpha Vantage `NEWS_SENTIMENT?tickers={...}`, render a Bullish/Bearish **Sentiment Badge** on each headline from the API's score, and refresh the feed whenever the user's selected/added stocks change.
 >

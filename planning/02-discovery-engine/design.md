@@ -1,6 +1,6 @@
 # Design — Discovery Engine (Super Prompt + Tailored Discovery + Refine Search)
 
-> **Status:** Design (awaiting alignment) · **Owner:** TBD · **Last updated:** 2026-06-13
+> **Status:** Implemented · **Owner:** Thomas · **Last updated:** 2026-08-27
 >
 > Scope: the Claude-driven personalized discovery surface. Three deliverables:
 > 1. **Super Prompt Engine** — a backend utility that interpolates the user's investor profile into a master prompt template, calls Claude, and returns a strictly-schematized list of recommended stocks.

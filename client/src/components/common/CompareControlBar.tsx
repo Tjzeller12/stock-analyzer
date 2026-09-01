@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import AdvancedSettingsPanel, { RadarTemplate } from './AdvancedSettingsPanel';
+import ColumnCustomizer from './ColumnCustomizer';
 import ControlPanel from './ControlPanel';
 
 interface CompareControlBarProps {
@@ -9,6 +10,9 @@ interface CompareControlBarProps {
     compareError: string | null;
     activeTemplate: RadarTemplate;
     setActiveTemplate: (template: RadarTemplate) => void;
+    visibleColumns: string[];
+    onToggleColumn: (id: string) => void;
+    onResetColumns: () => void;
 }
 
 /**
@@ -26,6 +30,9 @@ const CompareControlBar: React.FC<CompareControlBarProps> = ({
     compareError,
     activeTemplate,
     setActiveTemplate,
+    visibleColumns,
+    onToggleColumn,
+    onResetColumns,
 }) => {
     const [showAdvanced, setShowAdvanced] = useState(false);
     const count = selectedSymbols.size;
@@ -44,6 +51,13 @@ const CompareControlBar: React.FC<CompareControlBarProps> = ({
                 },
             ]}
             info={`Selected: ${count} (min 2, max 10)${compareError ? ` - ${compareError}` : ''}`}
+            extra={(
+                <ColumnCustomizer
+                    visibleColumns={visibleColumns}
+                    onToggle={onToggleColumn}
+                    onReset={onResetColumns}
+                />
+            )}
         >
             {showAdvanced && (
                 <AdvancedSettingsPanel

@@ -1,6 +1,6 @@
 # Design — Thematic Global-News Discovery Cards
 
-> **Status:** Design (awaiting alignment) · **Owner:** TBD · **Last updated:** 2026-06-13
+> **Status:** Queued after 06/08 · **Owner:** TBD · **Last updated:** 2026-08-27
 >
 > Scope: a set of **thematic news cards** on the Discovery page. Each card is a current global-news theme (e.g. *"War in Iran"*, *"AI Bubble"*) with a short explanation and a list of ~5 stocks impacted by/relevant to that theme, each with a one-line rationale. The set is **regenerated on a weekly schedule** (not per request) and every listed stock has the shared **＋ Add to list** button (feature 02's `AddToListButton`).
 >

@@ -2,7 +2,7 @@ import { ColDef } from 'ag-grid-community';
 import React, { useMemo } from 'react';
 import { Stock } from '../../types';
 import StockTableBase from './StockTableBase';
-import { metricColumns, positionColumns, radarColumn, selectColumn, symbolColumn } from './stockColumns';
+import { buildMetricColumns, positionColumns, radarColumn, selectColumn, symbolColumn } from './stockColumns';
 
 interface PortfolioTableProps {
     stocks: Stock[];
@@ -10,6 +10,8 @@ interface PortfolioTableProps {
     selectedSymbols: Set<string>;
     toggleSelectSymbol: (symbol: string) => void;
     onRowClick: (symbol: string) => void;
+    visibleColumns: string[];
+    activeAxes: string[];
 }
 
 /**
@@ -23,14 +25,16 @@ const PortfolioTable: React.FC<PortfolioTableProps> = ({
     selectedSymbols,
     toggleSelectSymbol,
     onRowClick,
+    visibleColumns,
+    activeAxes,
 }) => {
     const columns: ColDef<Stock>[] = useMemo(() => [
-        radarColumn(radarScores),
+        radarColumn(radarScores, activeAxes),
         symbolColumn(),
         ...positionColumns(),
-        ...metricColumns(),
+        ...buildMetricColumns(visibleColumns),
         selectColumn(selectedSymbols, toggleSelectSymbol),
-    ], [radarScores, selectedSymbols, toggleSelectSymbol]);
+    ], [radarScores, activeAxes, visibleColumns, selectedSymbols, toggleSelectSymbol]);
 
     return <StockTableBase stocks={stocks} columns={columns} onRowClick={onRowClick} />;
 };

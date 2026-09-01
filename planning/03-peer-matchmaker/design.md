@@ -1,6 +1,6 @@
 # Design — Peer Matchmaker (StockPage Discovery Module)
 
-> **Status:** Design (awaiting alignment) · **Owner:** TBD · **Last updated:** 2026-06-13
+> **Status:** Queued after 06/08 · **Owner:** TBD · **Last updated:** 2026-08-27
 >
 > Scope: a "Peers & Competitors" module on the individual Stock Page that fights familiarity bias. For the stock being viewed it uses Claude (seeded with the stock's sector/industry + cached fundamentals) to surface 3–5 direct competitors, shows high-level comparison metrics (market cap, P/E, debt-to-equity), offers a one-click route into the existing deep-comparison tool, and includes a brief AI insight ("While you're looking at Oracle, Microsoft shows stronger free cash flow…").
 >

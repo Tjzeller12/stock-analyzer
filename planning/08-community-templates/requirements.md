@@ -1,6 +1,6 @@
 # Requirements — Community Analysis Templates & Saveable Preferences
 
-> Derived from `design.md`. Property tags reference design Correctness Properties.
+> After feature 06. Derived from `design.md`.
 
 ---
 
@@ -20,11 +20,13 @@
 - THE SYSTEM SHALL apply non-destructively (no saved template is altered) (P2).
 
 ## R3 — Default templates
-**User story:** As a casual user, I want ready-made templates (e.g. "Warren Buffett Value", "High-Risk Tech"), so that I can start fast.
+**User story:** As a new user, I want a starter view that matches how I invest, so the radar is useful on day one.
 
 **Acceptance criteria:**
-- THE SYSTEM SHALL seed 3–4 defaults idempotently at startup (P1).
-- THE SYSTEM SHALL make defaults read-only/undeletable; editing a default SHALL clone it into an owned template (P5, P6).
+- THE SYSTEM SHALL seed exactly one read-only default per `risk_tag` (`Conservative`, `Balanced`, `Growth`, `Aggressive`) idempotently at startup (P1).
+- THE SYSTEM SHALL make defaults undeletable; editing a default SHALL clone it into an owned template (P5, P6).
+- THE SYSTEM SHALL treat Balanced as the fallback when the profile is incomplete or the tag is unknown (P15).
+- THE SYSTEM SHALL not ship a default without a written thesis and a passing fixture ranking test (P16).
 
 ## R4 — Sharing & ownership
 **User story:** As a user, I want to share my templates and use others', safely.
@@ -48,3 +50,11 @@
 **Acceptance criteria:**
 - THE SYSTEM SHALL display verified return only when backed by brokerage data (feature 10); otherwise omit it (P8).
 - THE SYSTEM SHALL present stars and verified return as independent signals (P13).
+
+## R7 — Profile-matched first run
+**User story:** As a user who finished onboarding, I want the dashboard to open on a setup that fits me, unless I already made my own.
+
+**Acceptance criteria:**
+- WHEN the user has a completed profile and no owned templates, THE SYSTEM SHALL apply the default for their `risk_tag` (P15).
+- WHEN the user owns at least one template, THE SYSTEM SHALL not auto-replace their active view, including after they retake onboarding (P15).
+- `suggest_default_template` SHALL read the seeded defaults (same configs), never a second hardcoded dict.

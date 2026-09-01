@@ -50,6 +50,11 @@ interface StocksCardProps {
   onSync: () => void;
   onDisconnect: () => void;
   onConnect: () => void;
+
+  visibleColumns: string[];
+  onToggleColumn: (id: string) => void;
+  onResetColumns: () => void;
+  activeAxes: string[];
 }
 
 /**
@@ -79,12 +84,18 @@ const StocksCard: React.FC<StocksCardProps> = ({
   onSync,
   onDisconnect,
   onConnect,
+  visibleColumns,
+  onToggleColumn,
+  onResetColumns,
+  activeAxes,
 }) => {
   const sharedTable = {
     radarScores,
     selectedSymbols,
     toggleSelectSymbol,
     onRowClick,
+    visibleColumns,
+    activeAxes,
   };
 
   return (
@@ -96,6 +107,9 @@ const StocksCard: React.FC<StocksCardProps> = ({
         compareError={compareError}
         activeTemplate={activeTemplate}
         setActiveTemplate={setActiveTemplate}
+        visibleColumns={visibleColumns}
+        onToggleColumn={onToggleColumn}
+        onResetColumns={onResetColumns}
       />
 
       <div className="flex flex-col gap-8 mt-4">

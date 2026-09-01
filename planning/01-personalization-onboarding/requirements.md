@@ -56,5 +56,5 @@
 
 **Acceptance criteria:**
 - THE SYSTEM SHALL expose `build_profile_context(user)` returning a bounded, fixed-schema string (≤ ~400 chars) for prompt injection, or "" when no completed profile (P11, P1-feature02).
-- THE SYSTEM SHALL expose `suggest_default_template(profile)` that only *proposes* a radar template and never overwrites a user's saved template (P7).
+- THE SYSTEM SHALL expose `suggest_default_template(profile)` as a lookup into the seeded defaults (feature 08). It never writes templates. First-run auto-apply is owned by 08 and only runs when the user has no owned templates (P7, 08-P15).
 - THE SYSTEM SHALL expose `budget_band(profile)` returning `micro|standard|high` for downstream use.

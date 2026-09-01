@@ -1,6 +1,6 @@
 # Tasks — Thematic Global-News Discovery Cards
 
-> (Rn) requirement · (Pn) property. Lives on the Discovery page (feature 02); reuses `AddToListButton`. Confirm scheduling mechanism before §4.
+> Queued after 06/08. (Rn) requirement · (Pn) property. Lives on the Discovery page (feature 02). Confirm scheduling before §4.
 
 - [ ] 1. Models & migration
   - [ ] 1.1 Add `NewsTheme` (week_key, title, summary, rank, is_active) + `ThemeStock` (theme_id, symbol, rationale, rank) (R1)

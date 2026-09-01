@@ -1,6 +1,12 @@
 # Design — Authentication & Production Security Hardening
 
-> **Status:** Design (awaiting alignment) · **Owner:** TBD · **Last updated:** 2026-06-13
+> **Status:** Google login shipped; hardening leftover · **Owner:** Michael (OAuth) · **Last updated:** 2026-08-27
+>
+> **What shipped:** Google OAuth (`POST /auth/google`, `google_id` on `User`, login/register buttons) alongside username/password.
+>
+> **Still open (not next):** httpOnly cookies, rotating refresh, real logout/revocation, rate-limit/lockout, CSRF, Talisman headers. Do not start this as the next feature — 06/08 come first. Treat remaining tasks as production hardening when we are closer to launch.
+>
+> Original design follows.
 >
 > Scope: turn the current hand-rolled auth into a production-grade system. Two thrusts:
 > 1. **Third-party login** — add OAuth (Google to start) alongside username/password, with safe account linking by verified email.
