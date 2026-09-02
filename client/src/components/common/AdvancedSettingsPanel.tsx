@@ -46,6 +46,18 @@ interface AdvancedSettingsPanelProps {
 const chipIdle = "text-text-main/70 hover:text-text-main hover:bg-list-bg";
 const chipActive = "bg-primary text-white shadow-md";
 
+const MATH_OPERATORS: { op: string; label: string }[] = [
+  { op: "+", label: "Add" },
+  { op: "-", label: "Subtract" },
+  { op: "*", label: "Multiply" },
+  { op: "/", label: "Divide" },
+  { op: "**", label: "Exponent" },
+  { op: "sqrt()", label: "Sq Root" },
+  { op: "log10()", label: "Log 10" },
+  { op: "abs()", label: "Abs Val" },
+  { op: "( )", label: "Group" },
+];
+
 const AdvancedSettingsPanel: React.FC<AdvancedSettingsPanelProps> = ({ initialTemplate, onApply, onClose }) => {
   const [template, setTemplate] = useState<RadarTemplate>(initialTemplate || DEFAULT_TEMPLATE);
   const [showVariablesGuide, setShowVariablesGuide] = useState(false);
@@ -191,9 +203,14 @@ const AdvancedSettingsPanel: React.FC<AdvancedSettingsPanelProps> = ({ initialTe
                 <div className="p-3 bg-list-bg rounded-lg border border-border-main/15 text-[11px] text-text-main/70">
                     <h4 className="text-text-main font-semibold mb-1.5 text-xs">Math Operators</h4>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5">
-                        {['+', '-', '*', '/', '**', 'sqrt()', 'log10()', 'abs()'].map((op) => (
-                          <div key={op} className="bg-form-bg px-1.5 py-0.5 rounded flex items-center gap-1.5 border border-border-main/10">
+                        {MATH_OPERATORS.map(({ op, label }) => (
+                          <div
+                            key={op}
+                            title={`${op} — ${label}`}
+                            className="bg-form-bg px-1.5 py-0.5 rounded flex items-center gap-1.5 border border-border-main/10"
+                          >
                             <span className="font-mono text-primary font-bold bg-primary/10 px-1 rounded">{op}</span>
+                            {label}
                           </div>
                         ))}
                     </div>
