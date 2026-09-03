@@ -1,6 +1,8 @@
-# Design — Brokerage Portfolio Import (Stretch)
+# Design — Brokerage Portfolio Import
 
-> **Status:** Design (stretch / exploratory) · **Owner:** TBD · **Last updated:** 2026-06-13
+> **Status:** Implemented on `brokerage-import` (PR) · **Owner:** Thomas · **Last updated:** 2026-08-27
+>
+> Live: SnapTrade read-only connect, holdings on MainPage as **My Portfolio** under Watchlist, performance from broker cost basis, disconnect purge. Community verified-return still waits on feature 08.
 >
 > Scope: let a user connect a brokerage (Robinhood, etc.) and pull in their **real holdings** read-only. Surface those holdings in a second table identical to the MainPage table (with per-holding radar charts and metrics), show their real-world **performance**, and feed a **community** section where users can see how people actually perform IRL alongside the analysis templates they used — giving credibility to those templates (ties to feature 08).
 >

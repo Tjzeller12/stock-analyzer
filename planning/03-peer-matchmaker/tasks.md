@@ -1,6 +1,6 @@
 # Tasks — Peer Matchmaker
 
-> (Rn) requirement · (Pn) property. Reuses `StructuredAlphaBotAnalysis`, the compare flow, and `AddToListButton` (feature 02).
+> Queued after 06/08. (Rn) requirement · (Pn) property.
 
 - [ ] 1. Server: analysis + prompt
   - [ ] 1.1 Create `server/app/prompts/peer_matchmaker.md` + add `PEER_MATCHMAKER_PROMPT` to `constants.py` (R1)

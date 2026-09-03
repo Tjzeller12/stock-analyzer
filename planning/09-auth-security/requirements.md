@@ -1,6 +1,6 @@
 # Requirements — Authentication & Production Security Hardening
 
-> Derived from `design.md`. Property tags reference design Correctness Properties.
+> Google OAuth + password login shipped. Criteria below are leftover hardening, not the next feature.
 
 ---
 

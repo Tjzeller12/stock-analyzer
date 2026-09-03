@@ -2,7 +2,7 @@ import { ColDef } from 'ag-grid-community';
 import React, { useMemo } from 'react';
 import { Stock } from '../../types';
 import StockTableBase from './StockTableBase';
-import { metricColumns, radarColumn, removeColumn, selectColumn, symbolColumn } from './stockColumns';
+import { buildMetricColumns, radarColumn, removeColumn, selectColumn, symbolColumn } from './stockColumns';
 
 interface WatchlistTableProps {
     stocks: Stock[];
@@ -11,6 +11,8 @@ interface WatchlistTableProps {
     toggleSelectSymbol: (symbol: string) => void;
     onRowClick: (symbol: string) => void;
     onRemove: (symbol: string) => Promise<void>;
+    visibleColumns: string[];
+    activeAxes: string[];
 }
 
 /**
@@ -24,14 +26,16 @@ const WatchlistTable: React.FC<WatchlistTableProps> = ({
     toggleSelectSymbol,
     onRowClick,
     onRemove,
+    visibleColumns,
+    activeAxes,
 }) => {
     const columns: ColDef<Stock>[] = useMemo(() => [
-        radarColumn(radarScores),
+        radarColumn(radarScores, activeAxes),
         symbolColumn(),
-        ...metricColumns(),
+        ...buildMetricColumns(visibleColumns),
         selectColumn(selectedSymbols, toggleSelectSymbol),
         removeColumn(onRemove),
-    ], [radarScores, selectedSymbols, toggleSelectSymbol, onRemove]);
+    ], [radarScores, activeAxes, visibleColumns, selectedSymbols, toggleSelectSymbol, onRemove]);
 
     return <StockTableBase stocks={stocks} columns={columns} onRowClick={onRowClick} />;
 };

@@ -1,6 +1,6 @@
 # Tasks — Search Autocomplete
 
-> (Rn) requirement · (Pn) property.
+> **Shipped** as live remote search. Remaining checkboxes are the optional local-index design, not next work.
 
 - [ ] 1. Server: index + search routes
   - [ ] 1.1 Add `SYMBOL_SEARCH = "SYMBOL_SEARCH"` to `AlphaVantageFunction` in `constants.py` (R2)

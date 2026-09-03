@@ -1,8 +1,10 @@
 import { CellStyle, CellStyleFunc, ColDef, ValueFormatterParams } from 'ag-grid-community';
 import { CustomCellRendererProps } from 'ag-grid-react';
+import { COLUMN_REGISTRY, ColumnSpec } from '../../constants/tableColumns';
 import removeIcon from '../../resources/x-close-delete-svgrepo-com.svg';
 import { Stock } from '../../types';
 import { formatMarketCap, formatVolume } from '../../utils/formatters';
+import { healthColor } from '../../utils/healthColor';
 import RadarGraph from './RadarGraph';
 
 /**
@@ -16,29 +18,6 @@ import RadarGraph from './RadarGraph';
  */
 
 type RadarScores = Record<string, Record<string, number>>;
-type StockField = keyof Stock;
-
-const fmtFixed = (digits: number) => (value: number) => value.toFixed(digits);
-const fmtPct = (value: number) => `${(value * 100).toFixed(1)}%`;
-const fmtCap = (value: number) => formatMarketCap(value);
-const fmtMoney = (value: number) => `$${value.toFixed(2)}`;
-
-/** Shared metric column: header + field + formatter. Missing values render as "N/A". */
-const metricCol = (
-    headerName: string,
-    field: StockField,
-    format: (value: number) => string,
-    width: number,
-    extra: Partial<ColDef<Stock>> = {},
-): ColDef<Stock> => ({
-    headerName,
-    colId: String(field),
-    valueGetter: (params) => params.data?.[field] as number | undefined,
-    valueFormatter: (params: ValueFormatterParams<Stock, number>) =>
-        params.value == null ? "N/A" : format(params.value),
-    width,
-    ...extra,
-});
 
 // Green for gains, red for losses. AG Grid's CellStyle index signature rejects
 // `undefined`, so only set `color` when there's a sign to show.
@@ -50,8 +29,8 @@ const pnlCellStyle: CellStyleFunc<Stock> = (params) => {
     return style;
 };
 
-/** The mini radar sparkline, coloured by total score (traffic-light). */
-export const radarColumn = (radarScores: RadarScores): ColDef<Stock> => ({
+/** The mini radar sparkline, coloured by average active-axis score (P3). */
+export const radarColumn = (radarScores: RadarScores, activeAxes: string[] = []): ColDef<Stock> => ({
     colId: "radar",
     headerName: "Radar",
     pinned: "left",
@@ -74,20 +53,9 @@ export const radarColumn = (radarScores: RadarScores): ColDef<Stock> => ({
         const scores = radarScores[stock.symbol];
         if (!scores) return <div className="text-xs text-gray-500 flex items-center justify-center h-full">Loading...</div>;
 
-        const labels = Object.keys(scores);
+        const labels = (activeAxes.length ? activeAxes : Object.keys(scores)).filter((k) => k in scores);
         const dataPts = labels.map(l => scores[l]);
-
-        // Traffic-light: sum the axes (max 600) → green / yellow / red.
-        const totalScore = dataPts.reduce((acc, curr) => acc + curr, 0);
-        let borderColor = '#069042';
-        let bgColor = 'rgba(6, 144, 66, 0.3)';
-        if (totalScore < 300) {
-            borderColor = '#ef4444';
-            bgColor = 'rgba(239, 68, 68, 0.3)';
-        } else if (totalScore <= 400) {
-            borderColor = '#eab308';
-            bgColor = 'rgba(234, 179, 8, 0.3)';
-        }
+        const { borderColor, bgColor } = healthColor(scores, labels);
 
         const chartData = {
             labels,
@@ -154,63 +122,58 @@ export const positionColumns = (): ColDef<Stock>[] => ([
     },
 ]);
 
-/** The shared fundamental/metric columns rendered by every stock table. */
-export const metricColumns = (): ColDef<Stock>[] => ([
-    {
-        field: "name",
-        headerName: "Name",
-        valueGetter: (params) => params.data?.name || "N/A",
-        width: 200
-    },
-    metricCol("Price", "price", fmtMoney, 100),
-    metricCol("Market Cap", "market_cap", fmtCap, 150),
-    metricCol("P/E", "pe_ratio", fmtFixed(2), 100),
-    metricCol("Fwd P/E", "forward_pe", fmtFixed(2), 120),
-    metricCol("EV/EBITDA", "ev_to_ebitda", fmtFixed(2), 120),
-    metricCol("P/S", "price_to_sales", fmtFixed(2), 100),
-    metricCol("PEG", "peg_ratio", fmtFixed(3), 100),
-    metricCol("ROE", "roe", fmtPct, 100),
-    metricCol("Op Margin", "operating_margin", fmtPct, 120),
-    metricCol("Profit Margin", "profit_margin", fmtPct, 140),
-    metricCol("ROA", "roa", fmtPct, 100),
-    metricCol("Rev Growth (QoQ)", "rev_growth_qoq", fmtPct, 160),
-    metricCol("EPS Growth (QoQ)", "eps_growth_qoq", fmtPct, 160),
-    metricCol("Total Assets", "total_assets", fmtCap, 140),
-    metricCol("Total Liab.", "total_liabilities", fmtCap, 140),
-    metricCol("Op. Cash Flow", "operating_cash_flow", fmtCap, 140),
-    metricCol("CapEx", "capital_expenditures", fmtCap, 120),
-    metricCol("Free Cash Flow", "free_cash_flow", fmtCap, 150),
-    metricCol("Debt/Equity", "debt_to_equity", fmtFixed(2), 130),
-    metricCol("Beta", "beta", fmtFixed(3), 100),
-    {
-        headerName: "Buy Ratings",
-        valueGetter: (params) => params.data?.buy_ratings_count || 0,
-        valueFormatter: (params: ValueFormatterParams<Stock, number>) => (params.value && params.value > 0) ? params.value.toString() : "N/A",
-        width: 130
-    },
-    {
-        field: "insider_volume",
-        headerName: "Insider Vol",
-        valueFormatter: (params: ValueFormatterParams<Stock, number | undefined>) => params.value ? formatVolume(params.value) : "0",
-        width: 130
-    },
-    {
-        headerName: "AI Moat",
-        field: "ai_moat_score",
-        valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value != null && params.value > 0 ? params.value.toFixed(0) : "N/A",
-        tooltipValueGetter: (params) => params.data?.ai_moat_summary || "No moat summary available.",
-        width: 110,
-        headerClass: "ai-header-glow"
-    },
-    {
-        headerName: "AI News",
-        field: "ai_news_score",
-        valueFormatter: (params: ValueFormatterParams<Stock, number>) => params.value != null && params.value > 0 ? params.value.toFixed(0) : "N/A",
-        tooltipValueGetter: (params) => params.data?.ai_news_summary || "No recent news summary.",
-        width: 110,
-        headerClass: "ai-header-glow"
-    },
-]);
+const formatBySpec = (spec: ColumnSpec, value: number | string | undefined | null): string => {
+    if (value == null || value === "") return "N/A";
+    if (spec.format === "text") return String(value);
+    const num = typeof value === "number" ? value : Number(value);
+    if (Number.isNaN(num)) return "N/A";
+    switch (spec.format) {
+        case "currency":
+            return `$${num.toFixed(2)}`;
+        case "bigNumber":
+            return formatMarketCap(num);
+        case "percent":
+            return `${(num * 100).toFixed(1)}%`;
+        case "signedPercent": {
+            const digits = spec.digits ?? 2;
+            return `${num >= 0 ? "+" : ""}${num.toFixed(digits)}%`;
+        }
+        case "ratio":
+            return num.toFixed(spec.digits ?? 2);
+        case "integer":
+            return num > 0 ? num.toFixed(0) : "N/A";
+        case "volume":
+            return formatVolume(num);
+        default:
+            return String(num);
+    }
+};
+
+const metricFromSpec = (spec: ColumnSpec): ColDef<Stock> => ({
+    colId: spec.id,
+    headerName: spec.header,
+    field: spec.field,
+    width: spec.width,
+    headerClass: spec.headerClass,
+    cellStyle: spec.tone === "pnl" ? pnlCellStyle : undefined,
+    valueGetter: (params) => params.data?.[spec.field],
+    valueFormatter: (params: ValueFormatterParams<Stock>) => formatBySpec(spec, params.value as number | string | undefined),
+    tooltipValueGetter: spec.tooltipField
+        ? (params) => String(params.data?.[spec.tooltipField!] || "")
+        : undefined,
+});
+
+/** Metric columns from the registry, filtered/ordered by the user's visible prefs. */
+export const buildMetricColumns = (visibleIds: string[]): ColDef<Stock>[] => {
+    const byId = new Map(COLUMN_REGISTRY.map((spec) => [spec.id, spec]));
+    return visibleIds
+        .map((id) => byId.get(id))
+        .filter((spec): spec is ColumnSpec => Boolean(spec))
+        .map(metricFromSpec);
+};
+
+/** Full metric set — used when no prefs are supplied. */
+export const metricColumns = (): ColDef<Stock>[] => buildMetricColumns(COLUMN_REGISTRY.map((c) => c.id));
 
 /** Multi-select checkbox column (drives the cross-table compare selection). */
 export const selectColumn = (

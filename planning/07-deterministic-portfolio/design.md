@@ -1,12 +1,12 @@
 # Design — Deterministic Portfolio Distribution
 
-> **Status:** Design (awaiting alignment) · **Owner:** TBD · **Last updated:** 2026-06-13
+> **Status:** After 06/08 · **Owner:** TBD · **Last updated:** 2026-08-27
 >
 > Scope: replace the AI-generated portfolio doughnut with a **deterministic allocation engine**. Distribution is computed from (a) the stock scores produced by the user's own radar template (what they find important) and (b) the user's budget. The engine recommends the **exact number of shares** of each stock to buy, reports leftover cash, and — when the budget is too low to build a sensible position — recommends a broad index fund (e.g. S&P 500) instead.
 >
 > **Why deterministic:** the user's explicit principle — *"when in doubt in finances I don't want to leave it up to an AI."* Allocation must be reproducible, explainable, and testable, not a model output.
 >
-> **Reuses / replaces:** today the doughnut comes from Claude (`CompareResponse.doughnutChartData` parsed in `useCompareAlphaBotManager`). This feature sources the doughnut from a new `/portfolio/allocation` endpoint backed by `score_engine` scores, `StockMaster` prices, and `User.budget` (synced from feature 01). Renders into the existing `DoughnutChart`.
+> **Reuses / replaces:** today the doughnut comes from Claude (`CompareResponse.doughnutChartData` parsed in `useCompareAlphaBotManager`). This feature sources the doughnut from a new `/portfolio/allocation` endpoint backed by `score_engine` scores, `StockMaster` prices, and `User.budget` (synced from feature 01). Renders into the existing `DoughnutChart`. Feature 06 already mounts this card in the compare **chart row** (before the LLM analysis) and paints it from its own data — 07 just makes that data as fast as radar.
 
 ---
 

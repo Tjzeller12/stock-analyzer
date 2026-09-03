@@ -20,12 +20,15 @@ import { useCompareAlphaBotManager } from '../hooks/useCompareAlphaBotManager';
 import { useNewsListManager } from '../hooks/useNewsListManager';
 import { useOnboardingGate } from '../hooks/useOnboardingGate';
 import { useStockTableManager } from '../hooks/useStockTableManager';
+import { useTablePreferences } from '../hooks/useTablePreferences';
 import { Article } from '../types';
+import { activeAxes } from '../utils/radarTemplate';
 
 const MainPage: React.FC = () => {
   useOnboardingGate();
 
   const [activeTemplate, setActiveTemplate] = useState<RadarTemplate>(DEFAULT_TEMPLATE);
+  const { visibleColumns, toggleColumn, resetToDefault } = useTablePreferences();
 
   const { stocks, sortBy, radarScores, fetchStocks, fetchCompareRadarScores, addStock, removeStock, refreshStocks, navigateToStockPage, error } = useStockTableManager();
   const { articles, newsFilter, handleFilterChange } = useNewsListManager();
@@ -48,7 +51,12 @@ const MainPage: React.FC = () => {
     ...stocks.map(s => s.symbol),
     ...holdings.map(h => h.symbol),
   ];
-  const handleCompare = () => { void compareStocks(allSelectableSymbols, activeTemplate); };
+  const handleCompare = () => {
+    document.getElementById("compare-results")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    void compareStocks(allSelectableSymbols, activeTemplate);
+  };
+
+  const compareActive = Boolean(compareLoading || compareRadarScores || compareResult);
 
   useEffect(() => {
     void fetchStocks();
@@ -105,52 +113,48 @@ const MainPage: React.FC = () => {
         onSync={() => { void sync(); }}
         onDisconnect={() => { void disconnect(true); }}
         onConnect={() => { void startConnect(); }}
+        visibleColumns={visibleColumns}
+        onToggleColumn={toggleColumn}
+        onResetColumns={resetToDefault}
+        activeAxes={activeAxes(activeTemplate)}
       />
 
       <Card title="News" variant="glass" className="col-span-1 lg:col-span-2 lg:row-span-2 lg:row-start-2 lg:col-start-1 w-full h-full flex flex-col">
           <List<Article> items={articles} renderItem={(article) => <NewsListItem article={article} />} 
         filterDropProp={{filter: newsFilter, setFilter: (f: string) => { void handleFilterChange(f); }, options: NEWS_FILTER_OPTIONS}}/>
       </Card>
-      <Card title="Comparison Analysis" variant="glass" className="col-span-1 lg:col-span-2 lg:row-span-2 lg:row-start-2 lg:col-start-3 w-full">
-        {(compareResult || compareLoading) && (
-            <AlphaBotResponseCard isLoading={compareLoading} className="min-h-[400px]">
-                 {compareResult && (
-                    <>
-                        <div className="text-left overflow-y-auto h-full max-h-[900px] pr-4 [scrollbar-color:var(--scrollbar-thumb)_transparent]">
-                        <StyledMarkdown>{compareResult.analysis}</StyledMarkdown>
-                        </div>
-                    </>
-                 )}
+      <div id="compare-results" className="col-span-1 lg:col-span-6 lg:col-start-1 h-0 overflow-hidden" aria-hidden="true" />
+      {compareActive && (
+        <div className="contents">
+          <Card title="Compare Radar Graph" variant="glass" className="col-span-1 lg:col-start-3 lg:col-span-2 lg:row-start-2 w-full flex justify-center items-center">
+            <AlphaBotResponseCard isLoading={!compareRadarScores} className="w-full">
+              {compareRadarScores && (
+                <div className="w-full h-full flex justify-center items-center">
+                  <RadarGraph data={compareRadarScores}/>
+                </div>
+              )}
             </AlphaBotResponseCard>
-        )}  
-      </Card>
-      <Card title="Compare Radar Graph" variant="glass" className="col-span-1 lg:col-start-5 lg:col-span-2 lg:row-start-2 w-full flex justify-center items-center">
-        {(compareRadarScores || compareLoading) && (
-            <AlphaBotResponseCard isLoading={compareLoading && !compareRadarScores}>
-            {compareRadarScores && (
-                    <>
-                        <div className="w-full h-full flex justify-center items-center">
-                        <RadarGraph data={compareRadarScores}/>
-                        </div>
-
-                    </>
-                 )}
-            </AlphaBotResponseCard>
-        )}
-      </Card>
-      <Card title="Portfolio Distribution Chart" variant="glass" className="col-span-1 lg:col-start-5 lg:col-span-2 lg:row-start-3 w-full flex justify-center items-center">
-        {(compareResult || compareLoading) && (
-          <AlphaBotResponseCard isLoading={compareLoading}>
-            {compareResult && compareResult.doughnutChartData && (
-              <>
+          </Card>
+          <Card title="Portfolio Distribution Chart" variant="glass" className="col-span-1 lg:col-start-5 lg:col-span-2 lg:row-start-2 w-full flex justify-center items-center">
+            <AlphaBotResponseCard isLoading={!compareResult?.doughnutChartData} className="w-full">
+              {compareResult?.doughnutChartData && (
                 <div className="w-full h-full max-h-[500px] max-w-[500px] flex justify-center items-center mx-auto">
                   <DoughnutChart data={compareResult.doughnutChartData}/>
                 </div>
-              </>
-            )}
-          </AlphaBotResponseCard>
-        )}
-      </Card>
+              )}
+            </AlphaBotResponseCard>
+          </Card>
+          <Card title="Comparison Analysis" variant="glass" className="col-span-1 lg:col-span-4 lg:col-start-3 lg:row-start-3 w-full">
+            <AlphaBotResponseCard isLoading={compareLoading && !compareResult} className="min-h-[400px]">
+              {compareResult && (
+                <div className="text-left overflow-y-auto h-full max-h-[900px] pr-4 [scrollbar-color:var(--scrollbar-thumb)_transparent]">
+                  <StyledMarkdown>{compareResult.analysis}</StyledMarkdown>
+                </div>
+              )}
+            </AlphaBotResponseCard>
+          </Card>
+        </div>
+      )}
       </div>
     </div>
   );

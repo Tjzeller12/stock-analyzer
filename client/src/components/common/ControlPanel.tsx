@@ -14,6 +14,7 @@ export interface ControlPanelProps {
     onStockSelect?: (symbol: string) => void;
     children: React.ReactNode;
     info?: string;
+    extra?: React.ReactNode;
 }
 
 /**
@@ -54,11 +55,14 @@ const ControlPanel = (props: ControlPanelProps) => {
                         </button>
                     ))}
                 </div>
-                {props.info && (
-                    <div className="text-sm font-medium text-text-main/70 px-2 md:ml-auto text-right whitespace-nowrap">
-                        {props.info}
-                    </div>
-                )}
+                <div className="flex items-center gap-3 md:ml-auto">
+                    {props.info && (
+                        <div className="text-sm font-medium text-text-main/70 px-2 text-right whitespace-nowrap">
+                            {props.info}
+                        </div>
+                    )}
+                    {props.extra}
+                </div>
             </div>
 
             {props.children}
