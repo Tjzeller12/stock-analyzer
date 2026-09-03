@@ -6,6 +6,7 @@ import {
   disableAxis,
   disabledAxes,
   enableAxis,
+  MAX_RADAR_AXES,
   MIN_RADAR_AXES,
   removeAxis,
   renameAxis,
@@ -75,6 +76,7 @@ const AdvancedSettingsPanel: React.FC<AdvancedSettingsPanelProps> = ({ initialTe
   };
 
   const atMinAxes = axes.length <= MIN_RADAR_AXES;
+  const atMaxAxes = axes.length >= MAX_RADAR_AXES;
 
   const resetToDefaultAxes = () => {
     setTemplate({
@@ -118,6 +120,7 @@ const AdvancedSettingsPanel: React.FC<AdvancedSettingsPanelProps> = ({ initialTe
           <p className="text-[11px] text-text-main/50 mt-0.5">
             Active axes: {axes.length}
             {atMinAxes ? ` (minimum ${MIN_RADAR_AXES})` : ""}
+            {atMaxAxes ? ` (maximum ${MAX_RADAR_AXES})` : ""}
           </p>
         </div>
         <button
@@ -232,7 +235,9 @@ const AdvancedSettingsPanel: React.FC<AdvancedSettingsPanelProps> = ({ initialTe
           <button
             type="button"
             onClick={handleAddAxis}
-            className="text-[11px] font-semibold text-primary hover:underline"
+            disabled={atMaxAxes}
+            title={atMaxAxes ? `Maximum ${MAX_RADAR_AXES} axes` : undefined}
+            className="text-[11px] font-semibold text-primary hover:underline disabled:opacity-40 disabled:no-underline disabled:cursor-not-allowed"
           >
             + Add axis
           </button>
@@ -253,7 +258,7 @@ const AdvancedSettingsPanel: React.FC<AdvancedSettingsPanelProps> = ({ initialTe
                     type="checkbox"
                     className="accent-[#069042]"
                     checked={enabled}
-                    disabled={enabled && atMinAxes}
+                    disabled={(enabled && atMinAxes) || (!enabled && atMaxAxes)}
                     onChange={() => toggleAxis(name)}
                     aria-label={`${enabled ? "Disable" : "Enable"} ${name} axis`}
                   />

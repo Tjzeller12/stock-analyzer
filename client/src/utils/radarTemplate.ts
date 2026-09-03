@@ -3,6 +3,8 @@ export const NEUTRAL_AXIS_EQUATION = "50";
 
 /** Radar charts need at least a triangle; 1–2 axes look like a number, not a chart. */
 export const MIN_RADAR_AXES = 3;
+/** More than this and the spider chart is an unreadable scribble. */
+export const MAX_RADAR_AXES = 8;
 
 export type AxisTemplate = {
   equations: Record<string, string>;
@@ -24,6 +26,7 @@ function disabledMap(template: AxisTemplate): Record<string, string> {
 export function addAxis<T extends AxisTemplate>(template: T, name: string): T {
   const trimmed = name.trim();
   if (!trimmed) return template;
+  if (Object.keys(template.equations).length >= MAX_RADAR_AXES) return template;
   if (template.equations[trimmed] !== undefined || disabledMap(template)[trimmed] !== undefined) {
     return template;
   }
@@ -60,6 +63,7 @@ export function disableAxis<T extends AxisTemplate>(template: T, name: string): 
 export function enableAxis<T extends AxisTemplate>(template: T, name: string): T {
   const parked = disabledMap(template);
   if (!(name in parked) || name in template.equations) return template;
+  if (Object.keys(template.equations).length >= MAX_RADAR_AXES) return template;
   const { [name]: equation, ...restDisabled } = parked;
   return {
     ...template,

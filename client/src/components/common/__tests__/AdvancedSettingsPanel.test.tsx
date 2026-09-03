@@ -68,6 +68,15 @@ describe("AdvancedSettingsPanel", () => {
     expect(onApply.mock.calls[0][0].equations["New Axis"]).toBe("50");
   });
 
+  it("stops adding axes at 8", () => {
+    renderPanel();
+    fireEvent.click(screen.getByRole("button", { name: /add axis/i }));
+    fireEvent.click(screen.getByRole("button", { name: /add axis/i }));
+    expect(screen.getByRole("button", { name: /add axis/i })).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: /add axis/i }));
+    expect(screen.queryByDisplayValue("New Axis 3")).not.toBeInTheDocument();
+  });
+
   it("turning an axis off keeps its formula after Apply", () => {
     const onApply = vi.fn();
     renderPanel(onApply);

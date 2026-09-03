@@ -33,4 +33,15 @@ describe("radarTemplate", () => {
   it("uniqueAxisName increments when the base is taken", () => {
     expect(uniqueAxisName(["New Axis"])).toBe("New Axis 2");
   });
+
+  it("refuses to add or re-enable past 8 active axes", () => {
+    const eight = {
+      equations: Object.fromEntries(
+        Array.from({ length: 8 }, (_, i) => [`A${i + 1}`, "50"]),
+      ),
+      disabledEquations: { Parked: "50" },
+    };
+    expect(addAxis(eight, "Extra")).toEqual(eight);
+    expect(enableAxis(eight, "Parked").equations).toEqual(eight.equations);
+  });
 });
