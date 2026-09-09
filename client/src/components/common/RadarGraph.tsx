@@ -6,10 +6,10 @@ import {
   PolarRadiusAxis,
   Radar,
   RadarChart,
-  ResponsiveContainer,
   Tooltip,
 } from 'recharts';
 import { ThemeContext } from '../../ThemeContext';
+import { usePositiveBox } from '../../hooks/usePositiveBox';
 import { ChartData } from '../../types';
 
 
@@ -19,6 +19,8 @@ interface RadarGraphProps {
     hideAxes?: boolean;
     hideToolTip?: boolean;
     height?: number;
+    /** When set, render at this pixel width (table sparklines). */
+    width?: number;
     outerRadius?: string | number;
     cy?: string | number;
 }
@@ -35,8 +37,9 @@ interface RechartsDataRow {
  * Hooks into the global `ThemeContext` to dynamically flip text colors, grid lines, and 
  * radial angle lines to maintain high contrast whether the user is in dark or light mode.
  */
-export const RadarGraph = ({ data, hideLegend = false, hideAxes = false, hideToolTip = false, height = 400, outerRadius = "", cy = "50%" }: RadarGraphProps) => {
+export const RadarGraph = ({ data, hideLegend = false, hideAxes = false, hideToolTip = false, height = 400, width, outerRadius = "", cy = "50%" }: RadarGraphProps) => {
     const { theme } = useContext(ThemeContext);
+    const { ref: boxRef, width: boxWidth, height: boxHeight } = usePositiveBox();
     
     // Determine Chart Colors based on Theme
     const textColor = theme === 'light' ? '#666' : '#e0e0e0';
@@ -100,59 +103,80 @@ export const RadarGraph = ({ data, hideLegend = false, hideAxes = false, hideToo
             </ul>
         );
     };
+    const chartWidth = width ?? boxWidth;
+    const chartHeight = width != null ? height : boxHeight;
+
+    const chart = chartWidth > 0 && chartHeight > 0 ? (
+        <RadarChart
+            width={chartWidth}
+            height={chartHeight}
+            cx="50%"
+            cy={cy}
+            outerRadius={appliedRadius}
+            data={rechartsData}
+        >
+            <PolarGrid stroke={gridColor} />
+            {!hideAxes && (
+                <>
+                    <PolarAngleAxis
+                        dataKey="subject"
+                        tick={{ fill: textColor, fontSize: 12 }}
+                    />
+                    <PolarRadiusAxis
+                        angle={30}
+                        domain={[0, 100]}
+                        tick={{ fill: textColor }}
+                        axisLine={false}
+                        fontSize={10}
+                    />
+                </>
+            )}
+            {!hideToolTip && <Tooltip
+                contentStyle={{
+                    backgroundColor: theme === 'dark' ? 'rgba(31, 41, 55, 0.85)' : 'rgba(255, 255, 255, 0.85)',
+                    backdropFilter: 'blur(8px)',
+                    border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+                    borderRadius: '12px',
+                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.15)',
+                    color: textColor,
+                    padding: '12px 16px'
+                }}
+            />}
+            {!hideLegend && <Legend content={renderLegend} />}
+            <defs>
+                <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="3" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+            </defs>
+            {data.datasets.map((dataset) => (
+                <Radar
+                    key={dataset.label}
+                    name={dataset.label}
+                    dataKey={dataset.label}
+                    stroke={dataset.borderColor as string}
+                    strokeWidth={3}
+                    fill={dataset.backgroundColor as string}
+                    fillOpacity={0.25}
+                    isAnimationActive={width == null}
+                    activeDot={{ r: 6, strokeWidth: 2, stroke: "#fff" }}
+                    filter="url(#glow)"
+                />
+            ))}
+        </RadarChart>
+    ) : null;
+
+    if (width != null) {
+        return (
+            <div style={{ width, height, minWidth: width, minHeight: height }}>
+                {chart}
+            </div>
+        );
+    }
+
     return (
-        <div className={`w-full min-w-0`} style={{ height: `${height}px`, minHeight: `${height}px` }}>
-            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
-                <RadarChart cx="50%" cy={cy} outerRadius={appliedRadius} data={rechartsData}>
-                    <PolarGrid stroke={gridColor} />
-                    {!hideAxes && (
-                        <>
-                            <PolarAngleAxis 
-                                dataKey="subject" 
-                                tick={{ fill: textColor, fontSize: 12 }} 
-                            />
-                            <PolarRadiusAxis 
-                                angle={30} 
-                                domain={[0, 100]} 
-                                tick={{ fill: textColor }}
-                                axisLine={false}
-                                fontSize={10}
-                            />
-                        </>
-                    )}
-                    {!hideToolTip && <Tooltip 
-                        contentStyle={{ 
-                            backgroundColor: theme === 'dark' ? 'rgba(31, 41, 55, 0.85)' : 'rgba(255, 255, 255, 0.85)',
-                            backdropFilter: 'blur(8px)',
-                            border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
-                            borderRadius: '12px',
-                            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.15)',
-                            color: textColor,
-                            padding: '12px 16px'
-                        }}
-                    />}
-                    {!hideLegend && <Legend content={renderLegend} />}
-                    <defs>
-                        <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-                            <feGaussianBlur stdDeviation="3" result="blur" />
-                            <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                        </filter>
-                    </defs>
-                    {data.datasets.map((dataset) => (
-                        <Radar
-                            key={dataset.label}
-                            name={dataset.label}
-                            dataKey={dataset.label}
-                            stroke={dataset.borderColor as string}
-                            strokeWidth={3}
-                            fill={dataset.backgroundColor as string}
-                            fillOpacity={0.25}
-                            activeDot={{ r: 6, strokeWidth: 2, stroke: "#fff" }}
-                            filter="url(#glow)"
-                        />
-                    ))}
-                </RadarChart>
-            </ResponsiveContainer>
+        <div ref={boxRef} className="w-full min-w-0" style={{ height: `${height}px`, minHeight: `${height}px` }}>
+            {chart}
         </div>
     );
 };

@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import axios from 'axios';
+import { ROUTER_FUTURE } from '../../constants/router';
 import RegisterPage from '../RegisterPage';
 
 vi.mock('axios');
@@ -19,7 +20,7 @@ vi.mock('react-router-dom', async (importOriginal) => {
 });
 
 const renderRegister = () =>
-  render(<MemoryRouter><RegisterPage /></MemoryRouter>);
+  render(<MemoryRouter future={ROUTER_FUTURE}><RegisterPage /></MemoryRouter>);
 
 describe('RegisterPage', () => {
   beforeEach(() => {

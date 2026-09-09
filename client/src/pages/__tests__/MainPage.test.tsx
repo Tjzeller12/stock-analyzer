@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ROUTER_FUTURE } from '../../constants/router';
 import MainPage from '../MainPage';
 
 const compareState = {
@@ -28,7 +29,7 @@ vi.mock('../../hooks/useCompareAlphaBotManager', () => ({
 }));
 
 const renderMain = () =>
-  render(<MemoryRouter><MainPage /></MemoryRouter>);
+  render(<MemoryRouter future={ROUTER_FUTURE}><MainPage /></MemoryRouter>);
 
 describe('MainPage', () => {
   beforeEach(() => {
