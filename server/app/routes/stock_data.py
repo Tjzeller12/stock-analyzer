@@ -14,42 +14,61 @@ from app.routes.auth import login_required
 
 bp = Blueprint('data', __name__)
 
+def _cached_news(filter_id):
+    return (
+        GeneralStockNews.query
+        .filter_by(filter_id=filter_id)
+        .order_by(desc(GeneralStockNews.last_news_update))
+        .all()
+    )
+
+
 # Retrieves news data from Alpha Vantage API
 @bp.route('/news', methods=['POST'])
 @login_required
 def news_filter_selection():
-
-# ... (omitting body for brevity in tool call, but targeting the decorator lines)
-    
-    #Upate API url with selected filter string
-    filter = request.json.get("filter")
+    filter = (request.get_json(silent=True) or {}).get("filter")
     current_app.logger.info(f"Filter: {filter}")
-    
+
     filter_id = get_filter_id(filter)
     current_app.logger.info(f"Filter ID: {filter_id}")
-    
+
     if filter_id is None:
         return jsonify({"error": "Filter not found"}), 404
-        
-    stock_news = GeneralStockNews.query.filter_by(filter_id=filter_id).order_by(desc(GeneralStockNews.last_news_update)).first()
-    # If the stock was updated in the last 15 minutes then return the price from the database
+
+    stock_news = (
+        GeneralStockNews.query
+        .filter_by(filter_id=filter_id)
+        .order_by(desc(GeneralStockNews.last_news_update))
+        .first()
+    )
     if stock_news and stock_news.last_news_update and stock_news.last_news_update > datetime.datetime.now() - timedelta(minutes=15):
-        news_items = GeneralStockNews.query.filter_by(filter_id=filter_id).order_by(desc(GeneralStockNews.last_news_update)).all()
-        return jsonify([news_item.to_dict() for news_item in news_items]), 200
-    
-    data = get_news_data(filter)
+        return jsonify([news_item.to_dict() for news_item in _cached_news(filter_id)]), 200
 
-    #Return the news data
-    if data and 'feed' in data:
-        # Delete all news items for the filter
-        GeneralStockNews.query.filter_by(filter_id=filter_id).delete()   
-        db.session.commit()
-
-        processed_news = process_news_data(data, filter_id)
-        
-        return jsonify(processed_news), 200
-    else:
+    try:
+        data = get_news_data(filter)
+    except Exception:
+        current_app.logger.exception("News API request failed")
+        stale = _cached_news(filter_id)
+        if stale:
+            return jsonify([news_item.to_dict() for news_item in stale]), 200
         return jsonify({"error": "No news found"}), 404
+
+    if data and 'feed' in data:
+        try:
+            # Delete + insert in one transaction so a persist failure keeps the old feed.
+            GeneralStockNews.query.filter_by(filter_id=filter_id).delete()
+            processed_news = process_news_data(data, filter_id)
+            return jsonify(processed_news), 200
+        except Exception:
+            db.session.rollback()
+            current_app.logger.exception("Failed to persist news feed")
+            stale = _cached_news(filter_id)
+            if stale:
+                return jsonify([news_item.to_dict() for news_item in stale]), 200
+            return jsonify({"error": "No news found"}), 404
+
+    return jsonify({"error": "No news found"}), 404
     
 # Retrives stock data from the database given a symbol
 @bp.route('/stock_data', methods=['POST'])
