@@ -68,12 +68,15 @@ class FakeProvider(BrokerageProvider):
         self.revoked = True
 
 
-def _seed_stock(symbol, price):
+def _seed_stock(symbol, price, *, name=None, sector="Technology"):
+    """Seed a StockMaster that looks like a real AV equity (name ≠ ticker)."""
     sm = StockMaster.query.filter_by(symbol=symbol).first()
     if sm is None:
         sm = StockMaster(symbol=symbol)
         db.session.add(sm)
     sm.price = price
+    sm.name = name or f"{symbol} Inc"
+    sm.sector = sector
     sm.last_stock_update = datetime.datetime.utcnow()
     db.session.commit()
     return sm
@@ -172,7 +175,48 @@ class TestSyncHoldings:
         provider = FakeProvider(positions=[RawPosition("GOOD", 1, 50.0), RawPosition("BADSYM", 2, 10.0)])
         brokerage_service.sync_holdings(conn, provider=provider, ingest=flaky_ingest)
         symbols = {h.symbol for h in Holding.query.filter_by(connection_id=conn.id).all()}
-        assert symbols == {"GOOD", "BADSYM"}  # bad symbol still recorded (P4)
+        # P4: the failure does not abort the sync, but unusable symbols are not recorded.
+        assert symbols == {"GOOD"}
+
+    def test_skips_crypto_even_if_master_has_a_price(self, user):
+        _seed_stock("BTC", 34.84, name="BTC", sector=None)
+        conn = _active_connection(user)
+        brokerage_service.sync_holdings(
+            conn,
+            provider=FakeProvider(positions=[
+                RawPosition("BTC", 0.02, 111000.0, asset_type="crypto"),
+            ]),
+            ingest=lambda s: None,
+        )
+        assert Holding.query.filter_by(connection_id=conn.id).count() == 0
+
+    def test_skips_stub_master_row_without_fundamentals(self, user):
+        # Leftover junk quote: name == ticker, no sector — AV never really ingested it.
+        _seed_stock("XRP", 15.0, name="XRP", sector=None)
+        conn = _active_connection(user)
+        brokerage_service.sync_holdings(
+            conn,
+            provider=FakeProvider(positions=[RawPosition("XRP", 100, 2.77)]),
+            ingest=lambda s: None,
+        )
+        assert Holding.query.filter_by(connection_id=conn.id).count() == 0
+
+    def test_drops_existing_unusable_holdings_on_resync(self, user):
+        _seed_stock("AAPL", 210.0)
+        _seed_stock("BTC", 34.84, name="BTC", sector=None)
+        conn = _active_connection(user)
+        db.session.add(Holding(connection_id=conn.id, symbol="BTC", quantity=0.02, avg_cost=111000.0))
+        db.session.commit()
+        brokerage_service.sync_holdings(
+            conn,
+            provider=FakeProvider(positions=[
+                RawPosition("AAPL", 10, 150.0),
+                RawPosition("BTC", 0.02, 111000.0, asset_type="crypto"),
+            ]),
+            ingest=lambda s: None,
+        )
+        symbols = {h.symbol for h in Holding.query.filter_by(connection_id=conn.id).all()}
+        assert symbols == {"AAPL"}
 
 
 # --- Performance (P5) --------------------------------------------------------
@@ -222,6 +266,17 @@ class TestHoldingsView:
         assert data["status"]["connected"] is True
         assert data["holdings"][0]["symbol"] == "AAPL"
         assert data["holdings"][0]["unrealized_pnl"] == pytest.approx(600.0)
+
+    def test_hides_stub_holdings_even_before_resync(self, client, user, headers):
+        _seed_stock("AAPL", 210.0)
+        _seed_stock("ETH", 23.58, name="ETH", sector=None)
+        conn = _active_connection(user)
+        db.session.add(Holding(connection_id=conn.id, symbol="AAPL", quantity=10, avg_cost=150.0))
+        db.session.add(Holding(connection_id=conn.id, symbol="ETH", quantity=1, avg_cost=3600.0))
+        db.session.commit()
+        resp = client.get("/brokerage/holdings", headers=headers)
+        symbols = {h["symbol"] for h in resp.get_json()["holdings"]}
+        assert symbols == {"AAPL"}
 
     def test_sync_route_uses_provider(self, client, user, headers, monkeypatch):
         _seed_stock("AAPL", 210.0)
