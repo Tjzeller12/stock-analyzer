@@ -25,6 +25,11 @@ from app.utils.crypto import decrypt_token, encrypt_token
 # Re-ingest a symbol if it's missing or older than this many days (mirrors add_stock).
 STOCK_STALE_DAYS = 7
 
+# SnapTrade (and similar) type codes we cannot analyze with Alpha Vantage.
+_UNSUPPORTED_ASSET_TYPES = frozenset({
+    "crypto", "cryptocurrency", "currency", "fiat", "nft",
+})
+
 
 # --- Connection lifecycle ----------------------------------------------------
 
@@ -91,8 +96,12 @@ def disconnect(connection, purge_holdings=True, provider=None):
 # --- Sync --------------------------------------------------------------------
 
 def sync_holdings(connection, provider=None, ingest=add_to_master):
-    """Pull positions and reconcile Holding rows idempotently (P3). Per-symbol
-    enrichment failures are tolerated (P4). Returns the reconciled Holding list."""
+    """Pull positions and reconcile Holding rows idempotently (P3).
+
+    Only symbols we can actually analyze are kept: not crypto (AV has no equity
+    fundamentals) and not stub StockMaster rows that only have a junk quote
+    (name == ticker, no sector). Enrichment failure never aborts the whole
+    sync (P4). Returns the reconciled Holding list."""
     provider = provider or get_provider(connection.provider)
     secret = decrypt_token(connection.access_token_enc)
 
@@ -108,7 +117,20 @@ def sync_holdings(connection, provider=None, ingest=add_to_master):
         if not symbol:
             continue
 
+        if _is_unsupported_asset(getattr(pos, "asset_type", None)):
+            current_app.logger.info(
+                f"Skipping holding {symbol}: unsupported asset type {pos.asset_type!r}"
+            )
+            continue
+
         _ensure_symbol_ingested(symbol, ingest)  # tolerant; never aborts sync (P4)
+
+        sm = StockMaster.query.filter_by(symbol=symbol).first()
+        if not _has_usable_master_data(sm):
+            current_app.logger.info(
+                f"Skipping holding {symbol}: no usable Alpha Vantage data"
+            )
+            continue
 
         holding = Holding.query.filter_by(connection_id=connection.id, symbol=symbol).first()
         if holding is None:
@@ -132,8 +154,11 @@ def sync_holdings(connection, provider=None, ingest=add_to_master):
 
 
 def _ensure_symbol_ingested(symbol, ingest):
-    """Ingest a symbol into StockMaster if missing/stale. Failures are swallowed so
-    one bad symbol never fails the whole sync (P4)."""
+    """Ingest a symbol into StockMaster if missing or stale.
+
+    Failures (bad symbol, crypto, AV rate limit) are swallowed.  The caller
+    must check `_has_usable_master_data` after this returns — this function
+    only guarantees it tried."""
     try:
         existing = StockMaster.query.filter_by(symbol=symbol).first()
         is_stale = (
@@ -160,16 +185,17 @@ def get_holdings_view(user):
     No token material is included (P2)."""
     connections = _user_active_connections(user)
     stock_map = _stock_map_for(connections)
-    # Treat 0 as "no price" (Alpha Vantage rate limits / crypto return no quote) so
-    # it renders as "—" and never skews performance.
-    price_map = {sym: sm.price for sym, sm in stock_map.items() if sm.price}
+    price_map = {sym: sm.price for sym, sm in stock_map.items() if _has_usable_master_data(sm)}
 
     holdings_out = []
     for connection in connections:
         for holding in connection.holdings:
             sm = stock_map.get(holding.symbol)
-            base = sm.to_dict() if sm else {"symbol": holding.symbol, "price": None}
-            position = holding.to_dict(current_price=(sm.price if sm and sm.price else None))
+            # Hide leftover crypto/stub rows even before the next sync deletes them.
+            if not _has_usable_master_data(sm):
+                continue
+            base = sm.to_dict()
+            position = holding.to_dict(current_price=sm.price)
             # position fields (quantity/avg_cost/market_value/P&L/current_price) win on overlap
             holdings_out.append({**base, **position})
 
@@ -228,6 +254,31 @@ def publish_performance(user, template_id=None, anonymize=True):
     return {"published": True, "return_pct": performance["total_return_pct"]}, 200
 
 
+def _is_unsupported_asset(asset_type):
+    """True for crypto / currency / other types Alpha Vantage cannot analyze."""
+    if not asset_type:
+        return False
+    return str(asset_type).strip().lower() in _UNSUPPORTED_ASSET_TYPES
+
+
+def _has_usable_master_data(sm):
+    """A StockMaster row is usable only if AV gave more than a junk quote.
+
+    Crypto stubs from earlier syncs look like: symbol=BTC, name='BTC', price=34.84,
+    no sector. A real equity/ETF has a company/fund name and/or sector/market cap.
+    """
+    if sm is None or not sm.price:
+        return False
+    name = (sm.name or "").strip()
+    if name and name.upper() != (sm.symbol or "").upper():
+        return True
+    if sm.sector:
+        return True
+    if sm.market_cap:
+        return True
+    return False
+
+
 # --- Helpers -----------------------------------------------------------------
 
 def _active_or_pending_connection(user, provider_name):
@@ -238,8 +289,7 @@ def _active_or_pending_connection(user, provider_name):
 
 
 def _price_map_for(connections):
-    # `if sm.price` excludes both None and 0 (unpriced / rate-limited symbols).
-    return {sym: sm.price for sym, sm in _stock_map_for(connections).items() if sm.price}
+    return {sym: sm.price for sym, sm in _stock_map_for(connections).items() if _has_usable_master_data(sm)}
 
 
 def _stock_map_for(connections):

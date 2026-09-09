@@ -2,6 +2,7 @@
  * NewsListItem component
  * Renders a single news article card with image, title, company, and publish time.
  */
+import { useState } from "react";
 import { Article } from "../../types";
 import { formatDate } from "../../utils/formatters";
 
@@ -10,6 +11,9 @@ export interface NewsListItemProps {
 }
 
 const NewsListItem = (props: NewsListItemProps) => {
+    const [imgFailed, setImgFailed] = useState(false);
+    const imageSrc = props.article.image_link?.trim();
+    const showImage = Boolean(imageSrc) && !imgFailed;
 
     return (
         <div
@@ -17,10 +21,21 @@ const NewsListItem = (props: NewsListItemProps) => {
             onClick={() => props.article.link && window.open(props.article.link, "_blank", "noopener,noreferrer")}
         >
             <div className="flex-none w-[100px] h-[75px] overflow-hidden bg-background shrink-0">
-                <img className="w-full h-full object-cover" src={props.article.image_link} alt={props.article.title || "News article decoration"} />
+                {showImage ? (
+                    <img
+                        className="w-full h-full object-cover"
+                        src={imageSrc}
+                        alt={props.article.title || "News article decoration"}
+                        loading="lazy"
+                        referrerPolicy="no-referrer"
+                        onError={() => setImgFailed(true)}
+                    />
+                ) : (
+                    <div className="w-full h-full bg-border-main/10" aria-hidden="true" />
+                )}
             </div>
             
-            <div className="flex flex-col flex-1 justify-center items-center text-sm min-w-0 h-full text-center">
+            <div className="flex-col flex-1 justify-center items-center text-sm min-w-0 h-full text-center flex">
                 <div className="font-bold text-text-main line-clamp-2 leading-snug mb-1">{props.article.title}</div>
                 <div className="flex items-center justify-center gap-2 mt-auto text-xs text-text-main/60 font-medium">
                     <span className="text-primary truncate max-w-[120px]">{props.article.news_company}</span>

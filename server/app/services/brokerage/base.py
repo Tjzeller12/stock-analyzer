@@ -18,6 +18,7 @@ class RawPosition:
     quantity: float
     avg_cost: float | None      # per-share cost basis; None if broker doesn't expose it
     currency: str = "USD"
+    asset_type: str | None = None  # e.g. "crypto", "cs", "etf" — from the aggregator
 
 
 @dataclass

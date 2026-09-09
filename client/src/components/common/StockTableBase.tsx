@@ -1,4 +1,13 @@
-import { ClientSideRowModelModule, ColDef, TooltipModule, ValidationModule, themeQuartz } from 'ag-grid-community';
+import {
+    CellStyleModule,
+    ClientSideRowModelModule,
+    ColDef,
+    NumberFilterModule,
+    TextFilterModule,
+    TooltipModule,
+    ValidationModule,
+    themeQuartz,
+} from 'ag-grid-community';
 import { AgGridReact } from 'ag-grid-react';
 import React, { useContext, useMemo } from 'react';
 import { ThemeContext } from '../../ThemeContext';
@@ -47,7 +56,14 @@ const StockTableBase: React.FC<StockTableBaseProps> = ({ stocks, columns, onRowC
         <div className={`ag-theme-quartz w-full`} style={{ height: 600 }}>
             <AgGridReact
                 theme={myTheme}
-                modules={[ClientSideRowModelModule, ValidationModule, TooltipModule]}
+                modules={[
+                    ClientSideRowModelModule,
+                    ValidationModule,
+                    TooltipModule,
+                    CellStyleModule,
+                    TextFilterModule,
+                    NumberFilterModule,
+                ]}
                 rowData={stocks}
                 columnDefs={columns}
                 defaultColDef={defaultColDef}

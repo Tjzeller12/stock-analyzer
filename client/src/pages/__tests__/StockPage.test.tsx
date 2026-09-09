@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { ROUTER_FUTURE } from '../../constants/router';
 import StockPage from '../StockPage';
 
 // NOTE: vi.mock is hoisted to top of file by Vitest, so mock data must be
@@ -53,7 +54,7 @@ const renderStockPage = () => {
     unobserve() {}
     disconnect() {}
   };
-  return render(<MemoryRouter initialEntries={['/stock/AAPL']}><StockPage /></MemoryRouter>);
+  return render(<MemoryRouter future={ROUTER_FUTURE} initialEntries={['/stock/AAPL']}><StockPage /></MemoryRouter>);
 };
 
 describe('StockPage', () => {

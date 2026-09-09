@@ -10,3 +10,11 @@ const localStorageMock = (function () {
   };
 })();
 Object.defineProperty(window, 'localStorage', { value: localStorageMock });
+
+if (typeof globalThis.ResizeObserver === "undefined") {
+  globalThis.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+}

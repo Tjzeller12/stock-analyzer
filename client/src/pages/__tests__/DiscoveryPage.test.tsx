@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ROUTER_FUTURE } from '../../constants/router';
 import DiscoveryPage from '../DiscoveryPage';
 
 // Stub the Header (not under test; pulls in theme context + assets).
@@ -31,7 +32,7 @@ vi.mock('../../hooks/useDiscoveryManager', () => ({
 
 const renderPage = () =>
   render(
-    <MemoryRouter>
+    <MemoryRouter future={ROUTER_FUTURE}>
       <DiscoveryPage />
     </MemoryRouter>
   );

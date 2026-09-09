@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, it, expect, vi } from 'vitest';
+import { ROUTER_FUTURE } from '../../constants/router';
 import { ThemeContext } from '../../ThemeContext';
 
 import LoginPage from '../LoginPage';
@@ -43,23 +44,23 @@ const MockThemeProvider = ({ children }: { children: React.ReactNode }) => (
 
 describe('Top Level Page Route Wrappers', () => {
   it('renders strictly login bounds natively without completely crashing DOM', () => {
-    render(<MemoryRouter><MockThemeProvider><LoginPage /></MockThemeProvider></MemoryRouter>);
+    render(<MemoryRouter future={ROUTER_FUTURE}><MockThemeProvider><LoginPage /></MockThemeProvider></MemoryRouter>);
     expect(screen.getByText(/Create an Account/i)).toBeInTheDocument();
   });
 
   it('renders strictly register bounds without crashing explicitly naturally', () => {
-    render(<MemoryRouter><MockThemeProvider><RegisterPage /></MockThemeProvider></MemoryRouter>);
+    render(<MemoryRouter future={ROUTER_FUTURE}><MockThemeProvider><RegisterPage /></MockThemeProvider></MemoryRouter>);
     expect(screen.getAllByRole('button').length).toBeGreaterThan(0);
   });
 
   it('renders primary app dashboard cleanly validating layout bounds precisely', () => {
-    render(<MemoryRouter><MockThemeProvider><MainPage /></MockThemeProvider></MemoryRouter>);
+    render(<MemoryRouter future={ROUTER_FUTURE}><MockThemeProvider><MainPage /></MockThemeProvider></MemoryRouter>);
     // Grid gets intercepted explicitly representing dashboard mount layout hooks cleanly
     expect(screen.getByTestId('grid')).toBeInTheDocument();
   });
 
   it('renders structural profile natively safely', () => {
-    render(<MemoryRouter><MockThemeProvider><Profile /></MockThemeProvider></MemoryRouter>);
+    render(<MemoryRouter future={ROUTER_FUTURE}><MockThemeProvider><Profile /></MockThemeProvider></MemoryRouter>);
     expect(screen.getAllByRole('button').length).toBeGreaterThan(0); // Validating form load explicitly
   });
 
@@ -69,7 +70,7 @@ describe('Top Level Page Route Wrappers', () => {
       unobserve() {}
       disconnect() {}
     };
-    render(<MemoryRouter initialEntries={['/stock/AAPL']}><MockThemeProvider><StockPage /></MockThemeProvider></MemoryRouter>);
+    render(<MemoryRouter future={ROUTER_FUTURE} initialEntries={['/stock/AAPL']}><MockThemeProvider><StockPage /></MockThemeProvider></MemoryRouter>);
     expect(screen.getByText(/Radar Score/i)).toBeInTheDocument();
   });
 });

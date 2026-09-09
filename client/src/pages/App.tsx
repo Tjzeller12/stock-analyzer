@@ -14,6 +14,7 @@ import RegisterPage from "./RegisterPage";
 import StockPage from "./StockPage";
 
 import PrivateRoute from "../components/PrivateRoute";
+import { ROUTER_FUTURE } from "../constants/router";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string;
 
@@ -21,7 +22,7 @@ const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string;
 function App() {
   return (
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-    <Router>
+    <Router future={ROUTER_FUTURE}>
       <div className="text-center bg-background text-text-main min-h-screen">
         <Routes>
           <Route path="/register" element={<RegisterPage />} />

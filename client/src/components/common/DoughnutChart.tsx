@@ -4,10 +4,10 @@ import {
     Legend,
     Pie,
     PieChart,
-    ResponsiveContainer,
     Tooltip
 } from 'recharts';
 import { ThemeContext } from '../../ThemeContext';
+import { usePositiveBox } from '../../hooks/usePositiveBox';
 import { ChartData } from '../../types';
 
 interface DoughnutChartProps {
@@ -23,6 +23,7 @@ interface DoughnutChartProps {
  */
 export const DoughnutChart = ({ data }: DoughnutChartProps) => {
     const { theme } = useContext(ThemeContext);
+    const { ref: boxRef, width: boxWidth, height: boxHeight } = usePositiveBox();
     
     // Determine Chart Colors based on Theme
     const textColor = theme === 'light' ? '#666' : '#e0e0e0';
@@ -97,48 +98,48 @@ export const DoughnutChart = ({ data }: DoughnutChartProps) => {
         );
     };
     return (
-        <div className="w-full h-[400px] min-h-[400px] min-w-0">
-            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={400}>
-                <PieChart>
-                    <defs>
-                        <filter id="pieGlow" x="-20%" y="-20%" width="140%" height="140%">
-                            <feGaussianBlur stdDeviation="4" result="blur" />
-                            <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                        </filter>
-                    </defs>
-                    <Pie
-                        data={rechartsData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius="55%"
-                        outerRadius="80%"
-                        paddingAngle={4}
-                        dataKey="value"
-                        filter="url(#pieGlow)"
-                    >
-                        {rechartsData.map((entry, index) => (
-                            <Cell 
-                                key={`cell-${index}`} 
-                                fill={getSolidColor(entry.fill)} 
-                                stroke="none"
-                            />
-                        ))}
-                    </Pie>
-                    <Tooltip 
-                        contentStyle={{ 
-                            backgroundColor: theme === 'dark' ? 'rgba(31, 41, 55, 0.85)' : 'rgba(255, 255, 255, 0.85)',
-                            backdropFilter: 'blur(8px)',
-                            border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
-                            borderRadius: '12px',
-                            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.15)',
-                            color: textColor,
-                            padding: '12px 16px'
-                        }}
-                        itemStyle={{ color: textColor, fontWeight: 500 }}
-                    />
-                    <Legend content={renderLegend} />
-                </PieChart>
-            </ResponsiveContainer>
+        <div ref={boxRef} className="w-full h-[400px] min-h-[400px] min-w-0">
+            {boxWidth > 0 && boxHeight > 0 && (
+                <PieChart width={boxWidth} height={boxHeight}>
+                        <defs>
+                            <filter id="pieGlow" x="-20%" y="-20%" width="140%" height="140%">
+                                <feGaussianBlur stdDeviation="4" result="blur" />
+                                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                            </filter>
+                        </defs>
+                        <Pie
+                            data={rechartsData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius="55%"
+                            outerRadius="80%"
+                            paddingAngle={4}
+                            dataKey="value"
+                            filter="url(#pieGlow)"
+                        >
+                            {rechartsData.map((entry, index) => (
+                                <Cell
+                                    key={`cell-${index}`}
+                                    fill={getSolidColor(entry.fill)}
+                                    stroke="none"
+                                />
+                            ))}
+                        </Pie>
+                        <Tooltip
+                            contentStyle={{
+                                backgroundColor: theme === 'dark' ? 'rgba(31, 41, 55, 0.85)' : 'rgba(255, 255, 255, 0.85)',
+                                backdropFilter: 'blur(8px)',
+                                border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+                                borderRadius: '12px',
+                                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.15)',
+                                color: textColor,
+                                padding: '12px 16px'
+                            }}
+                            itemStyle={{ color: textColor, fontWeight: 500 }}
+                        />
+                        <Legend content={renderLegend} />
+                    </PieChart>
+            )}
         </div>
     );
 };

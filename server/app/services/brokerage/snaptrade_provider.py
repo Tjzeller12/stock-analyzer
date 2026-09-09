@@ -119,6 +119,7 @@ class SnapTradeProvider(BrokerageProvider):
                         quantity=_safe_num(pos.get("units")) or 0.0,
                         avg_cost=_safe_num(pos.get("average_purchase_price")),
                         currency=_extract_currency(pos),
+                        asset_type=_extract_asset_type(pos),
                     )
                 )
 
@@ -143,16 +144,33 @@ def _safe_num(value):
 
 def _extract_symbol(pos: dict) -> str | None:
     """SnapTrade nests the symbol under symbol.symbol.symbol (universal symbol)."""
+    inner = _universal_symbol(pos)
+    if isinstance(inner, dict):
+        return (inner.get("symbol") or "").upper() or None
+    if isinstance(inner, str):
+        return inner.upper() or None
+    return None
+
+
+def _extract_asset_type(pos: dict) -> str | None:
+    """SnapTrade puts type on the universal symbol: { type: { code: "crypto" } }."""
+    inner = _universal_symbol(pos)
+    if not isinstance(inner, dict):
+        return None
+    typ = inner.get("type")
+    if isinstance(typ, dict):
+        return (typ.get("code") or typ.get("description") or "").lower() or None
+    if isinstance(typ, str):
+        return typ.lower() or None
+    return None
+
+
+def _universal_symbol(pos: dict):
+    """Return the innermost SnapTrade symbol object (or a bare string)."""
     sym = pos.get("symbol")
     if isinstance(sym, dict):
-        inner = sym.get("symbol")
-        if isinstance(inner, dict):
-            return (inner.get("symbol") or "").upper() or None
-        if isinstance(inner, str):
-            return inner.upper() or None
-    if isinstance(sym, str):
-        return sym.upper() or None
-    return None
+        return sym.get("symbol", sym)
+    return sym
 
 
 def _extract_currency(pos: dict) -> str:

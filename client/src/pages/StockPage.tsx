@@ -16,7 +16,7 @@ import { ChartData } from '../types';
 // Import our custom hooks
 import { useStockDataManager } from "../hooks/useStockDataManager";
 import { useStockAnalysisManager } from "../hooks/useStockAnalysisManager";
-import { healthColor } from "../utils/healthColor";
+import { healthColor, healthScore } from "../utils/healthColor";
 
 const StockPage: React.FC = () => {
   const navigate = useNavigate();
@@ -43,7 +43,7 @@ const StockPage: React.FC = () => {
     if (!radarScores || !stock) return null;
     const labels = Object.keys(radarScores);
     const dataPts = labels.map(l => radarScores[l]);
-    const { borderColor, bgColor } = healthColor(radarScores, labels);
+    const { borderColor, bgColor } = healthColor(healthScore(radarScores, labels));
     return {
       labels,
       datasets: [{ label: stock.symbol, data: dataPts, backgroundColor: bgColor, borderColor, borderWidth: 2, fill: true }],
