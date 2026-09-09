@@ -30,6 +30,38 @@ interface RechartsDataRow {
     [key: string]: string | number;
 }
 
+function splitAxisLabel(label: string): string[] {
+    if (label.length <= 10 || !label.includes(" ")) return [label];
+    const idx = label.lastIndexOf(" ");
+    return [label.slice(0, idx), label.slice(idx + 1)];
+}
+
+function RadarAxisTick({
+    x = 0,
+    y = 0,
+    textAnchor = "middle",
+    payload,
+    fill,
+}: {
+    x?: number;
+    y?: number;
+    textAnchor?: string;
+    payload?: { value?: string };
+    fill?: string;
+}) {
+    const lines = splitAxisLabel(String(payload?.value ?? ""));
+    const startDy = lines.length > 1 ? -6 : 0;
+    return (
+        <text x={x} y={y} textAnchor={textAnchor} fill={fill} fontSize={11}>
+            {lines.map((line, i) => (
+                <tspan key={`${line}-${i}`} x={x} dy={i === 0 ? startDy : 13}>
+                    {line}
+                </tspan>
+            ))}
+        </text>
+    );
+}
+
 /**
  * RadarGraph Component
  * 
@@ -45,7 +77,7 @@ export const RadarGraph = ({ data, hideLegend = false, hideAxes = false, hideToo
     const textColor = theme === 'light' ? '#666' : '#e0e0e0';
     const gridColor = theme === 'light' ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.2)';
 
-    const appliedRadius = outerRadius || (hideAxes ? "90%" : "80%");
+    const appliedRadius = outerRadius || (hideAxes ? "90%" : "58%");
 
     // Transform Chart.js data format to Recharts format
     const rechartsData = useMemo(() => {
@@ -53,7 +85,8 @@ export const RadarGraph = ({ data, hideLegend = false, hideAxes = false, hideToo
         return data.labels.map((label, index) => {
             const row: RechartsDataRow = { subject: label };
             data.datasets.forEach(dataset => {
-                row[dataset.label] = dataset.data[index] || 0;
+                const n = Number(dataset.data[index]);
+                row[dataset.label] = Number.isFinite(n) ? Math.round(n) : 0;
             });
             return row;
         });
@@ -114,13 +147,22 @@ export const RadarGraph = ({ data, hideLegend = false, hideAxes = false, hideToo
             cy={cy}
             outerRadius={appliedRadius}
             data={rechartsData}
+            margin={hideAxes ? { top: 0, right: 0, bottom: 0, left: 0 } : { top: 28, right: 72, bottom: 28, left: 72 }}
         >
             <PolarGrid stroke={gridColor} />
             {!hideAxes && (
                 <>
                     <PolarAngleAxis
                         dataKey="subject"
-                        tick={{ fill: textColor, fontSize: 12 }}
+                        tick={(props) => (
+                            <RadarAxisTick
+                                x={props.x}
+                                y={props.y}
+                                textAnchor={props.textAnchor}
+                                payload={props.payload}
+                                fill={textColor}
+                            />
+                        )}
                     />
                     <PolarRadiusAxis
                         angle={30}
@@ -132,6 +174,7 @@ export const RadarGraph = ({ data, hideLegend = false, hideAxes = false, hideToo
                 </>
             )}
             {!hideToolTip && <Tooltip
+                formatter={(value) => Math.round(Number(value))}
                 contentStyle={{
                     backgroundColor: theme === 'dark' ? 'rgba(31, 41, 55, 0.85)' : 'rgba(255, 255, 255, 0.85)',
                     backdropFilter: 'blur(8px)',
