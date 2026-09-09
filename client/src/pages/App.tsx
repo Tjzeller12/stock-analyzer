@@ -14,12 +14,14 @@ import RegisterPage from "./RegisterPage";
 import StockPage from "./StockPage";
 
 import PrivateRoute from "../components/PrivateRoute";
-import { GOOGLE_CLIENT_ID, isGoogleAuthEnabled } from "../constants/google";
 import { ROUTER_FUTURE } from "../constants/router";
+
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string;
 
 // App.tsx is the main component that renders the entire application.
 function App() {
-  const routes = (
+  return (
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
     <Router future={ROUTER_FUTURE}>
       <div className="text-center bg-background text-text-main min-h-screen">
         <Routes>
@@ -72,13 +74,7 @@ function App() {
         </Routes>
       </div>
     </Router>
+    </GoogleOAuthProvider>
   );
-
-  // GoogleOAuthProvider throws if clientId is empty — that was crashing login
-  // into a blank/black screen when GOOGLE_CLIENT_ID isn't in .env.
-  if (!isGoogleAuthEnabled) {
-    return routes;
-  }
-  return <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>{routes}</GoogleOAuthProvider>;
 }
 export default App;
