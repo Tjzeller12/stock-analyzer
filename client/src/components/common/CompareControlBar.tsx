@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { AnalysisTemplateDTO, TemplateLibrary } from '../../types';
 import AdvancedSettingsPanel, { RadarTemplate } from './AdvancedSettingsPanel';
 import ColumnCustomizer from './ColumnCustomizer';
 import ControlPanel from './ControlPanel';
@@ -9,18 +10,25 @@ interface CompareControlBarProps {
     compareLoading: boolean;
     compareError: string | null;
     activeTemplate: RadarTemplate;
-    setActiveTemplate: (template: RadarTemplate) => void;
     visibleColumns: string[];
     onToggleColumn: (id: string) => void;
     onResetColumns: () => void;
+    onApplyScoring: (radar: RadarTemplate, columns: string[]) => void;
+    scoringLibrary: TemplateLibrary;
+    scoringActiveId: number | null;
+    profileRiskTag: string | null;
+    onSaveSetup: (name: string, description: string, radar: RadarTemplate, columns: string[]) => Promise<AnalysisTemplateDTO>;
+    onUpdateSetup: (id: number, radar: RadarTemplate, columns: string[], meta: { name: string; description: string }) => Promise<AnalysisTemplateDTO>;
+    onDeleteSetup: (id: number) => Promise<void>;
+    onPersistActive: (id: number) => void;
 }
 
 /**
  * CompareControlBar
  *
  * The single, shared control bar that governs BOTH stock tables (watchlist +
- * portfolio). Selection is shared across the tables, so compare and the Advanced
- * radar-template editor belong here once — not duplicated per table. Table-specific
+ * portfolio). Selection is shared across the tables, so compare and the radar
+ * scoring editor belong here once — not duplicated per table. Table-specific
  * actions (add / refresh / sync) live with their own table instead.
  */
 const CompareControlBar: React.FC<CompareControlBarProps> = ({
@@ -29,10 +37,17 @@ const CompareControlBar: React.FC<CompareControlBarProps> = ({
     compareLoading,
     compareError,
     activeTemplate,
-    setActiveTemplate,
     visibleColumns,
     onToggleColumn,
     onResetColumns,
+    onApplyScoring,
+    scoringLibrary,
+    scoringActiveId,
+    profileRiskTag,
+    onSaveSetup,
+    onUpdateSetup,
+    onDeleteSetup,
+    onPersistActive,
 }) => {
     const [showAdvanced, setShowAdvanced] = useState(false);
     const count = selectedSymbols.size;
@@ -46,7 +61,7 @@ const CompareControlBar: React.FC<CompareControlBarProps> = ({
                     disabled: count < 2 || count > 10 || compareLoading,
                 },
                 {
-                    label: showAdvanced ? "Hide Advanced" : "Advanced",
+                    label: showAdvanced ? "Hide scoring" : "Scoring",
                     onClick: () => setShowAdvanced(!showAdvanced),
                 },
             ]}
@@ -63,8 +78,16 @@ const CompareControlBar: React.FC<CompareControlBarProps> = ({
                 <AdvancedSettingsPanel
                     onClose={() => setShowAdvanced(false)}
                     initialTemplate={activeTemplate}
-                    onApply={(template: RadarTemplate) => {
-                        setActiveTemplate(template);
+                    visibleColumns={visibleColumns}
+                    library={scoringLibrary}
+                    activeId={scoringActiveId}
+                    profileRiskTag={profileRiskTag}
+                    onSaveSetup={onSaveSetup}
+                    onUpdateSetup={onUpdateSetup}
+                    onDeleteSetup={onDeleteSetup}
+                    onPersistActive={onPersistActive}
+                    onApply={(radar, columns) => {
+                        onApplyScoring(radar, columns);
                         setShowAdvanced(false);
                     }}
                 />

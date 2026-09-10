@@ -109,6 +109,11 @@ export const authPut = async <T>(url: string, data?: unknown): Promise<T> => {
     return response.data;
 };
 
+export const authDelete = async <T>(url: string): Promise<T> => {
+    const response = await axios.delete<T>(url, createAuthConfig());
+    return response.data;
+};
+
 // Add a response interceptor to handle 401 Unauthorized errors globally
 axios.interceptors.response.use(
   (response) => {

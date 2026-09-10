@@ -14,6 +14,7 @@ export interface UseTablePreferences {
   isVisible: (id: string) => boolean;
   toggleColumn: (id: string) => void;
   setOrder: (ids: string[]) => void;
+  applyColumns: (ids: string[]) => void;
   resetToDefault: () => void;
 }
 
@@ -82,12 +83,19 @@ export function useTablePreferences(): UseTablePreferences {
     [commit],
   );
 
+  const applyColumns = useCallback(
+    (ids: string[]) => {
+      commit(ids);
+    },
+    [commit],
+  );
+
   const resetToDefault = useCallback(() => {
     commit([...DEFAULT_VISIBLE_COLUMNS]);
   }, [commit]);
 
   return useMemo(
-    () => ({ visibleColumns, isVisible, toggleColumn, setOrder, resetToDefault }),
-    [visibleColumns, isVisible, toggleColumn, setOrder, resetToDefault],
+    () => ({ visibleColumns, isVisible, toggleColumn, setOrder, applyColumns, resetToDefault }),
+    [visibleColumns, isVisible, toggleColumn, setOrder, applyColumns, resetToDefault],
   );
 }

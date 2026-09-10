@@ -3,6 +3,7 @@ from flask import Flask
 from app.models import db
 from sqlalchemy import text
 from app.services.news_manager import seed_filters
+from app.services.template_seed import seed_default_templates
 
 def create_app():
     app = Flask(__name__)
@@ -26,6 +27,8 @@ def reset_db():
         # Seed the filters
         seed_filters()
         print("Filters seeded.")
+        seed_default_templates()
+        print("Analysis templates seeded.")
 
 if __name__ == "__main__":
     reset_db()

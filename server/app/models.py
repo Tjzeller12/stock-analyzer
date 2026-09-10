@@ -450,19 +450,41 @@ class AnalysisTemplate(db.Model):
     #   ...
     # }
     equations = db.Column(db.JSON, nullable=False)
-    
+    # Full applyable view: { radar: RadarTemplate, visible_columns: [...] }
+    config = db.Column(db.JSON)
+    # Set on seeded defaults so first-run can look up by InvestorProfile.risk_tag.
+    profile_risk_tag = db.Column(db.String(32), nullable=True)
+
     is_default = db.Column(db.Boolean, default=False)
     time_created = db.Column(db.DateTime, default=datetime.utcnow)
     def __repr__(self):
         return f'<AnalysisTemplate {self.name}>'
-        
-    def to_dict(self):
+
+    def resolved_config(self):
+        if self.config:
+            return self.config
         return {
-            'id': self.id,
-            'name': self.name,
-            'description': self.description,
-            'equations': self.equations,
-            'is_default': self.is_default
+            "radar": {
+                "name": self.name,
+                "normalization_method": "min-max",
+                "scope": "global",
+                "equations": self.equations or {},
+            },
+            "visible_columns": [],
+        }
+
+    def to_dict(self, current_user_id=None):
+        config = self.resolved_config()
+        return {
+            "id": self.id,
+            "name": self.name,
+            "description": self.description,
+            "equations": (config.get("radar") or {}).get("equations") or self.equations,
+            "config": config,
+            "is_default": self.is_default,
+            "is_owner": bool(current_user_id and self.creator_id == current_user_id),
+            "profile_risk_tag": self.profile_risk_tag,
+            "time_created": self.time_created.isoformat() if self.time_created else None,
         }
     
     

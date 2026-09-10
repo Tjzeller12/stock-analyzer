@@ -21,6 +21,7 @@ import { useNewsListManager } from '../hooks/useNewsListManager';
 import { useOnboardingGate } from '../hooks/useOnboardingGate';
 import { useStockTableManager } from '../hooks/useStockTableManager';
 import { useTablePreferences } from '../hooks/useTablePreferences';
+import { useTemplateManager } from '../hooks/useTemplateManager';
 import { Article } from '../types';
 import { activeAxes } from '../utils/radarTemplate';
 
@@ -28,7 +29,11 @@ const MainPage: React.FC = () => {
   useOnboardingGate();
 
   const [activeTemplate, setActiveTemplate] = useState<RadarTemplate>(DEFAULT_TEMPLATE);
-  const { visibleColumns, toggleColumn, resetToDefault } = useTablePreferences();
+  const { visibleColumns, toggleColumn, resetToDefault, applyColumns } = useTablePreferences();
+  const templates = useTemplateManager((radar, columns) => {
+    setActiveTemplate(radar);
+    applyColumns(columns);
+  });
 
   const { stocks, sortBy, radarScores, fetchStocks, fetchCompareRadarScores, addStock, removeStock, refreshStocks, navigateToStockPage, error } = useStockTableManager();
   const { articles, newsFilter, handleFilterChange } = useNewsListManager();
@@ -99,7 +104,6 @@ const MainPage: React.FC = () => {
         compareLoading={compareLoading}
         compareError={compareError}
         activeTemplate={activeTemplate}
-        setActiveTemplate={setActiveTemplate}
         watchlist={stocks}
         watchlistError={error}
         onAdd={addStock}
@@ -117,6 +121,17 @@ const MainPage: React.FC = () => {
         onToggleColumn={toggleColumn}
         onResetColumns={resetToDefault}
         activeAxes={activeAxes(activeTemplate)}
+        onApplyScoring={(radar, columns) => {
+          setActiveTemplate(radar);
+          applyColumns(columns);
+        }}
+        scoringLibrary={templates.library}
+        scoringActiveId={templates.activeId}
+        profileRiskTag={templates.profileRiskTag}
+        onSaveSetup={templates.saveCurrentView}
+        onUpdateSetup={templates.updateSetup}
+        onDeleteSetup={(id) => templates.deleteTemplate(id)}
+        onPersistActive={templates.persistActive}
       />
 
       <Card title="News" variant="glass" className="col-span-1 lg:col-span-2 lg:row-span-2 lg:row-start-2 lg:col-start-1 w-full h-full flex flex-col">

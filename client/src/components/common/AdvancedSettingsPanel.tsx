@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { AVAILABLE_VARIABLES } from '../../constants/radarMetrics';
+import { AnalysisTemplateDTO, TemplateLibrary } from '../../types';
 import {
   activeAxes,
   addAxis,
@@ -14,6 +15,7 @@ import {
   uniqueAxisName,
 } from '../../utils/radarTemplate';
 import FormulaBuilder, { evaluateFormula } from './FormulaBuilder';
+import TemplateSelector from './TemplateSelector';
 
 export interface RadarTemplate {
   name: string;
@@ -25,7 +27,7 @@ export interface RadarTemplate {
 }
 
 export const DEFAULT_TEMPLATE: RadarTemplate = {
-  name: "Custom Template",
+  name: "Custom scoring",
   normalization_method: "min-max",
   scope: "global",
   equations: {
@@ -40,8 +42,16 @@ export const DEFAULT_TEMPLATE: RadarTemplate = {
 
 interface AdvancedSettingsPanelProps {
   initialTemplate?: RadarTemplate;
-  onApply: (template: RadarTemplate) => void;
+  visibleColumns?: string[];
+  library?: TemplateLibrary;
+  activeId?: number | null;
+  profileRiskTag?: string | null;
+  onApply: (template: RadarTemplate, columns: string[]) => void;
   onClose: () => void;
+  onSaveSetup?: (name: string, description: string, radar: RadarTemplate, columns: string[]) => Promise<AnalysisTemplateDTO>;
+  onUpdateSetup?: (id: number, radar: RadarTemplate, columns: string[], meta: { name: string; description: string }) => Promise<AnalysisTemplateDTO>;
+  onDeleteSetup?: (id: number) => Promise<void>;
+  onPersistActive?: (id: number) => void;
 }
 
 const chipIdle = "text-text-main/70 hover:text-text-main hover:bg-list-bg";
@@ -59,10 +69,59 @@ const MATH_OPERATORS: { op: string; label: string }[] = [
   { op: "( )", label: "Group" },
 ];
 
-const AdvancedSettingsPanel: React.FC<AdvancedSettingsPanelProps> = ({ initialTemplate, onApply, onClose }) => {
+function cloneRadar(radar: RadarTemplate): RadarTemplate {
+  return {
+    ...radar,
+    equations: { ...radar.equations },
+    disabledEquations: radar.disabledEquations ? { ...radar.disabledEquations } : {},
+  };
+}
+
+function scoringChanged(current: RadarTemplate, loaded?: RadarTemplate): boolean {
+  if (!loaded) return true;
+  return JSON.stringify({
+    equations: current.equations,
+    normalization_method: current.normalization_method,
+    scope: current.scope,
+    disabledEquations: current.disabledEquations ?? {},
+  }) !== JSON.stringify({
+    equations: loaded.equations,
+    normalization_method: loaded.normalization_method,
+    scope: loaded.scope,
+    disabledEquations: loaded.disabledEquations ?? {},
+  });
+}
+
+const EMPTY_LIBRARY: TemplateLibrary = { defaults: [], mine: [] };
+
+const AdvancedSettingsPanel: React.FC<AdvancedSettingsPanelProps> = ({
+  initialTemplate,
+  visibleColumns = [],
+  library = EMPTY_LIBRARY,
+  activeId = null,
+  profileRiskTag = null,
+  onApply,
+  onClose,
+  onSaveSetup,
+  onUpdateSetup,
+  onDeleteSetup,
+  onPersistActive,
+}) => {
   const [template, setTemplate] = useState<RadarTemplate>(initialTemplate || DEFAULT_TEMPLATE);
+  const [pendingColumns, setPendingColumns] = useState<string[]>(visibleColumns);
+  const [selectedId, setSelectedId] = useState<number | null>(activeId);
+  const [setupName, setSetupName] = useState(() => {
+    const current = [...library.defaults, ...library.mine].find((t) => t.id === activeId);
+    return current?.name ?? initialTemplate?.name ?? "";
+  });
+  const [setupDescription, setSetupDescription] = useState(() => {
+    const current = [...library.defaults, ...library.mine].find((t) => t.id === activeId);
+    return current?.description ?? "";
+  });
   const [showVariablesGuide, setShowVariablesGuide] = useState(false);
   const [draftNames, setDraftNames] = useState<Record<string, string>>({});
+  const [busy, setBusy] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const axes = activeAxes(template);
   const invalidCount = useMemo(
@@ -70,9 +129,78 @@ const AdvancedSettingsPanel: React.FC<AdvancedSettingsPanelProps> = ({ initialTe
     [axes, template.equations],
   );
 
+  const allSetups = [...library.defaults, ...library.mine];
+  const selectedSetup = allSetups.find((t) => t.id === selectedId);
+  const columnsForSave = pendingColumns.length > 0 ? pendingColumns : visibleColumns;
+
+  const loadSetup = (t: AnalysisTemplateDTO) => {
+    const radar = t.config?.radar;
+    if (!radar?.equations) return;
+    setTemplate(cloneRadar(radar as RadarTemplate));
+    setPendingColumns(t.config.visible_columns?.length ? [...t.config.visible_columns] : visibleColumns);
+    setSelectedId(t.id);
+    setSetupName(t.name);
+    setSetupDescription(t.description ?? "");
+    setDraftNames({});
+    setActionError(null);
+  };
+
+  const persistEditor = async (asNew = false, applyUnmodifiedStarter = false): Promise<number | null> => {
+    const name = setupName.trim();
+    const description = setupDescription.trim();
+    const loadedRadar = selectedSetup?.config.radar as RadarTemplate | undefined;
+    const editedStarter = Boolean(selectedSetup?.is_default && scoringChanged(template, loadedRadar));
+    const canUpdate = Boolean(selectedSetup && !selectedSetup.is_default && onUpdateSetup && !asNew);
+
+    if (applyUnmodifiedStarter && selectedSetup?.is_default && !editedStarter) {
+      return selectedSetup.id;
+    }
+    if (!name) {
+      setActionError("Give this setup a name before saving.");
+      return null;
+    }
+    const radarToSave = { ...template, name };
+    if (canUpdate && selectedSetup && onUpdateSetup) {
+      await onUpdateSetup(selectedSetup.id, radarToSave, columnsForSave, { name, description });
+      return selectedSetup.id;
+    }
+    if (!onSaveSetup) return null;
+    const created = await onSaveSetup(name, description, radarToSave, columnsForSave);
+    setSelectedId(created.id);
+    return created.id;
+  };
+
+  const handleSave = (asNew = false) => {
+    if (invalidCount > 0 || busy) return;
+    if (!setupName.trim()) {
+      setActionError("Give this setup a name before saving.");
+      return;
+    }
+    setBusy(true);
+    setActionError(null);
+    void persistEditor(asNew)
+      .catch(() => setActionError("Could not save scoring setup"))
+      .finally(() => setBusy(false));
+  };
+
   const handleApply = () => {
-    if (invalidCount > 0) return;
-    onApply(template);
+    if (invalidCount > 0 || busy) return;
+    if (!onSaveSetup && !onUpdateSetup) {
+      onApply(template, columnsForSave);
+      onClose();
+      return;
+    }
+    setBusy(true);
+    setActionError(null);
+    void (async () => {
+      const id = await persistEditor(false, true);
+      if (id == null) return;
+      onPersistActive?.(id);
+      onApply(template, columnsForSave);
+      onClose();
+    })()
+      .catch(() => setActionError("Could not apply scoring setup"))
+      .finally(() => setBusy(false));
   };
 
   const atMinAxes = axes.length <= MIN_RADAR_AXES;
@@ -112,29 +240,75 @@ const AdvancedSettingsPanel: React.FC<AdvancedSettingsPanelProps> = ({ initialTe
 
   return (
     <div className="bg-form-bg p-4 rounded-xl border border-border-main/20 mt-3 shadow-xl mb-4">
-      <div className="flex justify-between items-center mb-4 border-b border-border-main/20 pb-3">
-        <div>
+      <div className="relative mb-4 w-full border-b border-border-main/20 pb-3">
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute top-0 right-0 text-text-main/50 hover:text-red-500 transition-colors text-sm"
+        >
+          ✕ Close
+        </button>
+        <div className="w-full text-center px-12">
           <h2 className="text-lg font-bold bg-gradient-to-r from-primary to-[#057a37] text-transparent bg-clip-text">
-            Advanced Engine Settings
+            Radar scoring
           </h2>
-          <p className="text-[11px] text-text-main/50 mt-0.5">
+          <p className="text-[11px] text-text-main/60 mt-1 mx-auto max-w-xl leading-snug">
+            Each axis is a formula. Those scores draw the spider chart and drive Compare.
+            Load a starter to fill the formulas, edit them, then Apply to use this scoring on your tables.
+          </p>
+          <p className="text-[11px] text-text-main/50 mt-1">
             Active axes: {axes.length}
             {atMinAxes ? ` (minimum ${MIN_RADAR_AXES})` : ""}
             {atMaxAxes ? ` (maximum ${MAX_RADAR_AXES})` : ""}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={onClose}
-          className="text-text-main/50 hover:text-red-500 transition-colors text-sm"
-        >
-          ✕ Close
-        </button>
+      </div>
+
+      <div className="mb-4">
+        <TemplateSelector
+          library={library}
+          selectedId={selectedId}
+          profileRiskTag={profileRiskTag}
+          onSelect={loadSetup}
+          onDelete={onDeleteSetup}
+        />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+          <div>
+            <label htmlFor="setup-name" className="text-xs font-semibold text-text-main block mb-1">Name</label>
+            <input
+              id="setup-name"
+              className="w-full box-border p-2 text-sm border border-border-main/20 rounded-md bg-input-bg text-text-main"
+              value={setupName}
+              maxLength={100}
+              onChange={(e) => setSetupName(e.target.value)}
+              placeholder="e.g. Dividend screen"
+            />
+          </div>
+          <div>
+            <label htmlFor="setup-description" className="text-xs font-semibold text-text-main block mb-1">Description</label>
+            <textarea
+              id="setup-description"
+              className="w-full box-border p-2 text-sm border border-border-main/20 rounded-md bg-input-bg text-text-main min-h-[42px] resize-y"
+              value={setupDescription}
+              maxLength={255}
+              rows={2}
+              onChange={(e) => setSetupDescription(e.target.value)}
+              placeholder="What this scoring is for"
+            />
+          </div>
+        </div>
+        <p className="text-[11px] text-text-main/50 mt-1.5">
+          {selectedSetup && !selectedSetup.is_default
+            ? "Edit the name, description, or formulas, then Save to update this setup. Save as new keeps the original."
+            : selectedSetup?.is_default
+              ? "Starters can’t be overwritten. Change the name or description if you like, then Save to keep a copy you can edit later."
+              : "Give this setup a name and optional description so you can find it after you Save."}
+        </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <div className="bg-list-bg p-3 rounded-lg border border-border-main/15">
-            <h3 className="text-xs font-semibold mb-2 text-text-main">Data Normalization Formatting</h3>
+            <h3 className="text-xs font-semibold mb-2 text-text-main">Scale metrics</h3>
             <div className="flex items-center gap-2 bg-form-bg p-1 rounded-md w-fit border border-border-main/10">
             <button
                 type="button"
@@ -163,7 +337,7 @@ const AdvancedSettingsPanel: React.FC<AdvancedSettingsPanelProps> = ({ initialTe
         </div>
 
         <div className="bg-list-bg p-3 rounded-lg border border-border-main/15">
-            <h3 className="text-xs font-semibold mb-2 text-text-main">Single Stock Comparison Scope</h3>
+            <h3 className="text-xs font-semibold mb-2 text-text-main">Compare against</h3>
             <div className="flex items-center gap-1.5 bg-form-bg p-1 rounded-md w-fit border border-border-main/10">
             {(['global', 'sector', 'industry'] as const).map(scope_val => (
                 <button
@@ -179,7 +353,7 @@ const AdvancedSettingsPanel: React.FC<AdvancedSettingsPanelProps> = ({ initialTe
             ))}
             </div>
             <p className="text-[10px] text-text-main/50 mt-1.5 ml-1 leading-tight">
-               Select which peer group to compare against when viewing a single stock's profile.
+               Peer group used when scoring a single stock against the market.
             </p>
         </div>
       </div>
@@ -223,7 +397,7 @@ const AdvancedSettingsPanel: React.FC<AdvancedSettingsPanelProps> = ({ initialTe
       </div>
 
       <div className="flex items-center justify-between mb-2 border-b border-border-main/10 pb-1.5">
-        <h3 className="text-xs font-semibold text-text-main">Radar Grid Algorithms</h3>
+        <h3 className="text-xs font-semibold text-text-main">Axis formulas</h3>
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -293,9 +467,12 @@ const AdvancedSettingsPanel: React.FC<AdvancedSettingsPanelProps> = ({ initialTe
         })}
       </div>
 
-      <div className="mt-5 flex justify-end gap-2 border-t border-border-main/20 pt-3">
+      <div className="mt-5 flex flex-wrap items-center justify-end gap-2 border-t border-border-main/20 pt-3">
         {invalidCount > 0 && (
           <p className="mr-auto text-xs text-red-500 self-center">{invalidCount} formula{invalidCount > 1 ? "s" : ""} need fixing</p>
+        )}
+        {actionError && (
+          <p className="mr-auto text-xs text-red-500 self-center">{actionError}</p>
         )}
         <button
           type="button"
@@ -304,13 +481,38 @@ const AdvancedSettingsPanel: React.FC<AdvancedSettingsPanelProps> = ({ initialTe
         >
           Cancel
         </button>
+        {onSaveSetup && (
+          <>
+            {selectedSetup && !selectedSetup.is_default && (
+              <button
+                type="button"
+                onClick={() => handleSave(true)}
+                disabled={invalidCount > 0 || busy || !setupName.trim()}
+                title="Keep the original and save a new copy"
+                className="px-4 py-1.5 rounded-md text-xs font-semibold text-text-main/70 hover:text-text-main"
+              >
+                Save as new
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => handleSave(false)}
+              disabled={invalidCount > 0 || busy || !setupName.trim()}
+              title="Keep these formulas without changing the tables yet"
+              className="px-4 py-1.5 rounded-md text-xs font-semibold border border-primary/40 text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
+            >
+              {busy ? "Saving…" : "Save"}
+            </button>
+          </>
+        )}
         <button
           type="button"
           onClick={handleApply}
-          disabled={invalidCount > 0}
+          disabled={invalidCount > 0 || busy}
+          title="Use this scoring on your tables and save it"
           className="px-4 py-1.5 rounded-md text-xs font-semibold bg-gradient-to-r from-primary to-[#057a37] text-white hover:scale-105 transition-transform disabled:opacity-50 disabled:hover:scale-100"
         >
-          Apply Template
+          Apply
         </button>
       </div>
     </div>

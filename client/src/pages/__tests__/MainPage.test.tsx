@@ -17,6 +17,8 @@ const compareState = {
 
 vi.mock('../../utils/api', () => ({
   authPost: vi.fn().mockResolvedValue([]),
+  authDelete: vi.fn().mockResolvedValue({ ok: true }),
+  authPut: vi.fn().mockResolvedValue({}),
   authGet: vi.fn().mockResolvedValue({ onboarding_completed: true }),
 }));
 vi.mock('ag-grid-react', () => ({ AgGridReact: () => <div data-testid="stock-grid" /> }));
@@ -48,6 +50,7 @@ describe('MainPage', () => {
     expect(screen.getByText('Watchlist')).toBeInTheDocument();
     expect(screen.getByText('My Portfolio')).toBeInTheDocument();
     expect(screen.getAllByText(/News/i).length).toBeGreaterThan(0);
+    expect(screen.getByRole('button', { name: /^scoring$/i })).toBeInTheDocument();
   });
 
   it('renders the stock table grid component', async () => {
