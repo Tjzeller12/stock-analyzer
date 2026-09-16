@@ -46,7 +46,7 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
           </option>
         )}
         {library.defaults.length > 0 && (
-          <optgroup label="Starters">
+          <optgroup label="Defaults">
             {library.defaults.map((t) => (
               <option key={t.id} value={t.id}>
                 {t.name}{t.profile_risk_tag === profileRiskTag ? " · matches you" : ""}

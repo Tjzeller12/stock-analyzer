@@ -466,7 +466,6 @@ class AnalysisTemplate(db.Model):
         return {
             "radar": {
                 "name": self.name,
-                "normalization_method": "min-max",
                 "scope": "global",
                 "equations": self.equations or {},
             },

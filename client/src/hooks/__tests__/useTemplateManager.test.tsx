@@ -13,7 +13,6 @@ vi.mock("../../utils/api", () => ({
 
 const radar = {
   name: "Stability First",
-  normalization_method: "min-max" as const,
   scope: "global" as const,
   equations: { Valuation: "1 - pe_ratio" },
 };

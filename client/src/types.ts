@@ -312,7 +312,6 @@ export interface DiscoveryResponse {
 export interface AnalysisTemplateConfig {
   radar: {
     name: string;
-    normalization_method: "min-max" | "z-score";
     scope: "global" | "sector" | "industry";
     equations: Record<string, string>;
     disabledEquations?: Record<string, string>;

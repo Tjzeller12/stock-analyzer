@@ -8,7 +8,7 @@ const starter: AnalysisTemplateDTO = {
   name: "Stability First",
   description: "For capital preservation.",
   config: {
-    radar: { name: "Stability First", normalization_method: "min-max", scope: "global", equations: { A: "1" } },
+    radar: { name: "Stability First", scope: "global", equations: { A: "1" } },
     visible_columns: ["name"],
   },
   is_default: true,

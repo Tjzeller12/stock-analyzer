@@ -1,5 +1,5 @@
 """
-Private analysis templates: four seeded starters + unlimited user-owned saves.
+Private analysis templates: four seeded defaults + unlimited user-owned saves.
 
 No community/share/stars. Defaults are immutable; edit means clone.
 """
@@ -16,7 +16,6 @@ templates_bp = Blueprint("templates", __name__)
 
 MIN_AXES = 3
 MAX_AXES = 8
-VALID_NORM = {"min-max", "z-score"}
 VALID_SCOPE = {"global", "sector", "industry"}
 
 
@@ -36,9 +35,6 @@ def validate_template_config(config):
             return False, "axis names must be non-empty strings"
         if not isinstance(formula, str) or not formula.strip():
             return False, f"equation for {name!r} must be a non-empty string"
-    norm = radar.get("normalization_method", "min-max")
-    if norm not in VALID_NORM:
-        return False, "normalization_method must be min-max or z-score"
     scope = radar.get("scope", "global")
     if scope not in VALID_SCOPE:
         return False, "scope must be global, sector, or industry"
@@ -119,7 +115,7 @@ def update_template(template_id):
     if t is None:
         return jsonify({"error": "Not found"}), 404
     if t.is_default:
-        return jsonify({"error": "Starter templates cannot be edited. Save a copy instead."}), 403
+        return jsonify({"error": "Default templates cannot be edited. Save a copy instead."}), 403
     if t.creator_id != user.id:
         return jsonify({"error": "Forbidden"}), 403
     body = request.get_json(silent=True) or {}
@@ -150,7 +146,7 @@ def delete_template(template_id):
     if t is None:
         return jsonify({"error": "Not found"}), 404
     if t.is_default:
-        return jsonify({"error": "Starter templates cannot be deleted"}), 403
+        return jsonify({"error": "Default templates cannot be deleted"}), 403
     if t.creator_id != user.id:
         return jsonify({"error": "Forbidden"}), 403
     db.session.delete(t)

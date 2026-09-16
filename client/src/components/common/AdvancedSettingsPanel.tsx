@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { AVAILABLE_VARIABLES } from '../../constants/radarMetrics';
+import { AVAILABLE_VARIABLES, VARIABLE_PREFIXES } from '../../constants/radarMetrics';
 import { AnalysisTemplateDTO, TemplateLibrary } from '../../types';
 import {
   activeAxes,
@@ -19,7 +19,6 @@ import TemplateSelector from './TemplateSelector';
 
 export interface RadarTemplate {
   name: string;
-  normalization_method: 'min-max' | 'z-score';
   scope: 'global' | 'sector' | 'industry';
   equations: Record<string, string>;
   /** Parked formulas: not scored until turned back on. */
@@ -28,15 +27,13 @@ export interface RadarTemplate {
 
 export const DEFAULT_TEMPLATE: RadarTemplate = {
   name: "Custom scoring",
-  normalization_method: "min-max",
   scope: "global",
   equations: {
-    "Valuation": "(1 - forward_pe) * 0.4 + (1 - ev_to_ebitda) * 0.3 + (1 - price_to_fc) * 0.3",
-    "Growth": "0.4 + (eps_growth_qoq * 0.3) + (rev_growth_qoq * 0.3) + (insider_volume / (market_cap + 0.2)) * 0.2",
-    "Stability": "(1 - debt_to_equity) * 0.4 + (1 - beta) * 0.4 + dividend_yield * 0.2",
-    "Sentiment": "ai_moat_score * 0.6 + ai_news_score * 0.4",
-    "Efficiency": "roe * 0.4 + roa * 0.3 + profit_margin * 0.3",
-    "Insider Confidence": "0.5 + (insider_volume / (market_cap + 0.2)) * 0.5"
+    "Valuation": "0.40 * (1 - forward_pe) + 0.35 * (1 - peg_ratio) + 0.25 * (1 - price_to_sales)",
+    "Growth": "0.55 * rev_growth_qoq + 0.45 * eps_growth_qoq",
+    "Stability": "0.40 * (1 - debt_to_equity) + 0.30 * (1 - beta) + 0.30 * dividend_yield",
+    "Efficiency": "0.40 * roe + 0.30 * operating_margin + 0.30 * roa",
+    "Sentiment": "0.60 * ai_moat_score + 0.40 * ai_news_score"
   }
 };
 
@@ -81,12 +78,10 @@ function scoringChanged(current: RadarTemplate, loaded?: RadarTemplate): boolean
   if (!loaded) return true;
   return JSON.stringify({
     equations: current.equations,
-    normalization_method: current.normalization_method,
     scope: current.scope,
     disabledEquations: current.disabledEquations ?? {},
   }) !== JSON.stringify({
     equations: loaded.equations,
-    normalization_method: loaded.normalization_method,
     scope: loaded.scope,
     disabledEquations: loaded.disabledEquations ?? {},
   });
@@ -118,6 +113,7 @@ const AdvancedSettingsPanel: React.FC<AdvancedSettingsPanelProps> = ({
     const current = [...library.defaults, ...library.mine].find((t) => t.id === activeId);
     return current?.description ?? "";
   });
+  const [showScoringGuide, setShowScoringGuide] = useState(false);
   const [showVariablesGuide, setShowVariablesGuide] = useState(false);
   const [draftNames, setDraftNames] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
@@ -145,14 +141,14 @@ const AdvancedSettingsPanel: React.FC<AdvancedSettingsPanelProps> = ({
     setActionError(null);
   };
 
-  const persistEditor = async (asNew = false, applyUnmodifiedStarter = false): Promise<number | null> => {
+  const persistEditor = async (asNew = false, applyUnmodifiedDefault = false): Promise<number | null> => {
     const name = setupName.trim();
     const description = setupDescription.trim();
     const loadedRadar = selectedSetup?.config.radar as RadarTemplate | undefined;
-    const editedStarter = Boolean(selectedSetup?.is_default && scoringChanged(template, loadedRadar));
+    const editedDefault = Boolean(selectedSetup?.is_default && scoringChanged(template, loadedRadar));
     const canUpdate = Boolean(selectedSetup && !selectedSetup.is_default && onUpdateSetup && !asNew);
 
-    if (applyUnmodifiedStarter && selectedSetup?.is_default && !editedStarter) {
+    if (applyUnmodifiedDefault && selectedSetup?.is_default && !editedDefault) {
       return selectedSetup.id;
     }
     if (!name) {
@@ -254,7 +250,7 @@ const AdvancedSettingsPanel: React.FC<AdvancedSettingsPanelProps> = ({
           </h2>
           <p className="text-[11px] text-text-main/60 mt-1 mx-auto max-w-xl leading-snug">
             Each axis is a formula. Those scores draw the spider chart and drive Compare.
-            Load a starter to fill the formulas, edit them, then Apply to use this scoring on your tables.
+            Load a default to fill the formulas, edit them, then Apply to use this scoring on your tables.
           </p>
           <p className="text-[11px] text-text-main/50 mt-1">
             Active axes: {axes.length}
@@ -297,65 +293,55 @@ const AdvancedSettingsPanel: React.FC<AdvancedSettingsPanelProps> = ({
             />
           </div>
         </div>
-        <p className="text-[11px] text-text-main/50 mt-1.5">
-          {selectedSetup && !selectedSetup.is_default
-            ? "Edit the name, description, or formulas, then Save to update this setup. Save as new keeps the original."
-            : selectedSetup?.is_default
-              ? "Starters can’t be overwritten. Change the name or description if you like, then Save to keep a copy you can edit later."
-              : "Give this setup a name and optional description so you can find it after you Save."}
+        {selectedSetup && !selectedSetup.is_default && (
+          <p className="text-[11px] text-text-main/50 mt-1.5">
+            Edit the name, description, or formulas, then Save to update this setup. Save as new keeps the original.
+          </p>
+        )}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mb-4">
+        <h3 className="text-xs font-semibold text-text-main">Compare against</h3>
+        <div className="flex items-center gap-1.5 bg-form-bg p-1 rounded-md w-fit border border-border-main/10">
+          {(['global', 'sector', 'industry'] as const).map(scope_val => (
+            <button
+                type="button"
+                key={scope_val}
+                onClick={() => setTemplate({ ...template, scope: scope_val })}
+                className={`px-3 py-1.5 rounded text-xs font-medium transition-all capitalize ${
+                template.scope === scope_val ? chipActive : chipIdle
+                }`}
+            >
+                {scope_val}
+            </button>
+          ))}
+        </div>
+        <p className="text-[10px] text-text-main/50 leading-tight">
+          Peer group used when scoring a single stock against the market.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <div className="bg-list-bg p-3 rounded-lg border border-border-main/15">
-            <h3 className="text-xs font-semibold mb-2 text-text-main">Scale metrics</h3>
-            <div className="flex items-center gap-2 bg-form-bg p-1 rounded-md w-fit border border-border-main/10">
-            <button
-                type="button"
-                onClick={() => setTemplate({ ...template, normalization_method: 'min-max' })}
-                className={`px-3 py-1.5 rounded text-xs font-medium transition-all ${
-                template.normalization_method === 'min-max' ? chipActive : chipIdle
-                }`}
-            >
-                Min-Max (Bounded 0-1)
-            </button>
-            <button
-                type="button"
-                onClick={() => setTemplate({ ...template, normalization_method: 'z-score' })}
-                className={`px-3 py-1.5 rounded text-xs font-medium transition-all ${
-                template.normalization_method === 'z-score' ? chipActive : chipIdle
-                }`}
-            >
-                Z-Score (Outliers)
-            </button>
+      <div className="mb-4">
+        <button
+            type="button"
+            onClick={() => setShowScoringGuide(!showScoringGuide)}
+            className="flex items-center gap-2 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+        >
+            <span>{showScoringGuide ? '▼' : '▶'}</span>
+            How scoring works
+        </button>
+        {showScoringGuide && (
+            <div className="mt-2 p-3 bg-list-bg rounded-lg border border-border-main/15">
+                <p className="text-[11px] text-text-main/70 leading-snug">
+                Every metric is scored as a <span className="text-text-main font-medium">percentile</span>:
+                {" "}0 is the lowest in the group, 1 is the highest, and a metric a company
+                {" "}has not reported counts as average. Write each axis as a weighted
+                {" "}average that lands between 0 and 1 &mdash; weights that add up to 1 do
+                {" "}this automatically. Use <span className="font-mono text-primary">1 - metric</span>
+                {" "}when a lower number is better, like a P/E ratio.
+                </p>
             </div>
-            <p className="text-[10px] text-text-main/50 mt-1.5 ml-1 leading-tight">
-            {template.normalization_method === 'min-max'
-                ? "Values are strictly scaled between the lowest and highest stats in the group."
-                : "Highlights extreme outliers by measuring standard deviations from the mean."}
-            </p>
-        </div>
-
-        <div className="bg-list-bg p-3 rounded-lg border border-border-main/15">
-            <h3 className="text-xs font-semibold mb-2 text-text-main">Compare against</h3>
-            <div className="flex items-center gap-1.5 bg-form-bg p-1 rounded-md w-fit border border-border-main/10">
-            {(['global', 'sector', 'industry'] as const).map(scope_val => (
-                <button
-                    type="button"
-                    key={scope_val}
-                    onClick={() => setTemplate({ ...template, scope: scope_val })}
-                    className={`px-3 py-1.5 rounded text-xs font-medium transition-all capitalize ${
-                    template.scope === scope_val ? chipActive : chipIdle
-                    }`}
-                >
-                    {scope_val}
-                </button>
-            ))}
-            </div>
-            <p className="text-[10px] text-text-main/50 mt-1.5 ml-1 leading-tight">
-               Peer group used when scoring a single stock against the market.
-            </p>
-        </div>
+        )}
       </div>
 
        <div className="mb-4">
@@ -376,6 +362,28 @@ const AdvancedSettingsPanel: React.FC<AdvancedSettingsPanelProps> = ({
                             <div key={v} className="bg-form-bg px-1.5 py-0.5 rounded font-mono select-all truncate border border-border-main/10">{v}</div>
                         ))}
                     </div>
+                </div>
+                <div className="p-3 bg-list-bg rounded-lg border border-border-main/15 text-[11px] text-text-main/70">
+                    <h4 className="text-text-main font-semibold mb-1.5 text-xs">Advanced: other scales</h4>
+                    <p className="leading-snug mb-2">
+                    A plain name like <span className="font-mono text-primary">roe</span> is its percentile.
+                    {" "}Rank is usually what you want, but it flattens extremes: the fastest
+                    {" "}grower and the runner-up both sit near 1 even if one grew twice as fast.
+                    {" "}To keep that distance, prefix a metric instead.
+                    </p>
+                    <div className="flex flex-col gap-1">
+                    {VARIABLE_PREFIXES.map(({ prefix, label }) => (
+                        <div key={prefix} className="flex items-baseline gap-2">
+                        <span className="font-mono text-primary bg-primary/10 px-1 rounded shrink-0">{prefix}</span>
+                        <span className="leading-snug">{label}</span>
+                        </div>
+                    ))}
+                    </div>
+                    <p className="leading-snug mt-2">
+                    A <span className="font-mono text-primary">z_</span> value is not between 0 and 1,
+                    {" "}so re-centre it yourself:
+                    {" "}<span className="font-mono text-primary">(z_rev_growth_qoq + 3) / 6</span>.
+                    </p>
                 </div>
                 <div className="p-3 bg-list-bg rounded-lg border border-border-main/15 text-[11px] text-text-main/70">
                     <h4 className="text-text-main font-semibold mb-1.5 text-xs">Math Operators</h4>

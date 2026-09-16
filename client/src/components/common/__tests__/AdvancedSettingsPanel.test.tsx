@@ -99,7 +99,6 @@ describe("AdvancedSettingsPanel", () => {
       config: {
         radar: {
           name: "Stability First",
-          normalization_method: "min-max" as const,
           scope: "global" as const,
           equations: { Valuation: "1 - pe_ratio", Stability: "1 - beta", Efficiency: "roe" },
         },
@@ -137,7 +136,6 @@ describe("AdvancedSettingsPanel", () => {
       config: {
         radar: {
           name: "My Screen",
-          normalization_method: "min-max" as const,
           scope: "global" as const,
           equations: { Valuation: "50", Growth: "50", Stability: "50" },
         },
@@ -171,7 +169,6 @@ describe("AdvancedSettingsPanel", () => {
       config: {
         radar: {
           name: "My Screen",
-          normalization_method: "min-max" as const,
           scope: "global" as const,
           equations: { Valuation: "50", Growth: "50", Stability: "50" },
         },
@@ -216,7 +213,6 @@ describe("AdvancedSettingsPanel", () => {
       config: {
         radar: {
           name: "Balanced Core",
-          normalization_method: "min-max" as const,
           scope: "global" as const,
           equations: { Valuation: "50", Growth: "50", Stability: "50" },
         },
