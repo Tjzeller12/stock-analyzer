@@ -4,7 +4,7 @@
  * Uses StockHeader and StockMetricsTable extracted components.
  */
 import React, { useMemo } from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import StyledMarkdown from "../components/common/StyledMarkdown";
 import StockHeader from "../components/StockHeader";
 import Header from "../components/common/Header";
@@ -19,7 +19,6 @@ import { useStockAnalysisManager } from "../hooks/useStockAnalysisManager";
 import { healthColor, healthScore } from "../utils/healthColor";
 
 const StockPage: React.FC = () => {
-  const navigate = useNavigate();
   const location = useLocation();
   const { symbol } = useParams<{ symbol: string }>();
   
@@ -53,7 +52,7 @@ const StockPage: React.FC = () => {
 
   return (
     <div className="flex flex-col items-center min-h-screen p-0 font-sans bg-background text-text-main">
-      <Header title={`${stock?.symbol} - ${stock?.name || 'Unknown Company'}`} />
+      <Header title={stock ? `${stock.symbol} - ${stock.name || 'Unknown Company'}` : "Loading..."} />
       <StockHeader stock={stock ?? undefined} />
       <EventPulseChart 
         symbol={symbol || ''} 

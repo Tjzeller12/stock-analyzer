@@ -14,9 +14,10 @@ interface StockSearchInputProps {
     disabled?: boolean;
     className?: string;
     inputClassName?: string;
+    action?: "add" | "open";
 }
 
-const StockSearchInput = ({ onStockSelect, disabled, className, inputClassName }: StockSearchInputProps) => {
+const StockSearchInput = ({ onStockSelect, disabled, className, inputClassName, action = "add" }: StockSearchInputProps) => {
     const [query, setQuery] = useState("");
     const [results, setResults] = useState<SearchResult[]>([]);
     const [loading, setLoading] = useState(false);
@@ -41,7 +42,7 @@ const StockSearchInput = ({ onStockSelect, disabled, className, inputClassName }
         return () => clearTimeout(timeout);
     }, [query]);
     return (
-        <div className={`relative border rounded-lg px-2 py-0.5 my-0.5 flex items-center ${className ?? 'bg-input-bg border-border-main/40 shadow-inner transition-all'}`}>
+        <div className={`relative border rounded-lg px-2 py-0.5 my-0.5 flex items-center ${className ?? 'bg-input-bg border-border-main/40 shadow-inner transition-all hover:border-primary/50 focus-within:ring-2 focus-within:ring-primary/50 focus-within:border-primary'}`}>
             <svg className="w-3.5 h-3.5 shrink-0 opacity-50 ml-1" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
             </svg>
@@ -71,10 +72,10 @@ const StockSearchInput = ({ onStockSelect, disabled, className, inputClassName }
                                     <button
                                         onMouseDown={(e) => { e.preventDefault(); onStockSelect(result.symbol); setQuery(""); setResults([]); }}
                                         className="w-5 h-5 rounded-full border-2 border-primary hover:bg-primary/10 active:scale-90 flex items-center justify-center transition-all"
-                                        title={`Add ${result.symbol}`}
+                                        title={`${action === "open" ? "Open" : "Add"} ${result.symbol}`}
                                     >
                                         <svg className="w-2.5 h-2.5 text-primary" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" d={action === "open" ? "M9 5l7 7-7 7" : "M12 4v16m8-8H4"} />
                                         </svg>
                                     </button>
                                 </div>

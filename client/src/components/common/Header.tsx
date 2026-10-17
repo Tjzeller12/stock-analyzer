@@ -1,8 +1,7 @@
 import axios from 'axios';
-import { authPost } from '../../utils/api';
 import { useContext } from "react";
 import { useNavigate } from 'react-router-dom';
-import { AUTH_ENDPOINTS, PORTFOLIO_ENDPOINTS } from '../../constants/api';
+import { AUTH_ENDPOINTS } from '../../constants/api';
 import logo from "../../resources/alphaBotLogo.png";
 import { ThemeContext } from "../../ThemeContext";
 import UsageBadge from './UsageBadge';
@@ -25,9 +24,9 @@ const Header = (props: HeaderProps) => {
         navigate("/main");
     }
 
-const handleAddStock = async (symbol: string) => {
-    await authPost(PORTFOLIO_ENDPOINTS.ADD, { symbol });
-}
+    const handleOpenStock = (symbol: string) => {
+        navigate(`/stock/${symbol}`);
+    }
 
   const handleLogout = async () => {
     try {
@@ -62,7 +61,8 @@ const handleNavButtonClick = (path: string) => {
             </div>
             <div className="w-[340px] mx-6">
                 <StockSearchInput
-                    onStockSelect={handleAddStock}
+                    onStockSelect={handleOpenStock}
+                    action="open"
                     className="bg-white/10 backdrop-blur-sm border-white/30 shadow-[0_0_0px_rgba(255,255,255,0)] hover:bg-white/15 hover:border-white/50 hover:shadow-[0_0_14px_rgba(255,255,255,0.2)] focus-within:bg-white/20 focus-within:border-white/70 focus-within:shadow-[0_0_20px_rgba(255,255,255,0.35)] transition-all duration-300"
                     inputClassName="text-white placeholder-white/50"
                 />
