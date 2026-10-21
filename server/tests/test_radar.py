@@ -27,7 +27,6 @@ def sample_stock(app):
 
 MOCK_TEMPLATE = {
     "name": "Test",
-    "normalization_method": "min-max",
     "scope": "global",
     "equations": {"Valuation": "pe_ratio"}
 }

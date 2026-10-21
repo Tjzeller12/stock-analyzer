@@ -72,6 +72,9 @@ def create_app(config_class=Config):
     from app.routes.discovery import discovery_bp
     app.register_blueprint(discovery_bp)
 
+    from app.routes.templates import templates_bp
+    app.register_blueprint(templates_bp)
+
     from app.alphaBot import alphaBot_bp
     app.register_blueprint(alphaBot_bp)
 

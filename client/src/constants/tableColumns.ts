@@ -54,6 +54,7 @@ export const COLUMN_REGISTRY: ColumnSpec[] = [
   { id: "dividend_yield", header: "Div Yield", field: "dividend_yield", group: "Valuation", format: "percent", removable: true, defaultVisible: true, width: 110 },
   { id: "ev_to_ebitda", header: "EV/EBITDA", field: "ev_to_ebitda", group: "Valuation", format: "ratio", removable: true, defaultVisible: false, width: 120, digits: 2 },
   { id: "price_to_sales", header: "P/S", field: "price_to_sales", group: "Valuation", format: "ratio", removable: true, defaultVisible: false, width: 100, digits: 2 },
+  { id: "price_to_book", header: "P/B", field: "price_to_book", group: "Valuation", format: "ratio", removable: true, defaultVisible: false, width: 100, digits: 2 },
   { id: "peg_ratio", header: "PEG", field: "peg_ratio", group: "Valuation", format: "ratio", removable: true, defaultVisible: false, width: 100, digits: 3 },
   { id: "roe", header: "ROE", field: "roe", group: "Profitability", format: "percent", removable: true, defaultVisible: true, width: 100 },
   { id: "operating_margin", header: "Op Margin", field: "operating_margin", group: "Profitability", format: "percent", removable: true, defaultVisible: false, width: 120 },

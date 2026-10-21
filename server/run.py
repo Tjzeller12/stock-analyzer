@@ -7,11 +7,13 @@ app = create_app()
 logging.basicConfig(level=logging.DEBUG)
 
 from app.services.news_manager import seed_filters
+from app.services.template_seed import seed_default_templates
 
 #Check if program is being ran directly
 with app.app_context():
     db.create_all()
     seed_filters()
+    seed_default_templates()
     
 if __name__ == '__main__':
     #Starts flask development server and enables debug mode

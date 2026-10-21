@@ -308,3 +308,29 @@ export interface DiscoveryResponse {
     refinement_count: number;
   };
 }
+
+export interface AnalysisTemplateConfig {
+  radar: {
+    name: string;
+    scope: "global" | "sector" | "industry";
+    equations: Record<string, string>;
+    disabledEquations?: Record<string, string>;
+  };
+  visible_columns: string[];
+}
+
+export interface AnalysisTemplateDTO {
+  id: number;
+  name: string;
+  description: string;
+  config: AnalysisTemplateConfig;
+  is_default: boolean;
+  is_owner: boolean;
+  profile_risk_tag?: string | null;
+  time_created?: string | null;
+}
+
+export interface TemplateLibrary {
+  defaults: AnalysisTemplateDTO[];
+  mine: AnalysisTemplateDTO[];
+}

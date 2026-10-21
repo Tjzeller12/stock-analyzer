@@ -19,6 +19,8 @@ vi.mock('@react-oauth/google', () => ({
 // Massive global mocking array overriding DOM limits structurally required natively
 vi.mock('../../utils/api', () => ({
   authPost: vi.fn().mockResolvedValue([]),
+  authDelete: vi.fn().mockResolvedValue({ ok: true }),
+  authPut: vi.fn().mockResolvedValue({}),
   authGet: vi.fn().mockResolvedValue({}),
 }));
 

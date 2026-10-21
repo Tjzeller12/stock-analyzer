@@ -18,6 +18,7 @@ AVAILABLE_VARIABLES.forEach(v => {
   DUMMY_STOCK_DATA[v] = 0.5;
   DUMMY_STOCK_DATA[`mm_${v}`] = 0.5;
   DUMMY_STOCK_DATA[`z_${v}`] = 0.5;
+  DUMMY_STOCK_DATA[`pct_${v}`] = 0.5;
 });
 
 export function evaluateFormula(value: string): { error: string | null; preview: number | null } {

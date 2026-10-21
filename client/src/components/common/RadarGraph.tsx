@@ -34,6 +34,14 @@ function splitAxisLabel(label: string): string[] {
   return [label.slice(0, idx), label.slice(idx + 1)];
 }
 
+type SvgTextAnchor = "inherit" | "middle" | "start" | "end";
+
+function asTextAnchor(value: unknown): SvgTextAnchor {
+  return value === "inherit" || value === "start" || value === "end" || value === "middle"
+    ? value
+    : "middle";
+}
+
 function RadarAxisTick({
   x = 0,
   y = 0,
@@ -43,7 +51,7 @@ function RadarAxisTick({
 }: {
   x?: number;
   y?: number;
-  textAnchor?: string;
+  textAnchor?: SvgTextAnchor;
   payload?: { value?: string };
   fill?: string;
 }) {
@@ -156,9 +164,9 @@ export const RadarGraph = ({
               dataKey="subject"
               tick={(props) => (
                 <RadarAxisTick
-                  x={props.x}
-                  y={props.y}
-                  textAnchor={props.textAnchor}
+                  x={Number(props.x) || 0}
+                  y={Number(props.y) || 0}
+                  textAnchor={asTextAnchor(props.textAnchor)}
                   payload={props.payload}
                   fill={textColor}
                 />

@@ -1,5 +1,5 @@
 import React, { ReactNode } from "react";
-import { PerformanceSummary as PerformanceSummaryData, Stock } from "../../types";
+import { AnalysisTemplateDTO, PerformanceSummary as PerformanceSummaryData, Stock, TemplateLibrary } from "../../types";
 import StockSearchInput from "./StockSearchInput";
 import { RadarTemplate } from "./AdvancedSettingsPanel";
 import Card from "./Card";
@@ -34,7 +34,6 @@ interface StocksCardProps {
   compareLoading: boolean;
   compareError: string | null;
   activeTemplate: RadarTemplate;
-  setActiveTemplate: (template: RadarTemplate) => void;
 
   watchlist: Stock[];
   watchlistError: string | null;
@@ -55,6 +54,14 @@ interface StocksCardProps {
   onToggleColumn: (id: string) => void;
   onResetColumns: () => void;
   activeAxes: string[];
+  onApplyScoring: (radar: RadarTemplate, columns: string[]) => void;
+  scoringLibrary: TemplateLibrary;
+  scoringActiveId: number | null;
+  profileRiskTag: string | null;
+  onSaveSetup: (name: string, description: string, radar: RadarTemplate, columns: string[]) => Promise<AnalysisTemplateDTO>;
+  onUpdateSetup: (id: number, radar: RadarTemplate, columns: string[], meta: { name: string; description: string }) => Promise<AnalysisTemplateDTO>;
+  onDeleteSetup: (id: number) => Promise<void>;
+  onPersistActive: (id: number) => void;
 }
 
 /**
@@ -70,7 +77,6 @@ const StocksCard: React.FC<StocksCardProps> = ({
   compareLoading,
   compareError,
   activeTemplate,
-  setActiveTemplate,
   watchlist,
   watchlistError,
   onAdd,
@@ -88,6 +94,14 @@ const StocksCard: React.FC<StocksCardProps> = ({
   onToggleColumn,
   onResetColumns,
   activeAxes,
+  onApplyScoring,
+  scoringLibrary,
+  scoringActiveId,
+  profileRiskTag,
+  onSaveSetup,
+  onUpdateSetup,
+  onDeleteSetup,
+  onPersistActive,
 }) => {
   const sharedTable = {
     radarScores,
@@ -106,10 +120,17 @@ const StocksCard: React.FC<StocksCardProps> = ({
         compareLoading={compareLoading}
         compareError={compareError}
         activeTemplate={activeTemplate}
-        setActiveTemplate={setActiveTemplate}
         visibleColumns={visibleColumns}
         onToggleColumn={onToggleColumn}
         onResetColumns={onResetColumns}
+        onApplyScoring={onApplyScoring}
+        scoringLibrary={scoringLibrary}
+        scoringActiveId={scoringActiveId}
+        profileRiskTag={profileRiskTag}
+        onSaveSetup={onSaveSetup}
+        onUpdateSetup={onUpdateSetup}
+        onDeleteSetup={onDeleteSetup}
+        onPersistActive={onPersistActive}
       />
 
       <div className="flex flex-col gap-8 mt-4">

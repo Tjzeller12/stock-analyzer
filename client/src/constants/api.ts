@@ -72,3 +72,9 @@ export const DISCOVERY_ENDPOINTS = {
     GENERATE: `${API_BASE_URL}/discovery/generate`,
 } as const;
 
+export const TEMPLATE_ENDPOINTS = {
+    LIST: `${API_BASE_URL}/templates`,
+    ONE: (id: number) => `${API_BASE_URL}/templates/${id}`,
+    CLONE: (id: number) => `${API_BASE_URL}/templates/${id}/clone`,
+} as const;
+
