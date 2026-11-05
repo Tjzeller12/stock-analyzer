@@ -42,7 +42,7 @@ const FilterDropdown: React.FC<FilterDropProps> = ({ filter, setFilter, options 
         <button
           type="button"
           onClick={() => setOpen((prev) => !prev)}
-          className="w-full flex items-center justify-between gap-2 px-2 py-1.5 bg-form-bg text-text-main rounded-md text-sm border border-border-main/20 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all shadow-inner"
+          className="tg-input w-full flex items-center justify-between gap-2 px-2.5 py-1.5 text-sm cursor-pointer"
         >
           <span className="truncate">{selectedLabel}</span>
           <svg
@@ -58,7 +58,7 @@ const FilterDropdown: React.FC<FilterDropProps> = ({ filter, setFilter, options 
 
         {/* Dropdown panel */}
         {open && (
-          <ul className="absolute z-50 mt-1 w-full max-h-60 overflow-y-auto rounded-md border border-border-main/20 bg-form-bg shadow-lg py-1">
+          <ul className="tg-pane absolute z-50 mt-1 w-full max-h-60 overflow-y-auto py-1 !rounded-xl">
             {options.map((option) => (
               <li
                 key={option.value}

@@ -49,7 +49,7 @@ const FormulaBuilder: React.FC<FormulaBuilderProps> = ({ label, value, onChange,
         <label className="text-sm font-semibold text-text-main">{label}</label>
         <div className="flex items-center gap-2">
           {currentPreview !== null && !currentError && (
-            <div className="text-xs bg-primary/15 text-primary px-2 py-1 rounded border border-primary/30">
+            <div className="text-[11px] font-mono text-ink-up bg-primary/10 px-2 py-0.5 rounded-md border border-primary/25">
               Preview Score: {currentPreview.toFixed(1)}
             </div>
           )}
@@ -57,7 +57,7 @@ const FormulaBuilder: React.FC<FormulaBuilderProps> = ({ label, value, onChange,
         </div>
       </div>
 
-      <div className={`rounded overflow-hidden border ${currentError ? 'border-red-500/50' : 'border-border-main/30'} focus-within:border-primary`}>
+      <div className={`tg-input overflow-hidden ${currentError ? '!border-ink-down/60' : ''}`}>
         <CodeMirror
           value={value}
           height="auto"
@@ -74,7 +74,7 @@ const FormulaBuilder: React.FC<FormulaBuilderProps> = ({ label, value, onChange,
       </div>
 
       {currentError && (
-        <div className="text-xs text-red-500 mt-1 flex items-center gap-1">
+        <div className="text-xs text-ink-down mt-1 flex items-center gap-1">
           <span>⚠️ {currentError}</span>
         </div>
       )}

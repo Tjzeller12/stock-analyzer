@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import { Stock } from "../../types";
 import { formatCashAndCashEquivalents, formatFreeCashFlow, formatMarketCap, formatVolume } from "../../utils/formatters";
+import LedText, { LedDisplay } from "./LedText";
 
 interface MetricItem {
     label: string;
@@ -25,19 +26,18 @@ const fmtPrice = (v: number | undefined | null) => v != null ? `$${v.toFixed(2)}
 const fmtStr   = (v: number | undefined | null) => v != null ? String(v) : "N/A";
 
 const MetricRow: React.FC<{ label: string; value: string }> = ({ label, value }) => (
-    <div className="flex justify-between items-center py-2 px-3 border-b border-border-main/10 last:border-b-0 hover:bg-border-main/5 transition-colors rounded-sm">
+    <div className="flex justify-between items-center py-2 px-3 border-b border-[var(--tg-hairline)] last:border-b-0 hover:bg-[color-mix(in_srgb,var(--primary-green)_8%,transparent)] transition-colors">
         <span className="text-xs text-text-main/60 font-medium truncate pr-2">{label}</span>
-        <span className="text-xs font-bold text-text-main tabular-nums whitespace-nowrap">{value}</span>
+        <span className={`text-xs font-mono font-semibold tabular-nums whitespace-nowrap ${value === "N/A" ? "text-text-main/35" : "text-text-main"}`}>{value}</span>
     </div>
 );
 
 const CategoryCard: React.FC<{ section: CategorySection }> = ({ section }) => (
-    <div className="bg-list-bg rounded-xl border border-border-main/10 shadow-md overflow-hidden flex flex-col">
-        {/* Card Header */}
-        <div className="flex items-center gap-2 px-3 py-2.5 bg-primary/5 border-b border-border-main/10">
-            <span className="text-xs font-extrabold uppercase tracking-widest text-primary/80">
-                {section.category}
-            </span>
+    <div className="tg-pane !rounded-2xl overflow-hidden flex flex-col text-left">
+        <div className="flex items-center px-3 py-2.5 bg-primary/5 border-b border-[var(--tg-hairline)]">
+            <LedDisplay className="inline-flex" layerClassName="px-2.5 py-1 text-[13px]">
+                <LedText tone="up">{section.category}</LedText>
+            </LedDisplay>
         </div>
         {/* Metric Rows */}
         <div className="flex flex-col flex-1">
@@ -141,9 +141,9 @@ const StockMetricsTable: React.FC<StockMetricsTableProps> = ({ stock }) => {
     }
 
     return (
-        <div className="flex flex-col gap-4 w-[97.5%] mx-auto mt-4 mb-4">
+        <div className="flex flex-col gap-4 w-full">
             {/* ── Responsive category grid ── */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
                 {sections.map((section) => (
                     <CategoryCard key={section.category} section={section} />
                 ))}

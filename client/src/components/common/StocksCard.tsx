@@ -8,10 +8,7 @@ import PortfolioTable from "./PortfolioTable";
 import WatchlistTable from "./WatchlistTable";
 import PerformanceSummary from "../holdings/PerformanceSummary";
 
-const TABLE_ACTION_BTN =
-  "px-3 py-1.5 font-semibold text-xs rounded-md transition-all duration-200 bg-gradient-to-r from-primary to-[#057a37] text-white hover:shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5 active:scale-95 border border-primary/30 shadow-md";
-const TABLE_ACTION_BTN_DISABLED =
-  "px-3 py-1.5 font-semibold text-xs rounded-md bg-list-bg text-text-main/50 cursor-not-allowed border border-white/5 shadow-none";
+const TABLE_ACTION_BTN = "tg-btn tg-btn-primary";
 
 interface SectionHeaderProps {
   title: string;
@@ -19,8 +16,11 @@ interface SectionHeaderProps {
 }
 
 const SectionHeader: React.FC<SectionHeaderProps> = ({ title, actions }) => (
-  <div className="flex flex-wrap items-center justify-between gap-3">
-    <h4 className="text-sm font-bold uppercase tracking-wide text-text-main/70 text-left">{title}</h4>
+  <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-[var(--tg-hairline)]">
+    <h4 className="m-0 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-text-main/60 text-left">
+      <span className="h-3 w-[3px] rounded-full bg-signal-up shadow-[0_0_8px_var(--signal-up)]" aria-hidden="true" />
+      {title}
+    </h4>
     {actions}
   </div>
 );
@@ -113,7 +113,7 @@ const StocksCard: React.FC<StocksCardProps> = ({
   };
 
   return (
-    <Card title="My Stocks" variant="glass" className="col-span-1 lg:col-span-6 lg:row-start-1 w-full">
+    <Card title="My Stocks" variant="glass" live className="col-span-1 lg:col-span-6 lg:row-start-1 w-full">
       <CompareControlBar
         selectedSymbols={selectedSymbols}
         onCompare={onCompare}
@@ -157,7 +157,7 @@ const StocksCard: React.FC<StocksCardProps> = ({
             title="My Portfolio"
             actions={connected ? (
               <div className="flex items-center gap-2">
-                <button type="button" onClick={onSync} disabled={syncing} className={syncing ? TABLE_ACTION_BTN_DISABLED : TABLE_ACTION_BTN}>
+                <button type="button" onClick={onSync} disabled={syncing} className={TABLE_ACTION_BTN}>
                   {syncing ? "Syncing…" : "Sync"}
                 </button>
                 <button
@@ -177,14 +177,14 @@ const StocksCard: React.FC<StocksCardProps> = ({
               <PortfolioTable stocks={holdings} {...sharedTable} />
             </div>
           ) : (
-            <div className="flex flex-col items-center gap-3 py-10 text-center border border-dashed border-border-main/30 rounded-lg">
+            <div className="flex flex-col items-center gap-3 py-10 text-center border border-dashed border-[var(--tg-hairline)] rounded-xl">
               <p className="text-text-main/70 max-w-md">
                 Connect your brokerage to import your real positions (read-only — we never get trading access) and compare them against your watchlist.
               </p>
               <button
                 type="button"
                 onClick={onConnect}
-                className="px-5 py-2 font-semibold text-sm rounded-md bg-gradient-to-r from-primary to-[#057a37] text-white hover:shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5 active:scale-95 border border-primary/30 shadow-md transition-all duration-200"
+                className="tg-btn tg-btn-primary !text-sm !px-5 !py-2"
               >
                 Connect Brokerage
               </button>
