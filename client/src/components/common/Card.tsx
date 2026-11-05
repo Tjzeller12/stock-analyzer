@@ -1,4 +1,5 @@
 import React, { ReactNode } from 'react';
+import LedText, { LedDisplay } from './LedText';
 
 interface CardProps {
   title?: string;
@@ -6,30 +7,34 @@ interface CardProps {
   className?: string;
   variant?: 'default' | 'glass' | 'outline' | 'inner';
   style?: React.CSSProperties;
+  /** Shows the pulsing live-data dot next to the title. */
+  live?: boolean;
+  /** Controls rendered at the right end of the title row. */
+  actions?: ReactNode;
 }
 
 /**
  * A reusable container component with standardized styling.
- * Supports different visuaßl variants and an optional title.
+ * `default` and `glass` render as a Ticker Glass pane with an LED title strip.
  */
 const Card: React.FC<CardProps> = ({ 
   title, 
   children, 
   className = '', 
   variant = 'default',
-  style 
+  style,
+  live = false,
+  actions,
 }) => {
-  const baseCardClasses = "backdrop-blur-xl rounded-xl p-4 transition-all duration-300 ease-in-out flex flex-col overflow-y-auto m-0 w-full text-text-main [scrollbar-color:var(--scrollbar-color)] relative z-10";
+  const baseCardClasses = "p-4 flex flex-col m-0 w-full text-text-main relative z-10";
 
   let specificClasses = "";
-  if (variant === 'default') {
-    specificClasses = "bg-form-bg border border-border-main/20 shadow-lg dark:shadow-none hover:shadow-2xl";
-  } else if (variant === 'glass') {
-    specificClasses = "bg-glass-bg border border-border-main/20 dark:border-white/10 shadow-xl hover:shadow-2xl";
+  if (variant === 'default' || variant === 'glass') {
+    specificClasses = "tg-pane";
   } else if (variant === 'outline') {
-    specificClasses = "bg-transparent border-2 border-border-main/30 shadow-none hover:shadow-none";
+    specificClasses = "rounded-[20px] bg-transparent border border-[var(--tg-pane-border)]";
   } else if (variant === 'inner') {
-    specificClasses = "bg-form-bg shadow-inner border border-border-main/10 hover:shadow-none";
+    specificClasses = "rounded-xl bg-black/10 dark:bg-black/30 shadow-inner border border-[var(--tg-hairline)]";
   }
 
   return (
@@ -38,11 +43,17 @@ const Card: React.FC<CardProps> = ({
       style={style}
     >
       {title && (
-        <div className="mb-3 border-b border-border-main/20 pb-2 w-full">
-          <h3 className="m-0 text-lg font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-primary to-green-500 tracking-tight">{title}</h3>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <LedDisplay className="inline-flex" layerClassName="flex items-center gap-2.5 px-3 py-1.5">
+            {live && <span className="tg-live-dot" aria-hidden="true" />}
+            <h3 className="m-0 text-[15px]">
+              <LedText>{title}</LedText>
+            </h3>
+          </LedDisplay>
+          {actions}
         </div>
       )}
-      <div className="flex-1 w-full">
+      <div className="flex-1 w-full min-h-0 overflow-y-auto [scrollbar-color:var(--scrollbar-color)_transparent]">
         {children}
       </div>
     </div>

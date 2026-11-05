@@ -35,7 +35,7 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
       </label>
       <select
         id="scoring-setup-select"
-        className="text-xs bg-input-bg border border-border-main rounded-md px-2 py-1.5 max-w-[260px] text-text-main"
+        className="tg-input text-xs px-2 py-1.5 max-w-[260px]"
         value={selectedId ?? ""}
         title={selected?.description ?? "Load a scoring setup into the editor"}
         onChange={handleChange}
@@ -66,7 +66,7 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
         <button
           type="button"
           onClick={() => { void onDelete(selected.id); }}
-          className="text-xs font-semibold text-text-main/60 hover:text-red-400"
+          className="text-xs font-semibold text-text-main/60 hover:text-ink-down"
         >
           Delete
         </button>

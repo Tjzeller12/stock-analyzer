@@ -4,12 +4,13 @@
  * Uses StockHeader and StockMetricsTable extracted components.
  */
 import React, { useMemo } from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
+import Card from "../components/common/Card";
+import Header from "../components/common/Header";
 import StyledMarkdown from "../components/common/StyledMarkdown";
 import StockHeader from "../components/StockHeader";
 import StockMetricsTable from "../components/common/StockMetricsTable";
 import RadarGraph from "../components/common/RadarGraph";
-import logo from "../resources/alphaBotLogo.png";
 import EventPulseChart from "../components/charts";
 import { ChartData } from '../types';
 
@@ -19,7 +20,6 @@ import { useStockAnalysisManager } from "../hooks/useStockAnalysisManager";
 import { healthColor, healthScore } from "../utils/healthColor";
 
 const StockPage: React.FC = () => {
-  const navigate = useNavigate();
   const location = useLocation();
   const { symbol } = useParams<{ symbol: string }>();
   
@@ -50,48 +50,45 @@ const StockPage: React.FC = () => {
     };
   }, [radarScores, stock]);
 
-  const handleLogoClick = () => {
-    navigate("/main");
-  };
-
   return (
-    <div className="flex flex-col items-center min-h-screen p-0 font-sans bg-background text-text-main">
-      <StockHeader stock={stock} onLogoClick={handleLogoClick} logo={logo} />
-      <EventPulseChart 
-        symbol={symbol || ''} 
-        data={chartData} 
-        activeTimeFrame={timeFrame as any}
-        onTimeFrameChange={setTimeFrame}
-      />
+    <div className="flex flex-col min-h-screen p-0 text-text-main">
+      <div className="sticky top-0 z-50">
+        <Header title={stock ? `${stock.symbol} Quote` : "Quote"} />
+      </div>
+      <div className="flex flex-col gap-5 p-5 max-w-[1800px] mx-auto w-full">
+      <StockHeader stock={stock} />
+      <Card title="Price History" variant="glass" live>
+        <EventPulseChart 
+          symbol={symbol || ''} 
+          data={chartData} 
+          activeTimeFrame={timeFrame as any}
+          onTimeFrameChange={setTimeFrame}
+        />
+      </Card>
       <StockMetricsTable stock={stock} />
 
       {/* ── Bottom Row: Alpha Bot Analysis (2/3) + Radar Score (1/3) ── */}
-      <div className="flex flex-col lg:flex-row items-stretch gap-4 w-[97.5%] h-full bg-list-bg p-4 rounded-xl shadow-lg border border-border-main/10 mt-4 mb-8">
+      <div className="flex flex-col lg:flex-row items-stretch gap-5 w-full mb-8">
 
         {/* Alpha Bot Analysis — 2/3 width */}
-        <div className="flex flex-col gap-3 bg-list-bg p-4 rounded-lg w-full lg:w-[66%] shadow-md border border-border-main/5 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-40 h-40 bg-primary/5 rounded-full blur-3xl -z-10" />
-
-          {/* Header row */}
-          <div className="flex items-center justify-between w-full">
-            <span className="text-xl font-extrabold text-transparent bg-clip-text bg-linear-to-r from-primary to-green-500 tracking-tight">
-              Alpha Bot Analysis
-            </span>
+        <Card
+          title="AlphaBot Analysis"
+          variant="glass"
+          className="lg:w-[66%] text-left"
+          actions={(
             <button
               onClick={() => setShowChat(c => !c)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
-                showChat
-                  ? 'bg-primary/20 border-primary/40 text-primary'
-                  : 'bg-form-bg border-border-main/20 text-text-main/60 hover:border-primary/30 hover:text-primary/80'
-              }`}
+              className={`tg-btn ${showChat ? 'tg-btn-primary' : ''}`}
             >
-              <span>{showChat ? 'View Analysis' : 'Open Chat'}</span>
+              {showChat ? 'View Analysis' : 'Open Chat'}
             </button>
-          </div>
+          )}
+        >
+          <div className="flex flex-col gap-3 h-full">
 
           {/* Analysis view */}
           {!showChat && (
-            <div className="flex flex-col items-start gap-4 bg-form-bg p-4 rounded-lg w-full min-h-[300px] h-full text-left shadow-inner border border-border-main/10 overflow-y-auto">
+            <div className="flex flex-col items-start gap-4 p-4 rounded-xl w-full min-h-[300px] h-full text-left bg-black/5 dark:bg-black/30 shadow-inner border border-[var(--tg-hairline)] overflow-y-auto">
               {summaryIsLoading && !summary ? (
                 <div className="flex flex-col items-center justify-center w-full h-full gap-3 py-8">
                   <span className="alpha-bot-spinner" />
@@ -120,7 +117,7 @@ const StockPage: React.FC = () => {
           {showChat && (
             <div className="flex flex-col flex-1 min-h-[360px] h-full">
               {/* Messages */}
-              <div className="flex-1 overflow-y-auto flex flex-col gap-3 bg-form-bg rounded-lg p-4 shadow-inner border border-border-main/10 min-h-[280px] max-h-[420px]">
+              <div className="flex-1 overflow-y-auto flex flex-col gap-3 rounded-xl p-4 bg-black/5 dark:bg-black/30 shadow-inner border border-[var(--tg-hairline)] min-h-[280px] max-h-[420px]">
                 {chatMessages.length === 0 && (
                   <div className="flex flex-col items-center justify-center h-full gap-2 text-text-main/30">
                     <span className="text-sm font-medium">Ask anything about {symbol}...</span>
@@ -131,7 +128,7 @@ const StockPage: React.FC = () => {
                     <div className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed shadow-sm ${
                       msg.role === 'user'
                         ? 'bg-primary text-white rounded-br-sm'
-                        : 'bg-list-bg border border-border-main/15 text-text-main rounded-bl-sm'
+                        : 'bg-white/50 dark:bg-white/5 border border-[var(--tg-hairline)] text-text-main rounded-bl-sm'
                     }`}>
                       {msg.role === 'assistant' ? (
                         msg.content ? (
@@ -167,7 +164,7 @@ const StockPage: React.FC = () => {
                 <input
                   type="text"
                   placeholder={`Ask about ${symbol}...`}
-                  className="flex-1 px-4 py-2.5 rounded-xl text-sm bg-input-bg text-text-main border border-border-main/30 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
+                  className="tg-input flex-1 px-4 py-2.5 text-sm"
                   value={chatInput}
                   onChange={e => setChatInput(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') void sendChat(); }}
@@ -176,26 +173,28 @@ const StockPage: React.FC = () => {
                 <button
                   onClick={() => void sendChat()}
                   disabled={chatLoading || !chatInput.trim()}
-                  className="px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-bold disabled:opacity-40 hover:bg-primary/80 transition-all shadow-md"
+                  className="tg-btn tg-btn-primary !text-sm !px-4"
                 >
                   Send
                 </button>
               </div>
             </div>
           )}
-        </div>
+          </div>
+        </Card>
 
         {/* Radar Score — 1/3 width */}
-        <div className="flex flex-col items-center gap-2 bg-list-bg p-4 rounded-lg w-full lg:w-[33%] shadow-md border border-border-main/5 relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -z-10" />
-          <span className="text-xl font-extrabold text-transparent bg-clip-text bg-linear-to-r from-primary to-green-500 tracking-tight w-full text-center">Radar Score</span>
+        <Card title="Radar Score" variant="glass" className="lg:w-[33%]">
+          <div className="flex justify-center items-center h-full">
           {radarChartData ? (
             <RadarGraph data={radarChartData} height={320} />
           ) : (
             <div className="flex items-center justify-center h-[320px] text-text-main/30 text-sm">Loading radar...</div>
           )}
-        </div>
+          </div>
+        </Card>
 
+      </div>
       </div>
     </div>
   );

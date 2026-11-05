@@ -29,8 +29,8 @@ type RadarScores = Record<string, Record<string, number>>;
 const pnlCellStyle: CellStyleFunc<Stock> = (params) => {
   const value = params.value as number | null | undefined;
   const style: CellStyle = { fontWeight: 600 };
-  if (value != null && value > 0) style.color = "#069042";
-  else if (value != null && value < 0) style.color = "#ef4444";
+  if (value != null && value > 0) style.color = "var(--ink-up)";
+  else if (value != null && value < 0) style.color = "var(--ink-down)";
   return style;
 };
 

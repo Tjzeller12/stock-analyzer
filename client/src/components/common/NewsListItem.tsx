@@ -17,10 +17,10 @@ const NewsListItem = (props: NewsListItemProps) => {
 
     return (
         <div
-            className="flex p-[15px] relative min-h-[80px] w-full items-start gap-4 transition-all duration-300 ease hover:scale-[1.025] hover:bg-black/5 dark:hover:bg-white/5 border-b border-border-main/10 last:border-0 cursor-pointer"
+            className="flex p-3 relative min-h-[80px] w-full items-start gap-4 rounded-xl transition-colors duration-200 hover:bg-[color-mix(in_srgb,var(--primary-green)_10%,transparent)] border-b border-[var(--tg-hairline)] last:border-0 cursor-pointer"
             onClick={() => props.article.link && window.open(props.article.link, "_blank", "noopener,noreferrer")}
         >
-            <div className="flex-none w-[100px] h-[75px] overflow-hidden bg-background shrink-0">
+            <div className="flex-none w-[100px] h-[75px] overflow-hidden rounded-lg bg-black/20 shrink-0 shadow-[inset_0_0_0_1px_var(--tg-hairline)]">
                 {showImage ? (
                     <img
                         className="w-full h-full object-cover"
@@ -35,10 +35,10 @@ const NewsListItem = (props: NewsListItemProps) => {
                 )}
             </div>
             
-            <div className="flex-col flex-1 justify-center items-center text-sm min-w-0 h-full text-center flex">
-                <div className="font-bold text-text-main line-clamp-2 leading-snug mb-1">{props.article.title}</div>
-                <div className="flex items-center justify-center gap-2 mt-auto text-xs text-text-main/60 font-medium">
-                    <span className="text-primary truncate max-w-[120px]">{props.article.news_company}</span>
+            <div className="flex-col flex-1 justify-center items-start text-sm min-w-0 h-full text-left flex">
+                <div className="font-semibold text-text-main line-clamp-2 leading-snug mb-1">{props.article.title}</div>
+                <div className="flex items-center gap-2 mt-auto font-mono text-[11px] text-text-main/50">
+                    <span className="text-ink-up uppercase truncate max-w-[140px]">{props.article.news_company}</span>
                     <span>•</span>
                     <span>{formatDate(props.article.time_published)}</span>
                 </div>

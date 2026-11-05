@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import Card from "../components/common/Card";
 import Header from "../components/common/Header";
 import DiscoveryGrid from "../components/discovery/DiscoveryGrid";
 import RefineSearchBar from "../components/discovery/RefineSearchBar";
@@ -35,16 +36,16 @@ const DiscoveryPage: React.FC = () => {
   const showEmpty = hasGenerated && !loading && recommendations.length === 0;
 
   return (
-    <div className="flex flex-col p-0 font-sans bg-background text-white min-h-screen w-full">
-      <Header title="Tailored Discovery" />
-      <div className="flex flex-col items-center pt-[20px] flex-1 w-full pb-10 px-5">
+    <div className="flex flex-col p-0 text-text-main min-h-screen w-full">
+      <div className="sticky top-0 z-50">
+        <Header title="Tailored Discovery" />
+      </div>
+      <div className="flex flex-col items-center pt-5 flex-1 w-full pb-10 px-5">
         <div className="w-full max-w-[1200px] mx-auto flex flex-col gap-6">
+          <Card title="Stocks picked for you" variant="glass" live className="text-left">
           {/* Intro / profile hint */}
-          <div className="text-left">
-            <h2 className="text-2xl font-extrabold text-text-main tracking-tight">
-              Stocks picked for you
-            </h2>
-            <p className="text-sm text-text-main/60 mt-1">
+          <div className="text-left mb-4">
+            <p className="text-sm text-text-main/60 m-0">
               {hasProfile
                 ? "Based on your investor profile. Refine the results in plain language below."
                 : "A general long-term starter list. Complete your profile for personalized picks."}
@@ -53,7 +54,7 @@ const DiscoveryPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => navigate("/onboarding")}
-                className="mt-3 px-4 py-2 rounded-lg text-sm font-bold bg-gradient-to-r from-primary to-[#057a37] text-white shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
+                className="tg-btn tg-btn-primary mt-3 !text-sm !px-4 !py-2"
               >
                 Complete your profile
               </button>
@@ -69,16 +70,17 @@ const DiscoveryPage: React.FC = () => {
             disabled={loading}
             atCap={refinements.length >= MAX_REFINEMENTS}
           />
+          </Card>
 
           {error && (
-            <div className="text-left p-3 rounded-lg border border-red-400/30 bg-red-500/10">
-              <p className="text-sm text-red-400" role="alert">
+            <div className="text-left p-3 rounded-xl border border-ink-down/30 bg-ink-down/10">
+              <p className="text-sm text-ink-down m-0" role="alert">
                 {error}
               </p>
               <button
                 type="button"
                 onClick={() => void generate()}
-                className="mt-2 text-xs font-semibold text-primary underline underline-offset-2"
+                className="mt-2 text-xs font-semibold text-ink-up underline underline-offset-2"
               >
                 Try again
               </button>
@@ -86,7 +88,7 @@ const DiscoveryPage: React.FC = () => {
           )}
 
           {showEmpty ? (
-            <div className="text-center py-16 border border-border-main/20 rounded-xl bg-glass-bg">
+            <div className="tg-pane text-center py-16">
               <p className="text-text-main/70 font-semibold">No recommendations to show.</p>
               <p className="text-sm text-text-main/50 mt-1">
                 Try removing a refinement or generating again.

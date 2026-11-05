@@ -27,7 +27,7 @@ export interface ControlPanelProps {
 const ControlPanel = (props: ControlPanelProps) => {
     return (
         <div className="flex flex-col gap-3 w-full">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-3 w-full bg-form-bg p-3 rounded-lg shadow-inner border border-border-main/10">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-3 w-full p-2.5 rounded-xl bg-black/5 dark:bg-black/30 shadow-inner border border-[var(--tg-hairline)]">
                 <div className="flex items-center gap-3 flex-wrap w-full md:w-auto">
                     {props.onStockSelect ? (
                         <div className="w-full md:w-[300px]">
@@ -45,11 +45,7 @@ const ControlPanel = (props: ControlPanelProps) => {
                             key={button.label}
                             onClick={button.onClick}
                             disabled={button.disabled}
-                            className={`px-3 py-1.5 font-semibold text-xs rounded-md transition-all duration-200 shrink-0 ${
-                                button.disabled
-                                ? 'bg-list-bg text-text-main/50 cursor-not-allowed border border-white/5 shadow-none'
-                                : 'bg-gradient-to-r from-primary to-[#057a37] text-white hover:shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5 active:scale-95 border border-primary/30 shadow-md'
-                            }`}
+                            className="tg-btn tg-btn-primary shrink-0"
                         >
                             {button.label}
                         </button>
@@ -57,7 +53,7 @@ const ControlPanel = (props: ControlPanelProps) => {
                 </div>
                 <div className="flex items-center gap-3 md:ml-auto">
                     {props.info && (
-                        <div className="text-sm font-medium text-text-main/70 px-2 text-right whitespace-nowrap">
+                        <div className="text-xs font-mono text-text-main/60 px-2 text-right whitespace-nowrap">
                             {props.info}
                         </div>
                     )}

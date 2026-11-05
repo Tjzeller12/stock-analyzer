@@ -39,15 +39,20 @@ const EventPulseChart: React.FC<EventPulseChartProps> = ({ symbol, data, activeT
         const isDark = theme === 'dark';
 
         const isUp = data && data.length > 0 ? data[data.length - 1].value >= data[0].value : true;
-        const mainColor = isUp ? '#06a84d' : '#ef4444'; 
-        const topColor = isUp ? 'rgba(6, 168, 77, 0.4)' : 'rgba(239, 68, 68, 0.4)';
+        const upColor = isDark ? '#2ee88a' : '#07803c';
+        const downColor = isDark ? '#ff5d6c' : '#d42c3d';
+        const mainColor = isUp ? upColor : downColor;
+        const topColor = isUp
+            ? (isDark ? 'rgba(46, 232, 138, 0.32)' : 'rgba(7, 128, 60, 0.28)')
+            : (isDark ? 'rgba(255, 93, 108, 0.32)' : 'rgba(212, 44, 61, 0.28)');
 
         chartRef.current = createChart(container, {
             width: container.clientWidth,
             height: 350,
             layout: {
                 background: { color: 'transparent' },
-                textColor: isDark ? '#e0e0e0' : '#333333',
+                textColor: isDark ? 'rgba(233,255,242,0.6)' : 'rgba(15,15,15,0.6)',
+                fontFamily: '"JetBrains Mono Variable", ui-monospace, monospace',
             },
             grid: {
                 vertLines: { color: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' },
@@ -94,10 +99,10 @@ const EventPulseChart: React.FC<EventPulseChartProps> = ({ symbol, data, activeT
             windowOverlayRef.current.style.width = `${width}px`;
 
             if (phase === 'selecting') {
-                windowOverlayRef.current.className = "absolute top-0 h-[320px] pointer-events-none bg-blue-500/20 border-x-2 border-blue-500/80 transition-none z-20 shadow-[0_0_15px_rgba(59,130,246,0.3)]";
+                windowOverlayRef.current.className = "absolute top-0 h-[320px] pointer-events-none bg-signal-flat/15 border-x-2 border-signal-flat/80 transition-none z-20 shadow-[0_0_15px_rgba(255,178,56,0.3)]";
             } else {
                 const swingType = (anchorEndRef.current?.price ?? 0) > start.price ? 'green' : 'red';
-                const bgClass = swingType === 'green' ? 'bg-green-500/20 border-green-500/80' : 'bg-red-500/20 border-red-500/80';
+                const bgClass = swingType === 'green' ? 'bg-ink-up/15 border-ink-up/80' : 'bg-ink-down/15 border-ink-down/80';
                 windowOverlayRef.current.className = `absolute top-0 h-[320px] pointer-events-none ${bgClass} border-x-2 transition-all duration-300 z-20 backdrop-blur-[1px] shadow-[0_0_20px_rgba(0,0,0,0.1)]`;
             }
         };
@@ -137,8 +142,8 @@ const EventPulseChart: React.FC<EventPulseChartProps> = ({ symbol, data, activeT
             const isShortTimeframe = ['1D', '1W'].includes(activeTimeFrame);
 
             tooltip.innerHTML = `
-                <div style="font-size: 14px; margin-bottom: 4px; color: ${isDark ? '#e0e0e0' : '#444'}">${timestampStr}</div>
-                <div style="font-size: 18px; font-weight: bold; color: #06a84d">$${price.toFixed(2)}</div>
+                <div style="font-size: 12px; margin-bottom: 4px; opacity: 0.6">${timestampStr}</div>
+                <div style="font-size: 18px; font-weight: 800; font-family: var(--font-mono); color: ${mainColor}">$${price.toFixed(2)}</div>
                 ${!isShortTimeframe ? `<div style="font-size: 11px; margin-top: 6px; color: ${isDark ? '#888' : '#aaa'}; font-style: italic;">
                     ${isSelecting ? 'Click again to analyze bounded area' : 'Click to trace Macro event'}
                 </div>` : ''}
@@ -253,10 +258,10 @@ const EventPulseChart: React.FC<EventPulseChartProps> = ({ symbol, data, activeT
     };
 
     return (
-        <div className="w-full bg-transparent rounded-xl py-4 flex flex-col items-center">
+        <div className="w-full bg-transparent flex flex-col items-center">
             <div className="w-full flex items-center px-4 pb-3 justify-between relative z-10">
                 <div className="flex flex-col">
-                    <span className="text-xl font-bold bg-clip-text text-transparent bg-linear-to-r from-blue-400 to-blue-600">
+                    <span className="text-lg font-bold text-text-main tracking-tight">
                         {symbol} {activeTimeFrame === '1D' || activeTimeFrame === '1W' ? 'Intraday' : 'Historical'} Data
                     </span>
                     <span className="text-xs text-text-main/50 font-medium">
@@ -268,24 +273,22 @@ const EventPulseChart: React.FC<EventPulseChartProps> = ({ symbol, data, activeT
             </div>
             
             {selectionError && (
-                <div className="w-[95%] mx-auto bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-semibold px-4 py-2 rounded-lg mb-2 text-center animate-in fade-in slide-in-from-top-2">
+                <div className="w-[95%] mx-auto bg-ink-down/10 border border-ink-down/25 text-ink-down text-xs font-semibold px-4 py-2 rounded-lg mb-2 text-center animate-in fade-in slide-in-from-top-2">
                     {selectionError}
                 </div>
             )}
 
             <div className="w-full relative px-2">
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-3/4 bg-blue-500/5 rounded-full blur-3xl -z-10 pointer-events-none"></div>
-                
                 <div className="flex justify-center w-full mb-4 z-20 relative">
-                  <div className="flex space-x-1 bg-form-bg/80 backdrop-blur-md border border-border-main/20 p-1 rounded-full shadow-sm">
+                  <div className="flex gap-1 p-1 rounded-full bg-black/5 dark:bg-black/30 border border-[var(--tg-hairline)] shadow-inner">
                     {timeFrames.map((tf) => (
                       <button
                         key={tf}
                         onClick={() => handleTimeFrameChange(tf)}
-                        className={`px-4 py-1.5 text-sm font-semibold rounded-full transition-all duration-300 ${
+                        className={`px-4 py-1.5 text-xs font-mono font-bold tracking-wider rounded-full transition-all duration-200 ${
                           activeTimeFrame === tf
-                            ? 'bg-blue-500 text-white shadow-md shadow-blue-500/20'
-                            : 'text-text-main/70 hover:text-text-main hover:bg-border-main/10'
+                            ? 'bg-primary text-white shadow-[0_0_16px_-4px_var(--signal-up)]'
+                            : 'text-text-main/60 hover:text-text-main hover:bg-[color-mix(in_srgb,var(--text-color)_8%,transparent)]'
                         }`}
                       >
                         {tf}
@@ -299,7 +302,7 @@ const EventPulseChart: React.FC<EventPulseChartProps> = ({ symbol, data, activeT
                     
                     <div 
                         ref={tooltipRef}
-                        className="absolute z-60 pointer-events-none bg-form-bg/90 backdrop-blur-md border border-border-main/20 p-3 rounded-lg shadow-xl"
+                        className="absolute z-60 pointer-events-none bg-[var(--tg-pane-tint)] backdrop-blur-xl border border-[var(--tg-pane-border)] p-3 rounded-xl shadow-xl text-text-main"
                         style={{ display: 'none', transition: 'opacity 0.1s ease' }}
                     />
 

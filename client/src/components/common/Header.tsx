@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { AUTH_ENDPOINTS } from '../../constants/api';
 import logo from "../../resources/alphaBotLogo.png";
 import { ThemeContext } from "../../ThemeContext";
+import LedText, { LedDisplay } from './LedText';
 import UsageBadge from './UsageBadge';
 interface HeaderProps {
     title: string;
@@ -41,10 +42,10 @@ const handleNavButtonClick = (path: string) => {
     navigate(path);
   };
 
-    const buttonClass = "px-4 py-1.5 text-sm bg-btn-bg text-white font-semibold my-[6px] mx-[4px] border border-white/10 rounded-md cursor-pointer hover:shadow-lg hover:shadow-btn-bg/30 hover:-translate-y-0.5 active:scale-95 transition-all duration-300";
+    const buttonClass = "tg-btn !text-white !text-[13px] !px-4 !bg-white/10 !border-white/20";
 
     return (
-        <header className="flex justify-between items-center w-full min-h-[60px] bg-primary text-white font-bold px-[20px] py-[6px] box-border shadow-md">
+        <header className="relative z-50 flex justify-between items-center w-full min-h-[64px] text-white font-bold px-[20px] py-[8px] box-border border-b border-white/15 bg-[linear-gradient(180deg,rgba(11,178,87,0.92),rgba(6,144,66,0.86))] backdrop-blur-xl backdrop-saturate-150 shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_10px_30px_-12px_rgba(0,0,0,0.6)]">
             <div className="flex items-center gap-[12px] flex-1">
                 <img
                     className="max-h-[40px] w-auto cursor-pointer hover:scale-105 transition-transform duration-300 ease-in-out"
@@ -52,7 +53,11 @@ const handleNavButtonClick = (path: string) => {
                     alt="AlphaBot Logo"
                     onClick={handleLogoClick}
                 />
-                <h1 className="text-white text-xl font-extrabold m-0 whitespace-nowrap tracking-tight drop-shadow-sm">{props.title}</h1>
+                <LedDisplay layerClassName="px-3.5 py-2">
+                    <h1 className="m-0 whitespace-nowrap text-[18px]">
+                        <LedText>{props.title}</LedText>
+                    </h1>
+                </LedDisplay>
             </div>
             
             <div className="flex items-center gap-[15px] flex-wrap justify-end mr-[15px]">
@@ -79,7 +84,7 @@ const handleNavButtonClick = (path: string) => {
                     />
                     <label 
                         htmlFor="theme"
-                        className={`absolute cursor-pointer inset-0 transition-colors duration-300 rounded-full shadow-inner border border-white/10 ${theme === 'dark' ? 'bg-btn-bg' : 'bg-[#3b3b3b]'}`}
+                        className="absolute cursor-pointer inset-0 transition-colors duration-300 rounded-full shadow-inner border border-white/20 bg-black/35"
                     >
                         <span className={`absolute left-[4px] bottom-[3px] h-[26px] w-[26px] transition-all duration-300 transform rounded-full flex items-center justify-center text-[16px] leading-none select-none shadow-sm ${theme === 'dark' ? 'translate-x-[24px] bg-[#333333]' : 'translate-x-0 bg-[#e0e0e0]'}`}>
                             {theme === "dark" ? "🌙" : "☀️"}

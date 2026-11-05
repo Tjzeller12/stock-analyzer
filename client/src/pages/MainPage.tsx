@@ -14,6 +14,7 @@ import Header from '../components/common/Header';
 import List from '../components/common/List';
 import NewsListItem from '../components/common/NewsListItem';
 import StocksCard from '../components/common/StocksCard';
+import TickerTape from '../components/common/TickerTape';
 import { NEWS_FILTER_OPTIONS } from "../constants/filters";
 import { useBrokerageManager } from '../hooks/useBrokerageManager';
 import { useCompareAlphaBotManager } from '../hooks/useCompareAlphaBotManager';
@@ -63,6 +64,11 @@ const MainPage: React.FC = () => {
 
   const compareActive = Boolean(compareLoading || compareRadarScores || compareResult);
 
+  const tickerStocks = [
+    ...stocks,
+    ...holdings.filter(h => !stocks.some(s => s.symbol === h.symbol)),
+  ];
+
   useEffect(() => {
     void fetchStocks();
     void handleFilterChange("all");
@@ -93,7 +99,10 @@ const MainPage: React.FC = () => {
 
   return (
     <div className="flex flex-col gap-5 p-0">
-      <Header title="AlphaBot Dashboard" />
+      <div className="sticky top-0 z-50">
+        <Header title="AlphaBot Dashboard" />
+        <TickerTape stocks={tickerStocks} />
+      </div>
       <div className="grid grid-cols-1 lg:grid-cols-6 gap-5 p-5 max-w-[1800px] mx-auto w-full">
       <StocksCard
         radarScores={radarScores}
@@ -134,7 +143,7 @@ const MainPage: React.FC = () => {
         onPersistActive={templates.persistActive}
       />
 
-      <Card title="News" variant="glass" className="col-span-1 lg:col-span-2 lg:row-span-2 lg:row-start-2 lg:col-start-1 w-full h-full flex flex-col">
+      <Card title="News" variant="glass" live className="col-span-1 lg:col-span-2 lg:row-span-2 lg:row-start-2 lg:col-start-1 w-full h-full flex flex-col">
           <List<Article> items={articles} renderItem={(article) => <NewsListItem article={article} />} 
         filterDropProp={{filter: newsFilter, setFilter: (f: string) => { void handleFilterChange(f); }, options: NEWS_FILTER_OPTIONS}}/>
       </Card>
