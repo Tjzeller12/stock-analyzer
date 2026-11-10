@@ -44,10 +44,10 @@ const AddToListButton: React.FC<AddToListButtonProps> = ({ symbol, onAdd, size =
 
   const tone =
     state === "added"
-      ? "bg-primary/20 text-primary border-primary/40"
+      ? "bg-primary/20 text-ink-up border-ink-up/40"
       : state === "error"
-        ? "bg-red-500/15 text-red-400 border-red-400/40"
-        : "bg-transparent text-text-main/70 border-border-main/40 hover:border-primary/60 hover:text-primary";
+        ? "bg-ink-down/15 text-ink-down border-ink-down/40"
+        : "bg-[color-mix(in_srgb,var(--text-color)_6%,transparent)] text-text-main/70 border-[var(--tg-pane-border)] hover:border-primary/60 hover:text-ink-up hover:shadow-[0_0_14px_-4px_var(--signal-up)]";
 
   return (
     <button

@@ -11,10 +11,10 @@ interface DiscoveryGridProps {
 }
 
 const SkeletonCard: React.FC = () => (
-  <div className="bg-glass-bg border border-border-main/20 dark:border-white/10 rounded-xl p-4 h-full animate-pulse flex flex-col gap-3">
+  <div className="tg-pane p-4 h-full animate-pulse flex flex-col gap-3">
     <div className="flex items-start justify-between">
       <div className="space-y-2 w-full">
-        <div className="h-5 w-20 rounded bg-border-main/30" />
+        <div className="tg-display h-9 w-24" />
         <div className="h-3 w-32 rounded bg-border-main/20" />
       </div>
       <div className="h-7 w-7 rounded-full bg-border-main/20" />

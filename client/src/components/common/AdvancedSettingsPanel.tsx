@@ -15,6 +15,7 @@ import {
   uniqueAxisName,
 } from '../../utils/radarTemplate';
 import FormulaBuilder, { evaluateFormula } from './FormulaBuilder';
+import LedText, { LedDisplay } from './LedText';
 import TemplateSelector from './TemplateSelector';
 
 export interface RadarTemplate {
@@ -51,8 +52,8 @@ interface AdvancedSettingsPanelProps {
   onPersistActive?: (id: number) => void;
 }
 
-const chipIdle = "text-text-main/70 hover:text-text-main hover:bg-list-bg";
-const chipActive = "bg-primary text-white shadow-md";
+const chipIdle = "text-text-main/60 hover:text-text-main hover:bg-[color-mix(in_srgb,var(--text-color)_8%,transparent)]";
+const chipActive = "bg-primary text-white";
 
 const MATH_OPERATORS: { op: string; label: string }[] = [
   { op: "+", label: "Add" },
@@ -235,20 +236,22 @@ const AdvancedSettingsPanel: React.FC<AdvancedSettingsPanelProps> = ({
   const allKnown = [...axes, ...disabledAxes(template)];
 
   return (
-    <div className="bg-form-bg p-4 rounded-xl border border-border-main/20 mt-3 shadow-xl mb-4">
-      <div className="relative mb-4 w-full border-b border-border-main/20 pb-3">
+    <div className="p-4 rounded-2xl bg-black/5 dark:bg-black/25 border border-[var(--tg-hairline)] shadow-inner mt-3 mb-4">
+      <div className="relative mb-4 w-full border-b border-[var(--tg-hairline)] pb-3">
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-0 right-0 text-text-main/50 hover:text-red-500 transition-colors text-sm"
+          className="tg-btn absolute top-0 right-0 !py-1 !px-2.5"
         >
           ✕ Close
         </button>
         <div className="w-full text-center px-12">
-          <h2 className="text-lg font-bold bg-gradient-to-r from-primary to-[#057a37] text-transparent bg-clip-text">
-            Radar scoring
-          </h2>
-          <p className="text-[11px] text-text-main/60 mt-1 mx-auto max-w-xl leading-snug">
+          <LedDisplay className="inline-flex" layerClassName="px-3 py-1.5">
+            <h2 className="m-0 text-[15px]">
+              <LedText>Radar scoring</LedText>
+            </h2>
+          </LedDisplay>
+          <p className="text-[11px] text-text-main/60 mt-2 mx-auto max-w-xl leading-snug">
             Each axis is a formula. Those scores draw the spider chart and drive Compare.
             Load a default to fill the formulas, edit them, then Apply to use this scoring on your tables.
           </p>
@@ -273,7 +276,7 @@ const AdvancedSettingsPanel: React.FC<AdvancedSettingsPanelProps> = ({
             <label htmlFor="setup-name" className="text-xs font-semibold text-text-main block mb-1">Name</label>
             <input
               id="setup-name"
-              className="w-full box-border p-2 text-sm border border-border-main/20 rounded-md bg-input-bg text-text-main"
+              className="tg-input w-full box-border p-2 text-sm"
               value={setupName}
               maxLength={100}
               onChange={(e) => setSetupName(e.target.value)}
@@ -284,7 +287,7 @@ const AdvancedSettingsPanel: React.FC<AdvancedSettingsPanelProps> = ({
             <label htmlFor="setup-description" className="text-xs font-semibold text-text-main block mb-1">Description</label>
             <textarea
               id="setup-description"
-              className="w-full box-border p-2 text-sm border border-border-main/20 rounded-md bg-input-bg text-text-main min-h-[42px] resize-y"
+              className="tg-input w-full box-border p-2 text-sm min-h-[42px] resize-y"
               value={setupDescription}
               maxLength={255}
               rows={2}
@@ -302,13 +305,13 @@ const AdvancedSettingsPanel: React.FC<AdvancedSettingsPanelProps> = ({
 
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mb-4">
         <h3 className="text-xs font-semibold text-text-main">Compare against</h3>
-        <div className="flex items-center gap-1.5 bg-form-bg p-1 rounded-md w-fit border border-border-main/10">
+        <div className="flex items-center gap-1 p-1 rounded-[10px] w-fit bg-black/5 dark:bg-black/30 border border-[var(--tg-hairline)]">
           {(['global', 'sector', 'industry'] as const).map(scope_val => (
             <button
                 type="button"
                 key={scope_val}
                 onClick={() => setTemplate({ ...template, scope: scope_val })}
-                className={`px-3 py-1.5 rounded text-xs font-medium transition-all capitalize ${
+                className={`px-3 py-1.5 rounded-[7px] text-xs font-medium transition-colors capitalize ${
                 template.scope === scope_val ? chipActive : chipIdle
                 }`}
             >
@@ -325,19 +328,19 @@ const AdvancedSettingsPanel: React.FC<AdvancedSettingsPanelProps> = ({
         <button
             type="button"
             onClick={() => setShowScoringGuide(!showScoringGuide)}
-            className="flex items-center gap-2 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+            className="flex items-center gap-2 text-xs font-semibold text-ink-up hover:opacity-80 transition-colors"
         >
             <span>{showScoringGuide ? '▼' : '▶'}</span>
             How scoring works
         </button>
         {showScoringGuide && (
-            <div className="mt-2 p-3 bg-list-bg rounded-lg border border-border-main/15">
+            <div className="mt-2 p-3 bg-black/5 dark:bg-black/25 rounded-xl border border-[var(--tg-hairline)]">
                 <p className="text-[11px] text-text-main/70 leading-snug">
                 Every metric is scored as a <span className="text-text-main font-medium">percentile</span>:
                 {" "}0 is the lowest in the group, 1 is the highest, and a metric a company
                 {" "}has not reported counts as average. Write each axis as a weighted
                 {" "}average that lands between 0 and 1 &mdash; weights that add up to 1 do
-                {" "}this automatically. Use <span className="font-mono text-primary">1 - metric</span>
+                {" "}this automatically. Use <span className="font-mono text-ink-up">1 - metric</span>
                 {" "}when a lower number is better, like a P/E ratio.
                 </p>
             </div>
@@ -348,25 +351,25 @@ const AdvancedSettingsPanel: React.FC<AdvancedSettingsPanelProps> = ({
         <button
             type="button"
             onClick={() => setShowVariablesGuide(!showVariablesGuide)}
-            className="flex items-center gap-2 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+            className="flex items-center gap-2 text-xs font-semibold text-ink-up hover:opacity-80 transition-colors"
         >
             <span>{showVariablesGuide ? '▼' : '▶'}</span>
             Variables & Operators Guide
         </button>
         {showVariablesGuide && (
             <div className="mt-2 flex flex-col gap-3">
-                <div className="p-3 bg-list-bg rounded-lg border border-border-main/15 text-[11px] text-text-main/70">
+                <div className="p-3 bg-black/5 dark:bg-black/25 rounded-xl border border-[var(--tg-hairline)] text-[11px] text-text-main/70">
                     <h4 className="text-text-main font-semibold mb-1.5 text-xs">Available Metrics</h4>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5">
                         {AVAILABLE_VARIABLES.map(v => (
-                            <div key={v} className="bg-form-bg px-1.5 py-0.5 rounded font-mono select-all truncate border border-border-main/10">{v}</div>
+                            <div key={v} className="bg-white/50 dark:bg-white/5 px-1.5 py-0.5 rounded-md font-mono select-all truncate border border-[var(--tg-hairline)]">{v}</div>
                         ))}
                     </div>
                 </div>
-                <div className="p-3 bg-list-bg rounded-lg border border-border-main/15 text-[11px] text-text-main/70">
+                <div className="p-3 bg-black/5 dark:bg-black/25 rounded-xl border border-[var(--tg-hairline)] text-[11px] text-text-main/70">
                     <h4 className="text-text-main font-semibold mb-1.5 text-xs">Advanced: other scales</h4>
                     <p className="leading-snug mb-2">
-                    A plain name like <span className="font-mono text-primary">roe</span> is its percentile.
+                    A plain name like <span className="font-mono text-ink-up">roe</span> is its percentile.
                     {" "}Rank is usually what you want, but it flattens extremes: the fastest
                     {" "}grower and the runner-up both sit near 1 even if one grew twice as fast.
                     {" "}To keep that distance, prefix a metric instead.
@@ -374,27 +377,27 @@ const AdvancedSettingsPanel: React.FC<AdvancedSettingsPanelProps> = ({
                     <div className="flex flex-col gap-1">
                     {VARIABLE_PREFIXES.map(({ prefix, label }) => (
                         <div key={prefix} className="flex items-baseline gap-2">
-                        <span className="font-mono text-primary bg-primary/10 px-1 rounded shrink-0">{prefix}</span>
+                        <span className="font-mono text-ink-up bg-primary/10 px-1 rounded shrink-0">{prefix}</span>
                         <span className="leading-snug">{label}</span>
                         </div>
                     ))}
                     </div>
                     <p className="leading-snug mt-2">
-                    A <span className="font-mono text-primary">z_</span> value is not between 0 and 1,
+                    A <span className="font-mono text-ink-up">z_</span> value is not between 0 and 1,
                     {" "}so re-centre it yourself:
-                    {" "}<span className="font-mono text-primary">(z_rev_growth_qoq + 3) / 6</span>.
+                    {" "}<span className="font-mono text-ink-up">(z_rev_growth_qoq + 3) / 6</span>.
                     </p>
                 </div>
-                <div className="p-3 bg-list-bg rounded-lg border border-border-main/15 text-[11px] text-text-main/70">
+                <div className="p-3 bg-black/5 dark:bg-black/25 rounded-xl border border-[var(--tg-hairline)] text-[11px] text-text-main/70">
                     <h4 className="text-text-main font-semibold mb-1.5 text-xs">Math Operators</h4>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5">
                         {MATH_OPERATORS.map(({ op, label }) => (
                           <div
                             key={op}
                             title={`${op} — ${label}`}
-                            className="bg-form-bg px-1.5 py-0.5 rounded flex items-center gap-1.5 border border-border-main/10"
+                            className="bg-white/50 dark:bg-white/5 px-1.5 py-0.5 rounded-md flex items-center gap-1.5 border border-[var(--tg-hairline)]"
                           >
-                            <span className="font-mono text-primary font-bold bg-primary/10 px-1 rounded">{op}</span>
+                            <span className="font-mono text-ink-up font-bold bg-primary/10 px-1 rounded">{op}</span>
                             {label}
                           </div>
                         ))}
@@ -404,7 +407,7 @@ const AdvancedSettingsPanel: React.FC<AdvancedSettingsPanelProps> = ({
         )}
       </div>
 
-      <div className="flex items-center justify-between mb-2 border-b border-border-main/10 pb-1.5">
+      <div className="flex items-center justify-between mb-2 border-b border-[var(--tg-hairline)] pb-1.5">
         <h3 className="text-xs font-semibold text-text-main">Axis formulas</h3>
         <div className="flex items-center gap-2">
           <button
@@ -419,7 +422,7 @@ const AdvancedSettingsPanel: React.FC<AdvancedSettingsPanelProps> = ({
             onClick={handleAddAxis}
             disabled={atMaxAxes}
             title={atMaxAxes ? `Maximum ${MAX_RADAR_AXES} axes` : undefined}
-            className="text-[11px] font-semibold text-primary hover:underline disabled:opacity-40 disabled:no-underline disabled:cursor-not-allowed"
+            className="text-[11px] font-semibold text-ink-up hover:underline disabled:opacity-40 disabled:no-underline disabled:cursor-not-allowed"
           >
             + Add axis
           </button>
@@ -433,7 +436,7 @@ const AdvancedSettingsPanel: React.FC<AdvancedSettingsPanelProps> = ({
             ? template.equations[name]
             : (template.disabledEquations?.[name] ?? "");
           return (
-            <div key={name} className={`rounded-lg border border-border-main/15 p-3 bg-list-bg ${enabled ? "" : "opacity-60"}`}>
+            <div key={name} className={`rounded-xl border border-[var(--tg-hairline)] p-3 bg-white/40 dark:bg-white/[0.03] ${enabled ? "" : "opacity-60"}`}>
               <div className="flex flex-wrap items-center gap-2 mb-2">
                 <label className="flex items-center gap-1.5 text-[11px] text-text-main">
                   <input
@@ -453,14 +456,14 @@ const AdvancedSettingsPanel: React.FC<AdvancedSettingsPanelProps> = ({
                   onBlur={() => enabled && handleRename(name)}
                   onKeyDown={(e) => { if (e.key === "Enter" && enabled) handleRename(name); }}
                   disabled={!enabled}
-                  className="flex-1 min-w-0 text-xs font-semibold bg-form-bg text-text-main border border-border-main/20 rounded px-2 py-1"
+                  className="tg-input flex-1 min-w-0 text-xs font-semibold px-2 py-1"
                   aria-label={`Rename ${name} axis`}
                 />
                 <button
                   type="button"
                   onClick={() => setTemplate((prev) => removeAxis(prev, name))}
                   disabled={enabled && atMinAxes}
-                  className="text-[11px] font-semibold text-red-500 disabled:opacity-40"
+                  className="text-[11px] font-semibold text-ink-down disabled:opacity-40"
                 >
                   Delete
                 </button>
@@ -475,17 +478,17 @@ const AdvancedSettingsPanel: React.FC<AdvancedSettingsPanelProps> = ({
         })}
       </div>
 
-      <div className="mt-5 flex flex-wrap items-center justify-end gap-2 border-t border-border-main/20 pt-3">
+      <div className="mt-5 flex flex-wrap items-center justify-end gap-2 border-t border-[var(--tg-hairline)] pt-3">
         {invalidCount > 0 && (
-          <p className="mr-auto text-xs text-red-500 self-center">{invalidCount} formula{invalidCount > 1 ? "s" : ""} need fixing</p>
+          <p className="mr-auto text-xs text-ink-down self-center">{invalidCount} formula{invalidCount > 1 ? "s" : ""} need fixing</p>
         )}
         {actionError && (
-          <p className="mr-auto text-xs text-red-500 self-center">{actionError}</p>
+          <p className="mr-auto text-xs text-ink-down self-center">{actionError}</p>
         )}
         <button
           type="button"
           onClick={onClose}
-          className="px-4 py-1.5 rounded-md text-xs font-semibold bg-list-bg text-text-main hover:bg-border-main/20 transition-colors border border-border-main/15"
+          className="tg-btn !px-4"
         >
           Cancel
         </button>
@@ -497,7 +500,7 @@ const AdvancedSettingsPanel: React.FC<AdvancedSettingsPanelProps> = ({
                 onClick={() => handleSave(true)}
                 disabled={invalidCount > 0 || busy || !setupName.trim()}
                 title="Keep the original and save a new copy"
-                className="px-4 py-1.5 rounded-md text-xs font-semibold text-text-main/70 hover:text-text-main"
+                className="tg-btn !px-4"
               >
                 Save as new
               </button>
@@ -507,7 +510,7 @@ const AdvancedSettingsPanel: React.FC<AdvancedSettingsPanelProps> = ({
               onClick={() => handleSave(false)}
               disabled={invalidCount > 0 || busy || !setupName.trim()}
               title="Keep these formulas without changing the tables yet"
-              className="px-4 py-1.5 rounded-md text-xs font-semibold border border-primary/40 text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
+              className="tg-btn !px-4"
             >
               {busy ? "Saving…" : "Save"}
             </button>
@@ -518,7 +521,7 @@ const AdvancedSettingsPanel: React.FC<AdvancedSettingsPanelProps> = ({
           onClick={handleApply}
           disabled={invalidCount > 0 || busy}
           title="Use this scoring on your tables and save it"
-          className="px-4 py-1.5 rounded-md text-xs font-semibold bg-gradient-to-r from-primary to-[#057a37] text-white hover:scale-105 transition-transform disabled:opacity-50 disabled:hover:scale-100"
+          className="tg-btn tg-btn-primary !px-4"
         >
           Apply
         </button>

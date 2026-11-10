@@ -65,7 +65,7 @@ describe('StockPage', () => {
   it('renders the Radar Score panel and AlphaBot Analysis section', async () => {
     await act(async () => { renderStockPage(); });
     expect(screen.getByText(/Radar Score/i)).toBeInTheDocument();
-    expect(screen.getByText(/Alpha Bot Analysis/i)).toBeInTheDocument();
+    expect(screen.getByText(/AlphaBot Analysis/i)).toBeInTheDocument();
   });
 
   it('shows "Open Chat" toggle button by default and switches to View Analysis on click', async () => {

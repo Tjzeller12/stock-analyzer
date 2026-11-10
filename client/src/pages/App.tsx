@@ -23,7 +23,7 @@ function App() {
   return (
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
     <Router future={ROUTER_FUTURE}>
-      <div className="text-center bg-background text-text-main min-h-screen">
+      <div className="text-center text-text-main min-h-screen">
         <Routes>
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/login" element={<LoginPage />} />

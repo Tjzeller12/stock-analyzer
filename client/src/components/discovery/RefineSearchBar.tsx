@@ -46,13 +46,13 @@ const RefineSearchBar: React.FC<RefineSearchBarProps> = ({
               ? "Refinement limit reached — remove one to add another"
               : 'e.g. "Exclude EV companies" or "Prefer dividend yield over 3%"'
           }
-          className="flex-1 box-border px-4 py-2.5 text-sm border border-border-main rounded-lg bg-input-bg text-text-main focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all shadow-inner disabled:opacity-60"
+          className="tg-input flex-1 box-border px-4 py-2.5 text-sm disabled:opacity-60"
         />
         <button
           type="button"
           onClick={submit}
           disabled={disabled || atCap || !value.trim()}
-          className="px-5 py-2.5 rounded-lg text-sm font-bold bg-gradient-to-r from-primary to-[#057a37] text-white shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:hover:scale-100"
+          className="tg-btn tg-btn-primary !text-sm !px-5"
         >
           Refine
         </button>
@@ -63,7 +63,7 @@ const RefineSearchBar: React.FC<RefineSearchBarProps> = ({
           {activeRefinements.map((r, i) => (
             <span
               key={`${r}-${i}`}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-ink-up border border-primary/25"
             >
               {r}
               <button
@@ -71,7 +71,7 @@ const RefineSearchBar: React.FC<RefineSearchBarProps> = ({
                 onClick={() => onRemove(i)}
                 disabled={disabled}
                 aria-label={`Remove refinement: ${r}`}
-                className="text-primary/70 hover:text-primary font-bold leading-none disabled:opacity-50"
+                className="text-ink-up/70 hover:text-ink-up font-bold leading-none disabled:opacity-50"
               >
                 ×
               </button>

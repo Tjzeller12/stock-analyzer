@@ -35,7 +35,7 @@ const ColumnCustomizer: React.FC<ColumnCustomizerProps> = ({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="px-3 py-1.5 font-semibold text-xs rounded-md transition-all duration-200 bg-form-bg text-text-main border border-border-main/30 hover:border-primary/40 hover:text-primary"
+        className="tg-btn"
         aria-expanded={open}
         aria-haspopup="dialog"
       >
@@ -45,14 +45,14 @@ const ColumnCustomizer: React.FC<ColumnCustomizerProps> = ({
         <div
           role="dialog"
           aria-label="Customize table columns"
-          className="absolute right-0 z-50 mt-2 w-72 max-h-96 overflow-y-auto rounded-lg border border-border-main/20 bg-form-bg p-3 shadow-xl text-left"
+          className="tg-pane absolute right-0 z-50 mt-2 w-72 max-h-96 overflow-y-auto p-3 text-left !rounded-xl"
         >
           <div className="flex items-center justify-between mb-2">
             <p className="text-xs font-semibold text-text-main">Table columns</p>
             <button
               type="button"
               onClick={onReset}
-              className="text-[11px] font-semibold text-primary hover:underline"
+              className="text-[11px] font-semibold text-ink-up hover:underline"
             >
               Reset
             </button>

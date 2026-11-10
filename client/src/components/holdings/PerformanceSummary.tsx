@@ -1,5 +1,7 @@
 import React from "react";
 import { PerformanceSummary as PerformanceSummaryData } from "../../types";
+import { LedTone, toneFor } from "../../utils/ledTone";
+import LedText, { LedDisplay } from "../common/LedText";
 
 interface PerformanceSummaryProps {
   performance: PerformanceSummaryData;
@@ -10,20 +12,20 @@ const STALE_AFTER_MS = 24 * 60 * 60 * 1000; // flag data older than a day (P11)
 const fmtMoney = (v: number | null | undefined) =>
   v == null ? "—" : v.toLocaleString(undefined, { style: "currency", currency: "USD" });
 
-const StatTile: React.FC<{ label: string; value: string; tone?: "up" | "down" | "neutral" }> = ({
+const StatTile: React.FC<{ label: string; value: string; tone?: LedTone }> = ({
   label,
   value,
-  tone = "neutral",
-}) => {
-  const color =
-    tone === "up" ? "text-primary" : tone === "down" ? "text-red-400" : "text-text-main";
-  return (
-    <div className="flex-1 min-w-[140px] p-3 rounded-lg bg-glass-bg border border-border-main/20">
-      <p className="text-xs text-text-main/60 font-semibold uppercase tracking-wide">{label}</p>
-      <p className={`text-xl font-extrabold mt-1 ${color}`}>{value}</p>
-    </div>
-  );
-};
+  tone = "text",
+}) => (
+  <div className="flex-1 min-w-[180px] text-left">
+    <p className="m-0 mb-1.5 text-[10px] text-text-main/55 font-semibold uppercase tracking-[0.14em]">{label}</p>
+    <LedDisplay pitch="md" layerClassName="px-4 py-3">
+      <p className="m-0 text-[26px]">
+        <LedText tone={tone}>{value}</LedText>
+      </p>
+    </LedDisplay>
+  </div>
+);
 
 /**
  * Headline performance card. All figures derive from broker cost basis (P5).
@@ -32,7 +34,7 @@ const StatTile: React.FC<{ label: string; value: string; tone?: "up" | "down" | 
 const PerformanceSummary: React.FC<PerformanceSummaryProps> = ({ performance }) => {
   const ret = performance.total_return ?? 0;
   const retPct = performance.total_return_pct ?? 0;
-  const tone = ret > 0 ? "up" : ret < 0 ? "down" : "neutral";
+  const tone = toneFor(ret);
 
   const lastSynced = performance.last_synced ? new Date(performance.last_synced) : null;
   const isStale = lastSynced ? Date.now() - lastSynced.getTime() > STALE_AFTER_MS : false;
@@ -58,7 +60,7 @@ const PerformanceSummary: React.FC<PerformanceSummaryProps> = ({ performance }) 
           <>
             Last synced {lastSynced.toLocaleString()}
             {isStale && (
-              <span className="ml-2 px-2 py-0.5 rounded-full bg-yellow-500/15 text-yellow-500 font-semibold">
+              <span className="ml-2 px-2 py-0.5 rounded-full bg-signal-flat/15 text-signal-flat font-semibold">
                 Stale — sync to refresh
               </span>
             )}
