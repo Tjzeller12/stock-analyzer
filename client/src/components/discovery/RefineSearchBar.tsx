@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 
 interface RefineSearchBarProps {
-  onSubmit: (modifier: string) => void;
+  onSearch: (pendingText: string) => void;
+  onAddFilter: (modifier: string) => void;
   onRemove: (index: number) => void;
   onClear: () => void;
   activeRefinements: string[];
@@ -10,11 +11,11 @@ interface RefineSearchBarProps {
 }
 
 /**
- * Chat-style modifier input. Submitting appends a refinement; active refinements
- * render as removable chips so the user can see (and prune) the running context.
+ * Edits the draft filters and submits them when the user searches.
  */
 const RefineSearchBar: React.FC<RefineSearchBarProps> = ({
-  onSubmit,
+  onSearch,
+  onAddFilter,
   onRemove,
   onClear,
   activeRefinements,
@@ -23,38 +24,47 @@ const RefineSearchBar: React.FC<RefineSearchBarProps> = ({
 }) => {
   const [value, setValue] = useState("");
 
-  const submit = () => {
+  const addFilter = () => {
     const trimmed = value.trim();
     if (!trimmed || disabled || atCap) return;
-    onSubmit(trimmed);
+    onAddFilter(trimmed);
     setValue("");
   };
 
   return (
-    <div className="w-full flex flex-col gap-3">
-      <div className="flex gap-2">
+    <form
+      className="w-full flex flex-col gap-3"
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (disabled) return;
+        onSearch(atCap ? "" : value);
+        setValue("");
+      }}
+    >
+      <div className="flex flex-wrap gap-2">
         <input
           type="text"
+          aria-label="Search instructions (optional)"
           value={value}
           disabled={disabled || atCap}
           onChange={(e) => setValue(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") submit();
-          }}
           placeholder={
             atCap
               ? "Refinement limit reached — remove one to add another"
               : 'e.g. "Exclude EV companies" or "Prefer dividend yield over 3%"'
           }
-          className="tg-input flex-1 box-border px-4 py-2.5 text-sm disabled:opacity-60"
+          className="tg-input min-w-0 flex-1 basis-full sm:basis-auto box-border px-4 py-2.5 text-sm disabled:opacity-60"
         />
         <button
           type="button"
-          onClick={submit}
+          onClick={addFilter}
           disabled={disabled || atCap || !value.trim()}
-          className="tg-btn tg-btn-primary !text-sm !px-5"
+          className="tg-btn !text-sm !px-5"
         >
-          Refine
+          Add filter
+        </button>
+        <button type="submit" disabled={disabled} className="tg-btn tg-btn-primary !text-sm !px-5">
+          Search
         </button>
       </div>
 
@@ -87,7 +97,7 @@ const RefineSearchBar: React.FC<RefineSearchBarProps> = ({
           </button>
         </div>
       )}
-    </div>
+    </form>
   );
 };
 

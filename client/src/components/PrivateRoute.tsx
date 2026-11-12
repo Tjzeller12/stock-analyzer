@@ -1,11 +1,13 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 
 interface PrivateRouteProps {
   children: JSX.Element;
 }
 
 const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
+  // The protected layout stays mounted, so recheck the session on navigation.
+  useLocation();
   const token = localStorage.getItem('token');
 
   if (!token) {
