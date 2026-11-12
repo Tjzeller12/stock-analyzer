@@ -1,4 +1,5 @@
 import datetime
+import math
 from app import db, cache
 from app.models import StockMaster
 import requests
@@ -82,14 +83,11 @@ def get_in_depth_financials(symbol):
         km_data = km_response.json()[0] if km_response.json() else {}
         stock_master = StockMaster.query.filter_by(symbol=symbol).first()
         if stock_master:
-
-            # Update the stock master with the new in-depth financial data
-            stock_master.free_cash_flow = safe_float(cf_data.get("freeCashFlow", 0))
-            stock_master.debt_to_equity = safe_float(bs_data.get("totalDebt", 0)) / safe_float(bs_data.get("totalStockholdersEquity", 1))  # Calculated
-            stock_master.roic = safe_float(km_data.get("roic", 0))
-            stock_master.price_to_fc = safe_float(km_data.get("pfcfRatio", 0))
+            # Scoring columns (free_cash_flow, debt_to_equity, roic, price_to_fc)
+            # and last_fundamental_update belong to the Alpha Vantage ingest in
+            # stock_manager. Writing FMP's definitions here put two meanings in
+            # one column, depending on whether someone had opened the stock page.
             stock_master.cash_and_equiv = safe_float(bs_data.get("cashAndCashEquivalents", 0))
-            stock_master.last_fundamental_update = datetime.datetime.now()
 
             db.session.commit()
 
@@ -112,6 +110,32 @@ def get_news_data(filter):
     #Convert it to JSON data
     data = req.json()
     return data
+
+# Strings providers send in place of a number they don't have.
+_PROVIDER_PLACEHOLDERS = {"", "none", "-", "nan", "null", "n/a", "na"}
+
+
+def parse_provider_number(value):
+    """
+    A provider value as a finite float, or None when there is no real number.
+
+    Alpha Vantage sends "None", "-", or "" for values it doesn't have, such as a
+    P/E for a loss-maker or EV/EBITDA for a bank. safe_float turns those into
+    0.0, and a fake 0.0 ranks as the cheapest or safest stock in the universe.
+    NaN and infinity are rejected too: float("NaN") parses, and one NaN poisons
+    every mean and score it touches. A literal "0" stays 0.0. Whether a zero is
+    believable is the validity layer's call, not the parser's.
+    """
+    if value is None:
+        return None
+    if isinstance(value, str) and value.strip().lower() in _PROVIDER_PLACEHOLDERS:
+        return None
+    try:
+        number = float(value)
+    except (ValueError, TypeError):
+        return None
+    return number if math.isfinite(number) else None
+
 
 # Safely converts a value to a float
 def safe_float(value, default=0.0):

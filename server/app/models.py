@@ -172,7 +172,12 @@ class StockMaster(db.Model):
     ai_news_summary = db.Column(db.Text)
     ai_moat_score = db.Column(db.Float)         
     ai_moat_summary = db.Column(db.Text)
-    
+
+    # --- Scoring inputs: signs that decide whether a ratio means anything ---
+    # (planning/14-radar-scoring-refinement/phase-1-design.md §3.1)
+    eps_ttm = db.Column(db.Float)   # diluted EPS, trailing twelve months
+    ebitda = db.Column(db.Float)    # trailing twelve months
+
     # --- Update Tracking ---
     last_stock_update = db.Column(db.DateTime)      
     last_fundamental_update = db.Column(db.DateTime) 
@@ -181,6 +186,9 @@ class StockMaster(db.Model):
     income_statement_history = db.Column(db.JSON) 
     cash_flow_history = db.Column(db.JSON)
     news_sentiment_data = db.Column(db.JSON)
+    # Kept so later metrics can be derived without calling the provider again.
+    overview_raw = db.Column(db.JSON)
+    balance_sheet_history = db.Column(db.JSON)
 
     # --- Relationships ---
     news = db.relationship('StockNews', backref='stock', uselist=False, cascade='all, delete-orphan') # One to one relationship with news table
