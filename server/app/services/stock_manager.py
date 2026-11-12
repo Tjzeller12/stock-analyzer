@@ -3,8 +3,9 @@ from app import db
 from app.models import Stock, StockMaster
 import concurrent.futures
 from app.constants import AlphaVantageFunction
-from app.services.alpha_api import safe_float, get_av_json, get_stock_price
+from app.services.alpha_api import safe_float, parse_provider_number, get_av_json, get_stock_price
 from app.alphaBot import get_moat_analysis, get_news_analysis
+from app.alphaBot.analysis import AI_FALLBACK_SUMMARY
 from flask import current_app
 from app.utils.normalization import update_global_and_sector_stats
 
@@ -28,28 +29,92 @@ def calculate_insider_volume(insider_data):
     return net_volume
 
 def calculate_cash_flow_metrics(cf_json):
-    """Takes AV CASH_FLOW JSON, returns: Free Cash Flow, Operating Cash Flow, CapEx"""
+    """
+    Takes AV CASH_FLOW JSON, returns: Free Cash Flow, Operating Cash Flow, CapEx.
+
+    A value the provider didn't report is None. FCF needs both inputs: a missing
+    capex used to read as 0 and made FCF equal operating cash flow.
+    """
     try:
         latest = cf_json.get("annualReports", [])[0]
-        ocf = safe_float(latest.get("operatingCashflow"))
-        capex = safe_float(latest.get("capitalExpenditures"))
-        return (ocf - capex), ocf, capex
+        ocf = parse_provider_number(latest.get("operatingCashflow"))
+        capex = parse_provider_number(latest.get("capitalExpenditures"))
     except (IndexError, AttributeError, TypeError):
         return None, None, None
+    fcf = (ocf - capex) if ocf is not None and capex is not None else None
+    return fcf, ocf, capex
 
 def calculate_balance_sheet_metrics(bs_json):
     """Takes AV BALANCE_SHEET JSON, returns: Debt-to-Equity, Liabilities, Equity, Assets, Cash"""
     try:
         latest = bs_json.get("annualReports", [])[0]
-        liabs = safe_float(latest.get("totalLiabilities"))
-        equity = safe_float(latest.get("totalShareholderEquity"))
-        assets = safe_float(latest.get("totalAssets"))
-        cash = safe_float(latest.get("cashAndCashEquivalentsAtCarryingValue"))
-        
-        de_ratio = (liabs / equity) if equity and equity != 0 else 0.0
-        return de_ratio, liabs, equity, assets, cash
+        liabs = parse_provider_number(latest.get("totalLiabilities"))
+        equity = parse_provider_number(latest.get("totalShareholderEquity"))
+        assets = parse_provider_number(latest.get("totalAssets"))
+        cash = parse_provider_number(latest.get("cashAndCashEquivalentsAtCarryingValue"))
     except (IndexError, AttributeError, TypeError):
         return None, None, None, None, None
+
+    # Still liabilities over equity; the true debt ratio is a later change
+    # (planning/14-radar-scoring-refinement/phase-1-design.md §0.2). Zero or
+    # unknown equity has no ratio: the old 0.0 ranked as the least leveraged
+    # company there is. Negative equity keeps its negative ratio, and the
+    # scoring layer reads the sign of equity to treat it as unfavorable.
+    de_ratio = (liabs / equity) if liabs is not None and equity not in (None, 0) else None
+    return de_ratio, liabs, equity, assets, cash
+
+
+def _has_annual_reports(statement_json):
+    """True when a statement payload carries data, not a rate-limit note or an empty body."""
+    return isinstance(statement_json, dict) and bool(statement_json.get("annualReports"))
+
+
+def _analyst_count(overview, *keys):
+    """Sum of the given analyst-rating counts, or None when none of them was reported."""
+    reported = [v for v in (parse_provider_number(overview.get(k)) for k in keys) if v is not None]
+    return int(sum(reported)) if reported else None
+
+
+def _overview_fields(overview):
+    """
+    StockMaster columns read from an AV OVERVIEW payload.
+
+    Anything the provider didn't report is None, never 0.0. Provider field names
+    stay in this module so the data source can be swapped later.
+    """
+    def num(key):
+        return parse_provider_number(overview.get(key))
+
+    market_cap = num("MarketCapitalization")
+    return {
+        "name": overview.get("Name"),
+        "sector": overview.get("Sector"),
+        "industry": overview.get("Industry"),
+        "description": overview.get("Description"),
+        "market_cap": int(market_cap) if market_cap is not None else None,
+        "pe_ratio": num("PERatio"),
+        "forward_pe": num("ForwardPE"),
+        "peg_ratio": num("PEGRatio"),
+        "ev_to_ebitda": num("EVToEBITDA"),
+        "price_to_sales": num("PriceToSalesRatioTTM"),
+        "price_to_book": num("PriceToBookRatio"),
+        "dividend_yield": num("DividendYield"),
+        "roe": num("ReturnOnEquityTTM"),
+        "roa": num("ReturnOnAssetsTTM"),
+        "operating_margin": num("OperatingMarginTTM"),
+        "profit_margin": num("ProfitMargin"),
+        "rev_growth_qoq": num("QuarterlyRevenueGrowthYOY"),
+        "eps_growth_qoq": num("QuarterlyEarningsGrowthYOY"),
+        "beta": num("Beta"),
+        # Signs the scoring layer needs: a loss-maker's P/E and a negative
+        # EBITDA's EV/EBITDA must rank as expensive, not as missing or cheap.
+        "eps_ttm": num("DilutedEPSTTM"),
+        "ebitda": num("EBITDA"),
+        "buy_ratings_count": _analyst_count(overview, "AnalystRatingBuy", "AnalystRatingStrongBuy"),
+        "hold_ratings_count": _analyst_count(overview, "AnalystRatingHold"),
+        "sell_ratings_count": _analyst_count(overview, "AnalystRatingSell", "AnalystRatingStrongSell"),
+        "overview_raw": overview,
+    }
 
 
 # Adds a stock to the MasterStocks
@@ -98,112 +163,59 @@ def add_to_master(symbol):
             and bool(overview.get("Name"))
         )
 
-        # Calculate everything using the raw JSON payloads
-        insider_volume = calculate_insider_volume(insider)
-        fcf, ocf, capex = calculate_cash_flow_metrics(cash_flow_json)
-        de_ratio, liabs, equity, assets, cash = calculate_balance_sheet_metrics(balance_sheet_json)
-
-        # Map overview attributes cleanly
-        market_cap_val = overview.get("MarketCapitalization")
-        market_cap = int(safe_float(market_cap_val)) if market_cap_val else None
-
+        # One field map for new and existing rows, so both follow the same
+        # rules: a payload that came back empty or rate-limited leaves the
+        # stored values alone, and a value the provider didn't report is None.
         volume_val = global_quote_data.get("06. volume")
         volume = int(safe_float(volume_val)) if volume_val else None
+        cash_flow_ok = _has_annual_reports(cash_flow_json)
+        balance_sheet_ok = _has_annual_reports(balance_sheet_json)
 
-        if stock_master:
-            stock_master.price = price
-            if overview_has_data:
-                stock_master.name = overview.get("Name")
-                stock_master.sector = overview.get("Sector")
-                stock_master.industry = overview.get("Industry")
-                stock_master.description = overview.get("Description")
-                stock_master.market_cap = market_cap
-                stock_master.pe_ratio = safe_float(overview.get("PERatio"))
-                stock_master.forward_pe = safe_float(overview.get("ForwardPE"))
-                stock_master.peg_ratio = safe_float(overview.get("PEGRatio"))
-                stock_master.ev_to_ebitda = safe_float(overview.get("EVToEBITDA"))
-                stock_master.price_to_sales = safe_float(overview.get("PriceToSalesRatioTTM"))
-                stock_master.price_to_book = safe_float(overview.get("PriceToBookRatio"))
-                stock_master.dividend_yield = safe_float(overview.get("DividendYield"))
-                stock_master.roe = safe_float(overview.get("ReturnOnEquityTTM"))
-                stock_master.roa = safe_float(overview.get("ReturnOnAssetsTTM"))
-                stock_master.operating_margin = safe_float(overview.get("OperatingMarginTTM"))
-                stock_master.profit_margin = safe_float(overview.get("ProfitMargin"))
-                stock_master.rev_growth_qoq = safe_float(overview.get("QuarterlyRevenueGrowthYOY"))
-                stock_master.eps_growth_qoq = safe_float(overview.get("QuarterlyEarningsGrowthYOY"))
-                stock_master.beta = safe_float(overview.get("Beta"))
-                stock_master.buy_ratings_count = int(safe_float(overview.get("AnalystRatingBuy"))) + int(safe_float(overview.get("AnalystRatingStrongBuy")))
-                stock_master.hold_ratings_count = int(safe_float(overview.get("AnalystRatingHold")))
-                stock_master.sell_ratings_count = int(safe_float(overview.get("AnalystRatingSell"))) + int(safe_float(overview.get("AnalystRatingStrongSell")))
+        fields = {"price": price}
+        if overview_has_data:
+            fields.update(_overview_fields(overview))
 
-            if global_quote_data and volume is not None:
-                stock_master.price_change_percent = safe_float(global_quote_data.get("10. change percent", "0").replace('%', ''))
-                stock_master.volume = volume
+        if global_quote_data and volume is not None:
+            fields["price_change_percent"] = safe_float(global_quote_data.get("10. change percent", "0").replace('%', ''))
+            fields["volume"] = volume
 
-            if ocf is not None:
-                stock_master.free_cash_flow = fcf
-                stock_master.operating_cash_flow = ocf
-                stock_master.capital_expenditures = capex
-                stock_master.cash_flow_history = cash_flow_json
-                
-            if assets is not None:
-                stock_master.debt_to_equity = de_ratio
-                stock_master.total_liabilities = liabs
-                stock_master.total_shareholder_equity = equity
-                stock_master.total_assets = assets
-                stock_master.cash_and_equiv = cash
-            
-            if news and "Information" not in news:
-                stock_master.news_sentiment_data = news
-            if insider and "Information" not in insider:
-                stock_master.insider_volume = insider_volume
-                
-            stock_master.last_stock_update = datetime.datetime.now()
-        else:
-            stock_master = StockMaster(
-                symbol=symbol,
-                price=price,
-                name=overview.get("Name") if overview_has_data else symbol,
-                sector=overview.get("Sector") if overview_has_data else None,
-                industry=overview.get("Industry") if overview_has_data else None,
-                description=overview.get("Description") if overview_has_data else None,
-                market_cap=market_cap if overview_has_data else None,
-                pe_ratio=safe_float(overview.get("PERatio")) if overview_has_data else None,
-                forward_pe=safe_float(overview.get("ForwardPE")) if overview_has_data else None,
-                peg_ratio=safe_float(overview.get("PEGRatio")) if overview_has_data else None,
-                ev_to_ebitda=safe_float(overview.get("EVToEBITDA")) if overview_has_data else None,
-                price_to_sales=safe_float(overview.get("PriceToSalesRatioTTM")) if overview_has_data else None,
-                price_to_book=safe_float(overview.get("PriceToBookRatio")) if overview_has_data else None,
-                dividend_yield=safe_float(overview.get("DividendYield")) if overview_has_data else None,
-                roe=safe_float(overview.get("ReturnOnEquityTTM")) if overview_has_data else None,
-                roa=safe_float(overview.get("ReturnOnAssetsTTM")) if overview_has_data else None,
-                operating_margin=safe_float(overview.get("OperatingMarginTTM")) if overview_has_data else None,
-                profit_margin=safe_float(overview.get("ProfitMargin")) if overview_has_data else None,
-                rev_growth_qoq=safe_float(overview.get("QuarterlyRevenueGrowthYOY")) if overview_has_data else None,
-                eps_growth_qoq=safe_float(overview.get("QuarterlyEarningsGrowthYOY")) if overview_has_data else None,
-                beta=safe_float(overview.get("Beta")) if overview_has_data else None,
-                buy_ratings_count=int(safe_float(overview.get("AnalystRatingBuy", 0))) + int(safe_float(overview.get("AnalystRatingStrongBuy", 0))) if overview_has_data else 0,
-                hold_ratings_count=int(safe_float(overview.get("AnalystRatingHold", 0))) if overview_has_data else 0,
-                sell_ratings_count=int(safe_float(overview.get("AnalystRatingSell", 0))) + int(safe_float(overview.get("AnalystRatingStrongSell", 0))) if overview_has_data else 0,
-                price_change_percent=safe_float(global_quote_data.get("10. change percent", "0").replace('%', '')),
-                volume=volume,
+        if cash_flow_ok:
+            fcf, ocf, capex = calculate_cash_flow_metrics(cash_flow_json)
+            fields.update(
                 free_cash_flow=fcf,
                 operating_cash_flow=ocf,
                 capital_expenditures=capex,
+                cash_flow_history=cash_flow_json,
+            )
+
+        if balance_sheet_ok:
+            de_ratio, liabs, equity, assets, cash = calculate_balance_sheet_metrics(balance_sheet_json)
+            fields.update(
                 debt_to_equity=de_ratio,
                 total_liabilities=liabs,
                 total_shareholder_equity=equity,
                 total_assets=assets,
                 cash_and_equiv=cash,
-                news_sentiment_data=news,
-                cash_flow_history=cash_flow_json,
-                insider_volume=insider_volume,
-                last_stock_update=datetime.datetime.now(),
-                income_statement_history={},
-                roic=0.0,
-                price_to_fc=0.0,
-            )    
+                balance_sheet_history=balance_sheet_json,
+            )
+
+        if news and "Information" not in news:
+            fields["news_sentiment_data"] = news
+        if insider and "Information" not in insider:
+            fields["insider_volume"] = calculate_insider_volume(insider)
+
+        now = datetime.datetime.now()
+        fields["last_stock_update"] = now
+        # The fundamentals clock moves only when fundamentals actually arrived,
+        # so a rate-limited refresh no longer makes old numbers look new.
+        if overview_has_data and (cash_flow_ok or balance_sheet_ok):
+            fields["last_fundamental_update"] = now
+
+        if not stock_master:
+            stock_master = StockMaster(symbol=symbol, name=symbol, income_statement_history={})
             db.session.add(stock_master)
+        for column, value in fields.items():
+            setattr(stock_master, column, value)
 
         db.session.commit()
 
@@ -259,14 +271,15 @@ def get_ai_analysis_metrics(app, stock_id):
 
         try:
             # 1. Get News
+            # A missing score stays empty. A default of 50 ranked as a real opinion.
             news_result = get_news_analysis(stock)
-            stock.ai_news_score = news_result.get("ai_news_score", 50)
-            stock.ai_news_summary = news_result.get("ai_news_summary", "Analysis failed.")
+            stock.ai_news_score = news_result.get("ai_news_score")
+            stock.ai_news_summary = news_result.get("ai_news_summary", AI_FALLBACK_SUMMARY)
 
             # 2. Get Moat
             moat_result = get_moat_analysis(stock)
-            stock.ai_moat_score = moat_result.get("ai_moat_score", 50)
-            stock.ai_moat_summary = moat_result.get("ai_moat_summary", "Analysis failed.")
+            stock.ai_moat_score = moat_result.get("ai_moat_score")
+            stock.ai_moat_summary = moat_result.get("ai_moat_summary", AI_FALLBACK_SUMMARY)
 
             print(f"[{stock.symbol}] AI news and moat analysis complete")
             db.session.commit()
