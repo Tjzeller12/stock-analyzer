@@ -18,6 +18,10 @@ NEWS_ANALYSIS_PROMPT = os.path.join(BASE_DIR, "prompts/news_analysis.md")
 MOAT_ANALYSIS_PROMPT = os.path.join(BASE_DIR, "prompts/moat_analysis.md")
 SUPER_PROMPT_PROMPT = os.path.join(BASE_DIR, "prompts/super_prompt.md")
 
+# Summary stored with an empty score when an AI analysis fails. Some older rows
+# hold a score of 50 next to this text; the scoring layer treats those as missing.
+AI_FALLBACK_SUMMARY = "Analysis failed or unavailable."
+
 # Scope types for Radar stats
 
 GLOBAL = 'global'
