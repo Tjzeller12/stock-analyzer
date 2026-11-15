@@ -84,9 +84,8 @@ def get_in_depth_financials(symbol):
         stock_master = StockMaster.query.filter_by(symbol=symbol).first()
         if stock_master:
             # Scoring columns (free_cash_flow, debt_to_equity, roic, price_to_fc)
-            # and last_fundamental_update belong to the Alpha Vantage ingest in
-            # stock_manager. Writing FMP's definitions here put two meanings in
-            # one column, depending on whether someone had opened the stock page.
+            # and last_fundamental_update are written only by the Alpha Vantage
+            # ingest in stock_manager, so each column has one definition.
             stock_master.cash_and_equiv = safe_float(bs_data.get("cashAndCashEquivalents", 0))
 
             db.session.commit()

@@ -11,7 +11,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from app import db
-from app.alphaBot.analysis import AI_FALLBACK_SUMMARY, MoatAnalysis, NewsAnalysis
+from app.alphaBot.analysis import MoatAnalysis, NewsAnalysis
+from app.constants import AI_FALLBACK_SUMMARY
 from app.constants import AlphaVantageFunction as AV
 from app.models import StockMaster
 from app.services.alpha_api import get_in_depth_financials, parse_provider_number
@@ -127,7 +128,7 @@ class TestStatementHelpers:
         assert calculate_cash_flow_metrics(_cash_flow("1000", "300")) == (700.0, 1000.0, 300.0)
 
     def test_fcf_is_none_when_capex_is_missing(self):
-        # A missing capex used to read as 0, which made FCF equal operating cash flow.
+        # Without capex there is no FCF; it must not fall back to operating cash flow.
         assert calculate_cash_flow_metrics(_cash_flow("1000", "None")) == (None, 1000.0, None)
 
     def test_rate_limited_cash_flow_has_no_values(self):
@@ -185,7 +186,7 @@ class TestAddToMaster:
     def test_new_row_gets_no_placeholder_zeros(self, app):
         stock = _ingest(app, "TNEW", _provider(overview=_overview(MarketCapitalization="None")))
 
-        # These used to be created as 0.0 and wait for an FMP call that never succeeded.
+        # Columns the ingest doesn't fill yet stay empty rather than 0.0.
         assert stock.roic is None
         assert stock.price_to_fc is None
         assert stock.market_cap is None

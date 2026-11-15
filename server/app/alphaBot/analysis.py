@@ -15,13 +15,8 @@ from abc import ABC, abstractmethod
 
 from app.alphaBot.client import AlphaBotClient
 from app.alphaBot.prompt import PromptTemplate, PromptNotFoundError
-from app.constants import NEWS_ANALYSIS_PROMPT, MOAT_ANALYSIS_PROMPT
+from app.constants import AI_FALLBACK_SUMMARY, MOAT_ANALYSIS_PROMPT, NEWS_ANALYSIS_PROMPT
 from app.models import StockMaster
-
-# Summary stored when an analysis fails. The score is left empty rather than
-# set to 50, which ranked as a real opinion. Rows written before that change
-# still hold a 50 next to this text, so the scoring layer looks for it.
-AI_FALLBACK_SUMMARY = "Analysis failed or unavailable."
 
 
 class StructuredAlphaBotAnalysis(ABC):

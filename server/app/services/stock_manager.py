@@ -2,10 +2,9 @@ import datetime
 from app import db
 from app.models import Stock, StockMaster
 import concurrent.futures
-from app.constants import AlphaVantageFunction
+from app.constants import AI_FALLBACK_SUMMARY, AlphaVantageFunction
 from app.services.alpha_api import safe_float, parse_provider_number, get_av_json, get_stock_price
 from app.alphaBot import get_moat_analysis, get_news_analysis
-from app.alphaBot.analysis import AI_FALLBACK_SUMMARY
 from flask import current_app
 from app.utils.normalization import update_global_and_sector_stats
 
@@ -32,8 +31,8 @@ def calculate_cash_flow_metrics(cf_json):
     """
     Takes AV CASH_FLOW JSON, returns: Free Cash Flow, Operating Cash Flow, CapEx.
 
-    A value the provider didn't report is None. FCF needs both inputs: a missing
-    capex used to read as 0 and made FCF equal operating cash flow.
+    A value the provider didn't report is None, and FCF is None unless both
+    operating cash flow and capex were reported.
     """
     try:
         latest = cf_json.get("annualReports", [])[0]
@@ -55,11 +54,10 @@ def calculate_balance_sheet_metrics(bs_json):
     except (IndexError, AttributeError, TypeError):
         return None, None, None, None, None
 
-    # Still liabilities over equity; the true debt ratio is a later change
-    # (planning/14-radar-scoring-refinement/phase-1-design.md §0.2). Zero or
-    # unknown equity has no ratio: the old 0.0 ranked as the least leveraged
-    # company there is. Negative equity keeps its negative ratio, and the
-    # scoring layer reads the sign of equity to treat it as unfavorable.
+    # TODO(radar Phase 1b): switch to total debt / equity and keep this ratio as
+    # liabilities_to_equity (planning/14-radar-scoring-refinement/phase-1-design.md §0.3).
+    # Zero or unknown equity has no ratio. Negative equity keeps its negative
+    # ratio; the scoring layer reads the sign of equity to treat it as unfavorable.
     de_ratio = (liabs / equity) if liabs is not None and equity not in (None, 0) else None
     return de_ratio, liabs, equity, assets, cash
 
@@ -207,7 +205,7 @@ def add_to_master(symbol):
         now = datetime.datetime.now()
         fields["last_stock_update"] = now
         # The fundamentals clock moves only when fundamentals actually arrived,
-        # so a rate-limited refresh no longer makes old numbers look new.
+        # so a rate-limited refresh doesn't make stored numbers look fresh.
         if overview_has_data and (cash_flow_ok or balance_sheet_ok):
             fields["last_fundamental_update"] = now
 
@@ -271,7 +269,7 @@ def get_ai_analysis_metrics(app, stock_id):
 
         try:
             # 1. Get News
-            # A missing score stays empty. A default of 50 ranked as a real opinion.
+            # A failed analysis leaves the score empty, so it can't rank as a real opinion.
             news_result = get_news_analysis(stock)
             stock.ai_news_score = news_result.get("ai_news_score")
             stock.ai_news_summary = news_result.get("ai_news_summary", AI_FALLBACK_SUMMARY)
