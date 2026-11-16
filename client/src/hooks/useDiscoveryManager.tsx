@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { DISCOVERY_ENDPOINTS, PORTFOLIO_ENDPOINTS } from "../constants/api";
 import { DiscoveryRecommendation, DiscoveryResponse } from "../types";
@@ -15,17 +15,17 @@ export interface UseDiscoveryManager {
   hasProfile: boolean;
   hasGenerated: boolean;
 
-  generate: () => Promise<void>;
-  refine: (modifier: string) => Promise<void>;
-  removeRefinement: (index: number) => Promise<void>;
-  clearRefinements: () => Promise<void>;
+  generate: (pendingText?: string) => Promise<void>;
+  addRefinement: (modifier: string) => void;
+  removeRefinement: (index: number) => void;
+  clearRefinements: () => void;
   goToStock: (ticker: string) => void;
   addToPortfolio: (ticker: string) => Promise<void>;
 }
 
 /**
  * Manages the client-held discovery "session". The server is stateless, so this
- * hook owns the ordered refinement list and resends the full list on every run.
+ * hook owns the ordered draft and sends the full list when the user searches.
  * `loading` is always cleared in a `finally` so skeletons never strand (P8).
  */
 export const useDiscoveryManager = (): UseDiscoveryManager => {
@@ -36,14 +36,22 @@ export const useDiscoveryManager = (): UseDiscoveryManager => {
   const [error, setError] = useState<string | null>(null);
   const [hasProfile, setHasProfile] = useState(false);
   const [hasGenerated, setHasGenerated] = useState(false);
+  const searchInFlight = useRef(false);
 
-  /** Run discovery with an explicit refinement list (kept pure so callers control state). */
-  const run = useCallback(async (nextRefinements: string[]) => {
+  const generate = useCallback(async (pendingText = "") => {
+    if (searchInFlight.current) return;
+    searchInFlight.current = true;
+
+    const trimmed = pendingText.trim();
+    const submittedRefinements = trimmed && refinements.length < MAX_REFINEMENTS
+      ? [...refinements, trimmed]
+      : refinements;
+    setRefinements(submittedRefinements);
     setLoading(true);
     setError(null);
     try {
       const data = await authPost<DiscoveryResponse>(DISCOVERY_ENDPOINTS.GENERATE, {
-        refinements: nextRefinements,
+        refinements: submittedRefinements,
       });
       setRecommendations(Array.isArray(data?.recommendations) ? data.recommendations : []);
       setHasProfile(Boolean(data?.generated_from?.has_profile));
@@ -53,44 +61,26 @@ export const useDiscoveryManager = (): UseDiscoveryManager => {
       setError("Couldn't generate recommendations. Please try again.");
       setRecommendations([]);
     } finally {
+      searchInFlight.current = false;
       setLoading(false);
     }
+  }, [refinements]);
+
+  const addRefinement = useCallback((modifier: string) => {
+    const trimmed = modifier.trim();
+    if (!trimmed || searchInFlight.current) return;
+    setRefinements((draft) => draft.length < MAX_REFINEMENTS ? [...draft, trimmed] : draft);
   }, []);
 
-  const generate = useCallback(async () => {
-    await run(refinements);
-  }, [run, refinements]);
+  const removeRefinement = useCallback((index: number) => {
+    if (searchInFlight.current) return;
+    setRefinements((draft) => draft.filter((_, i) => i !== index));
+  }, []);
 
-  const refine = useCallback(
-    async (modifier: string) => {
-      const trimmed = modifier.trim();
-      if (!trimmed || loading) return;
-      if (refinements.length >= MAX_REFINEMENTS) {
-        setError(`You can apply at most ${MAX_REFINEMENTS} refinements.`);
-        return;
-      }
-      const next = [...refinements, trimmed]; // append-only, order-preserving (P4)
-      setRefinements(next);
-      await run(next);
-    },
-    [run, refinements, loading]
-  );
-
-  const removeRefinement = useCallback(
-    async (index: number) => {
-      if (loading) return;
-      const next = refinements.filter((_, i) => i !== index);
-      setRefinements(next);
-      await run(next);
-    },
-    [run, refinements, loading]
-  );
-
-  const clearRefinements = useCallback(async () => {
-    if (loading) return;
+  const clearRefinements = useCallback(() => {
+    if (searchInFlight.current) return;
     setRefinements([]);
-    await run([]);
-  }, [run, loading]);
+  }, []);
 
   const goToStock = useCallback(
     (ticker: string) => {
@@ -113,7 +103,7 @@ export const useDiscoveryManager = (): UseDiscoveryManager => {
     hasProfile,
     hasGenerated,
     generate,
-    refine,
+    addRefinement,
     removeRefinement,
     clearRefinements,
     goToStock,

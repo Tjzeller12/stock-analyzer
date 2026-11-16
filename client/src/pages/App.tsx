@@ -4,7 +4,7 @@ import {
     BrowserRouter as Router,
     Routes,
 } from "react-router-dom";
-import DiscoveryPage from "./DiscoveryPage";
+import DiscoveryPage, { DiscoverySession } from "./DiscoveryPage";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import LoginPage from "./LoginPage";
 import MainPage from "./MainPage";
@@ -28,47 +28,13 @@ function App() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/login" element={<LoginPage />} />
           
-          {/* Protected Routes */}
-          <Route 
-            path="/onboarding" 
-            element={
-              <PrivateRoute>
-                <OnboardingPage />
-              </PrivateRoute>
-            } 
-          />
-          <Route 
-            path="/profile" 
-            element={
-              <PrivateRoute>
-                <ProfilePage />
-              </PrivateRoute>
-            } 
-          />
-          <Route 
-            path="/main" 
-            element={
-              <PrivateRoute>
-                <MainPage />
-              </PrivateRoute>
-            } 
-          />
-          <Route 
-            path="/discovery" 
-            element={
-              <PrivateRoute>
-                <DiscoveryPage />
-              </PrivateRoute>
-            } 
-          />
-          <Route 
-            path="/stock/:symbol" 
-            element={
-              <PrivateRoute>
-                <StockPage />
-              </PrivateRoute>
-            } 
-          />
+          <Route element={<PrivateRoute><DiscoverySession /></PrivateRoute>}>
+            <Route path="/onboarding" element={<OnboardingPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/main" element={<MainPage />} />
+            <Route path="/discovery" element={<DiscoveryPage />} />
+            <Route path="/stock/:symbol" element={<StockPage />} />
+          </Route>
           
           <Route path="/" element={<Navigate replace to="/login" />} />
         </Routes>
