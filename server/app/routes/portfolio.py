@@ -3,7 +3,7 @@ from app import db, cache
 from app.models import Stock, StockMaster
 from sqlalchemy import desc
 from app.routes.auth import get_current_user
-from app.services.stock_manager import add_stock, add_to_master
+from app.services.stock_manager import add_stock, add_to_master, needs_ingest
 from app.services.alpha_api import *
 
 from flask import abort
@@ -124,7 +124,7 @@ def stock_sort_by():
         result_list = []
         for s in stocks:
             print(f" - Found stock: {s.stock_master.symbol}")
-            if s.stock_master.market_cap is None:
+            if needs_ingest(s.stock_master):
                 updated_master = add_to_master(s.stock_master.symbol)
                 # Ensure we don't crash if hitting API limit during auto-heal
                 if not isinstance(updated_master, dict):

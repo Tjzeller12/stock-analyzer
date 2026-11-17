@@ -9,7 +9,7 @@ from sqlalchemy import desc
 from datetime import timedelta
 from app.services.alpha_api import *
 from app.services.news_manager import *
-from app.services.stock_manager import add_to_master
+from app.services.stock_manager import add_to_master, needs_ingest
 from app.routes.auth import login_required
 
 bp = Blueprint('data', __name__)
@@ -81,12 +81,14 @@ def stock_data():
     
     # First check if the stock exists in StockMaster
     stock_master = StockMaster.query.filter_by(symbol=symbol).first()
-    if not stock_master or stock_master.market_cap is None:
-        print(f"Stock {symbol} not found in StockMaster or missing flat data")  # Debug log
-        # Try to add it to master (or update existing)
-        stock_master = add_to_master(symbol)
-        if isinstance(stock_master, dict) and "error" in stock_master:
-            return jsonify({"error": stock_master["error"]}), 404
+    if needs_ingest(stock_master):
+        ingested = add_to_master(symbol)
+        if isinstance(ingested, dict) and "error" in ingested:
+            # A stored row is still worth showing when a refresh fails.
+            if not stock_master:
+                return jsonify({"error": ingested["error"]}), 404
+        else:
+            stock_master = ingested
 
     # Return the stock data directly from StockMaster
     if stock_master:

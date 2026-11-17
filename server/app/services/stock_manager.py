@@ -1,9 +1,15 @@
 import datetime
-from app import db
+from app import db, cache
 from app.models import Stock, StockMaster
 import concurrent.futures
 from app.constants import AI_FALLBACK_SUMMARY, AlphaVantageFunction
-from app.services.alpha_api import safe_float, parse_provider_number, get_av_json, get_stock_price
+from app.services.alpha_api import (
+    get_av_json,
+    get_stock_price,
+    is_provider_error,
+    parse_provider_number,
+    safe_float,
+)
 from app.alphaBot import get_moat_analysis, get_news_analysis
 from flask import current_app
 from app.utils.normalization import update_global_and_sector_stats
@@ -67,6 +73,34 @@ def _has_annual_reports(statement_json):
     return isinstance(statement_json, dict) and bool(statement_json.get("annualReports"))
 
 
+# How long a stored row waits before another ingest attempt, after one that
+# couldn't finish (rate limit, no price). Process-local until the shared cache
+# lands (planning/13-cost-efficiency/design.md rank 4).
+INGEST_RETRY_COOLDOWN_SECONDS = 3600
+
+
+def _ingest_attempt_key(symbol):
+    return f"ingest_attempt:{symbol}"
+
+
+def needs_ingest(stock_master):
+    """
+    Whether opening or listing a stock should run the full ingest.
+
+    Only a stock we have never cleanly asked about needs one. A row whose
+    fundamentals call was answered, even with nothing (ETFs, crypto, some
+    foreign tickers have no company data), is served as stored; refreshing
+    stale rows is feature 13's freshness clock, not this check. A row whose
+    last attempt failed waits out INGEST_RETRY_COOLDOWN_SECONDS, so a quota
+    error doesn't turn every page view into another six calls.
+    """
+    if stock_master is None:
+        return True
+    if stock_master.market_cap is not None or stock_master.last_fundamental_update is not None:
+        return False
+    return not cache.get(_ingest_attempt_key(stock_master.symbol))
+
+
 def _analyst_count(overview, *keys):
     """Sum of the given analyst-rating counts, or None when none of them was reported."""
     reported = [v for v in (parse_provider_number(overview.get(k)) for k in keys) if v is not None]
@@ -120,6 +154,7 @@ def add_to_master(symbol):
     try:
         stock_master = StockMaster.query.filter_by(symbol=symbol).first()
         app = current_app._get_current_object()
+        cache.set(_ingest_attempt_key(symbol), True, timeout=INGEST_RETRY_COOLDOWN_SECONDS)
 
         def run_with_context(func, *args, **kwargs):
             with app.app_context():
@@ -150,16 +185,13 @@ def add_to_master(symbol):
 
         # Price is the hard requirement — no price means invalid symbol or full rate limit.
         if not price:
+            reason = "provider error" if is_provider_error(quote) else "no price in quote"
+            current_app.logger.warning("Ingest of %s stopped: %s", symbol, reason)
             return {"error": f"Price unavailable or API limit reached for symbol: {symbol}"}
 
         # Overview is optional: ETFs (USO, SPY, etc.) return {} from AV.
         # We still add them — they just won't have fundamental metrics.
-        overview_has_data = (
-            bool(overview)
-            and "Information" not in overview
-            and "Note" not in overview
-            and bool(overview.get("Name"))
-        )
+        overview_has_data = not is_provider_error(overview) and bool(overview.get("Name"))
 
         # One field map for new and existing rows, so both follow the same
         # rules: a payload that came back empty or rate-limited leaves the
@@ -204,9 +236,10 @@ def add_to_master(symbol):
 
         now = datetime.datetime.now()
         fields["last_stock_update"] = now
-        # The fundamentals clock moves only when fundamentals actually arrived,
-        # so a rate-limited refresh doesn't make stored numbers look fresh.
-        if overview_has_data and (cash_flow_ok or balance_sheet_ok):
+        # The fundamentals clock moves when the provider answered every
+        # fundamentals call, including with nothing (an ETF's {}), so a
+        # rate-limited refresh never makes stored numbers look fresh.
+        if not any(is_provider_error(p) for p in (overview, balance_sheet_json, cash_flow_json)):
             fields["last_fundamental_update"] = now
 
         if not stock_master:

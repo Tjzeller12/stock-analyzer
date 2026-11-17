@@ -110,6 +110,23 @@ def get_news_data(filter):
     data = req.json()
     return data
 
+# Keys Alpha Vantage uses, in a 200 response, to say the request failed:
+# rate limits ("Note", "Information") and bad requests ("Error Message").
+_PROVIDER_ERROR_KEYS = ("Note", "Information", "Error Message")
+
+
+def is_provider_error(payload):
+    """
+    True when a payload is a failed request rather than an answer.
+
+    An empty dict is an answer: Alpha Vantage sends {} for an ETF's OVERVIEW
+    and statements, which means "this symbol has no company data".
+    """
+    if not isinstance(payload, dict):
+        return True
+    return any(key in payload for key in _PROVIDER_ERROR_KEYS)
+
+
 # Strings providers send in place of a number they don't have.
 _PROVIDER_PLACEHOLDERS = {"", "none", "-", "nan", "null", "n/a", "na"}
 
