@@ -31,6 +31,7 @@ export const DATA_ENDPOINTS = {
 // AlphaBot endpoints
 export const ALPHA_BOT_ENDPOINTS = {
     BASE: `${API_BASE_URL}/alphaBot`,
+    USAGE: `${API_BASE_URL}/alphaBot/usage`,
     COMPARE: `${API_BASE_URL}/alphaBot/compare_analysis`,
     USER_QUERY: `${API_BASE_URL}/alphaBot/user_query`,
     IN_DEPTH: `${API_BASE_URL}/alphaBot/in_depth_analysis`,
@@ -54,5 +55,26 @@ export const PROFILE_ENDPOINTS = {
 export const RADAR_ENDPOINTS = {
     SINGLE: `${API_BASE_URL}/radar/single`,
     COMPARE: `${API_BASE_URL}/radar/compare`,
+} as const;
+
+// Brokerage import endpoints
+export const BROKERAGE_ENDPOINTS = {
+    CONNECT_START: `${API_BASE_URL}/brokerage/connect/start`,
+    CONNECT_CALLBACK: `${API_BASE_URL}/brokerage/connect/callback`,
+    SYNC: `${API_BASE_URL}/brokerage/sync`,
+    HOLDINGS: `${API_BASE_URL}/brokerage/holdings`,
+    DISCONNECT: `${API_BASE_URL}/brokerage/disconnect`,
+    PUBLISH: `${API_BASE_URL}/brokerage/publish`,
+} as const;
+
+// Discovery endpoints
+export const DISCOVERY_ENDPOINTS = {
+    GENERATE: `${API_BASE_URL}/discovery/generate`,
+} as const;
+
+export const TEMPLATE_ENDPOINTS = {
+    LIST: `${API_BASE_URL}/templates`,
+    ONE: (id: number) => `${API_BASE_URL}/templates/${id}`,
+    CLONE: (id: number) => `${API_BASE_URL}/templates/${id}/clone`,
 } as const;
 

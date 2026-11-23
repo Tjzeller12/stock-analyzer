@@ -158,6 +158,40 @@ class TestNewsRoute:
             )
         assert resp.status_code == 404
 
+    def test_persist_failure_returns_json_and_keeps_stale(self, client, auth_headers, app):
+        """A DB write failure must return JSON (not an empty crash) and keep cached news."""
+        with app.app_context():
+            f = Filter.query.filter_by(filter_name="all").first()
+            if not f:
+                f = Filter(filter_name="all")
+                db.session.add(f)
+                db.session.commit()
+            GeneralStockNews.query.filter_by(filter_id=f.id).delete()
+            stale = GeneralStockNews(
+                filter_id=f.id,
+                title="Stale Article",
+                summary="Still useful.",
+                link="https://example.com/stale",
+                image_link="",
+                news_company="CacheSource",
+                time_published=datetime.datetime.now() - datetime.timedelta(hours=2),
+                last_news_update=datetime.datetime.now() - datetime.timedelta(hours=2),
+            )
+            db.session.add(stale)
+            db.session.commit()
+
+        with patch("app.routes.stock_data.get_news_data", return_value=make_av_feed(2)), \
+             patch("app.routes.stock_data.process_news_data", side_effect=Exception("value too long")):
+            resp = client.post(
+                "/data/news",
+                json={"filter": "all"},
+                headers=auth_headers,
+            )
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert isinstance(data, list)
+        assert data[0]["title"] == "Stale Article"
+
 
 # ------------------------------------------------------------------ #
 # Unit tests: process_news_data()                                      #

@@ -1,51 +1,63 @@
 import React from 'react';
 import { Stock } from '../types';
+import { toneFor } from '../utils/ledTone';
+import LedText, { LedDisplay } from './common/LedText';
 
 interface StockHeaderProps {
     stock: Stock | null;
-    onLogoClick: () => void;
-    logo: string;
 }
 
-const StockHeader: React.FC<StockHeaderProps> = ({ stock, onLogoClick, logo}) => {
+const RATINGS = [
+    { key: 'buy_ratings_count', label: 'Buy', tone: 'up' },
+    { key: 'hold_ratings_count', label: 'Hold', tone: 'flat' },
+    { key: 'sell_ratings_count', label: 'Sell', tone: 'down' },
+] as const;
 
-    const holdRating = stock?.hold_ratings_count !== undefined && stock.hold_ratings_count !== null ? stock.hold_ratings_count : "N/A";
-    const sellRating = stock?.sell_ratings_count !== undefined && stock.sell_ratings_count !== null ? stock.sell_ratings_count : "N/A";
+/**
+ * Quote board for the stock page: identity + price on the left, analyst
+ * ratings on the right, all as LED readouts on a glass pane.
+ */
+const StockHeader: React.FC<StockHeaderProps> = ({ stock }) => {
+    const pct = stock?.price_change_percent;
+    const tone = toneFor(pct);
+    const arrow = tone === 'up' ? '▲' : tone === 'down' ? '▼' : '■';
 
     return (
-        <header className="flex justify-between items-center w-full min-h-[60px] bg-primary text-white font-bold px-6 py-2 box-border shadow-md">
-            <div className="flex items-center gap-4">
-                <h1 className="text-3xl text-white m-0 whitespace-nowrap tracking-tight drop-shadow-sm font-extrabold">
-                    {stock ? `${stock.symbol} - ${stock.name || 'Unknown Company'}` : "Loading..."}
-                </h1>
-                <div className="flex justify-center items-center flex-row text-white text-xl font-bold gap-2 ml-4">
-                    <div>${stock?.price.toFixed(2)}</div>
+        <section className="tg-pane flex flex-wrap items-center justify-between gap-5 p-4 w-full">
+            <div className="flex flex-wrap items-center gap-4 text-left min-w-0">
+                <LedDisplay pitch="md" layerClassName="flex items-baseline gap-5 px-5 py-3 text-[30px]">
+                    <LedText>{stock?.symbol ?? '····'}</LedText>
+                    <LedText>{stock ? `$${stock.price.toFixed(2)}` : '—'}</LedText>
+                    {pct != null && (
+                        <LedText tone={tone} className="text-[22px]">
+                            {arrow} {pct > 0 ? '+' : ''}{pct.toFixed(2)}%
+                        </LedText>
+                    )}
+                </LedDisplay>
+                <div className="min-w-0">
+                    <h1 className="m-0 text-xl font-bold tracking-tight truncate">
+                        {stock ? stock.name || 'Unknown Company' : 'Loading…'}
+                    </h1>
+                    {stock?.sector && (
+                        <p className="m-0 mt-0.5 text-[11px] font-mono uppercase tracking-[0.12em] text-text-main/50">
+                            {stock.sector}{stock.industry ? ` · ${stock.industry}` : ''}
+                        </p>
+                    )}
                 </div>
             </div>
-            <div className="flex items-center gap-6">
-                <div className="flex justify-between items-center gap-2 bg-list-bg p-2 rounded-lg text-center shadow-lg border border-border-main/20 backdrop-blur-md">
-                    <div className="flex justify-center items-center flex-row gap-2 bg-primary text-white rounded-md px-2 py-1 shadow-inner">
-                        <span className="flex justify-center items-center text-xs font-bold text-white mb-px">Buy Rating</span>
-                        <div className="font-extrabold text-sm">{stock?.buy_ratings_count}</div>
+
+            <div className="flex items-end gap-2">
+                {RATINGS.map(({ key, label, tone: ratingTone }) => (
+                    <div key={key} className="flex flex-col items-center gap-1">
+                        <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-text-main/55">{label}</span>
+                        <LedDisplay pitch="md" layerClassName="px-3.5 py-2 text-[24px] min-w-[64px] text-center">
+                            <LedText tone={ratingTone}>{stock?.[key] ?? '—'}</LedText>
+                        </LedDisplay>
                     </div>
-                    <div className="flex justify-center items-center flex-row gap-2 bg-yellow-500 text-white rounded-md px-2 py-1 shadow-inner">
-                        <span className="flex justify-center items-center text-xs font-bold text-white mb-px">Hold Rating</span>
-                        <div className="font-extrabold text-sm">{holdRating}</div>
-                    </div>
-                    <div className="flex justify-center items-center flex-row gap-2 bg-red-500 text-white rounded-md px-2 py-1 shadow-inner">
-                        <span className="flex justify-center items-center text-xs font-bold text-white mb-px">Sell Rating</span>
-                        <div className="font-extrabold text-sm">{sellRating}</div>
-                    </div>
-                </div>
-                <img
-                    src={logo}
-                    alt="Stock Market Logo"
-                    onClick={onLogoClick}
-                    className="cursor-pointer max-h-[40px] w-auto hover:scale-105 transition-transform duration-300 ease-in-out"
-                />
+                ))}
             </div>
-        </header>
-    )
-}
+        </section>
+    );
+};
 
 export default StockHeader;

@@ -7,3 +7,16 @@ export const AVAILABLE_VARIABLES = [
   'eps_growth_qoq', 'debt_to_equity', 'beta', 'insider_volume',
   'ai_news_score', 'ai_moat_score'
 ];
+
+/**
+ * Scale prefixes a formula can apply to any variable above.
+ * An unprefixed name is already the percentile rank, so `pct_` is just an
+ * explicit alias for the default. The others exist for the rarer formula that
+ * needs distance-from-average rather than rank.
+ */
+export const VARIABLE_PREFIXES = [
+  { prefix: 'pct_', label: 'Percentile rank, 0-1. Same as using the bare name.' },
+  { prefix: 'z_', label: 'Standard deviations from the group average. Keeps the size of a gap, not just its order.' },
+  { prefix: 'mm_', label: 'Raw min-max, 0-1. One extreme company squashes everyone else, so prefer pct_.' },
+];
+

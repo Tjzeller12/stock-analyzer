@@ -1,6 +1,12 @@
 # Design — Search Autocomplete (Alpha Vantage SYMBOL_SEARCH)
 
-> **Status:** Design (awaiting alignment) · **Owner:** TBD · **Last updated:** 2026-06-13
+> **Status:** Shipped (live search) · **Owner:** Michael · **Last updated:** 2026-08-27
+>
+> **What shipped:** `StockSearchInput` + `GET /data/search` (`search_provider.py`) — debounced live Alpha Vantage lookup, keyboard/mouse pick, wired into add-stock. Replaces typing a raw ticker.
+>
+> **Not done (optional later):** the original local-first in-memory index (`/data/symbol_index`, `useSymbolSearch`). Useful if AV rate limits hurt, not a blocker. Leave the tasks below as a polish backlog.
+>
+> Original design follows for that optional work.
 >
 > Scope: a high-performance ticker search/autocomplete on the MainPage. Typing resolves instantly against a **local in-memory index** (no network for common tickers), falling back to the Alpha Vantage `SYMBOL_SEARCH` endpoint only for misses. Selecting a result adds the stock (reusing the existing `addStock`) or navigates to it.
 >

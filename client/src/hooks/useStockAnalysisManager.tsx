@@ -87,16 +87,16 @@ export const useStockAnalysisManager = (symbol: string | undefined) => {
         stock_symbol: symbol,
         user_query: trimmed,
       });
-    } catch {
+    } catch (e: unknown) {
+      const status = (e as { response?: { status?: number } })?.response?.status;
+      const errMsg = status === 429
+        ? "You've used all 3 of your free AlphaBot queries for today. Come back tomorrow!"
+        : 'Error fetching response.';
       setChatMessages((prev) => {
         const updated = [...prev];
         const last = updated[updated.length - 1];
         if (last?.role === 'assistant') {
-          updated[updated.length - 1] = {
-            ...last,
-            content: 'Error fetching response.',
-            isStreaming: false,
-          };
+          updated[updated.length - 1] = { ...last, content: errMsg, isStreaming: false };
         }
         return updated;
       });

@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { HORIZON_OPTIONS, QUESTIONNAIRE } from '../../constants/onboarding';
+import { ROUTER_FUTURE } from '../../constants/router';
 import OnboardingPage from '../OnboardingPage';
 import { authPut } from '../../utils/api';
 
@@ -18,7 +19,7 @@ vi.mock('react-router-dom', async (importOriginal) => {
 
 const renderPage = () =>
   render(
-    <MemoryRouter>
+    <MemoryRouter future={ROUTER_FUTURE}>
       <OnboardingPage />
     </MemoryRouter>
   );

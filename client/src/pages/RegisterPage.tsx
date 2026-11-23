@@ -2,10 +2,10 @@
  * RegisterPage component
  * Handles new user registration, capturing username, email, password, and investor preferences.
  */
+import { useGoogleLogin } from "@react-oauth/google";
 import axios from "axios";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useGoogleLogin } from "@react-oauth/google";
 import Card from "../components/common/Card";
 import { AUTH_ENDPOINTS } from "../constants/api";
 import logo from "../resources/alphaBotLogo.png";
@@ -64,19 +64,15 @@ const RegisterPage: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col justify-center items-center p-5 font-sans min-h-screen bg-background text-text-main relative overflow-hidden">
-      {/* Decorative background blur */}
-      <div className="absolute top-[-10%] right-[-10%] w-[40vw] h-[40vw] rounded-full bg-primary/20 blur-[100px] -z-10 animate-pulse"></div>
-      <div className="absolute bottom-[-10%] left-[-10%] w-[40vw] h-[40vw] rounded-full bg-blue-400/10 blur-[100px] -z-10 animate-pulse delay-1000"></div>
-
+    <div className="flex flex-col justify-center items-center p-5 font-sans min-h-screen text-text-main relative overflow-x-hidden">
       <h1 className="text-5xl font-extrabold mb-8 text-transparent bg-clip-text bg-linear-to-r from-primary to-green-500 tracking-tight drop-shadow-sm">AlphaBot</h1>
       <img src={logo} alt="Stock Market Logo" className="max-h-[200px] w-auto mb-5" />
 
-      <Card title="Register" className="w-full max-w-[400px] p-8 flex flex-col shadow-2xl border-white/20 relative z-10" variant="glass">
+      <Card title="Register" className="w-full max-w-[400px] p-8 flex flex-col" variant="glass">
         <form className="flex flex-col w-full" onSubmit={(e: React.FormEvent<HTMLFormElement>) => { void handleRegister(e); }}>
           <label htmlFor="email" className="text-sm font-semibold mb-2">Email</label>
           <input
-            className="w-full box-border p-3 text-base border border-border-main rounded-lg mb-5 bg-input-bg text-text-main focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all shadow-inner"
+            className="tg-input w-full box-border p-3 text-base mb-5"
             type="email"
             id="email"
             value={email}
@@ -85,7 +81,7 @@ const RegisterPage: React.FC = () => {
 
           <label htmlFor="username" className="text-sm font-semibold mb-2">Username</label>
           <input
-            className="w-full box-border p-3 text-base border border-border-main rounded-lg mb-5 bg-input-bg text-text-main focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all shadow-inner"
+            className="tg-input w-full box-border p-3 text-base mb-5"
             type="text"
             id="username"
             value={username}
@@ -94,7 +90,7 @@ const RegisterPage: React.FC = () => {
           <label htmlFor="password" className="text-sm font-semibold mb-2">Password</label>
           <div className="flex items-center w-full mb-8 relative">
             <input
-              className="w-full p-3 text-base border border-border-main rounded-lg bg-input-bg text-text-main focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all shadow-inner"
+              className="tg-input w-full p-3 text-base"
               type={showPassword ? "text" : "password"}
               id="password"
               value={password}
@@ -117,7 +113,7 @@ const RegisterPage: React.FC = () => {
           <div className="flex flex-col gap-4 mt-2">
             <button 
               type="submit"
-              className="w-full bg-linear-to-r from-primary to-[#057a37] text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:shadow-primary/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
+              className="tg-btn tg-btn-primary w-full !text-base !py-3 !px-4"
             >
               Create Account
             </button>
@@ -131,7 +127,7 @@ const RegisterPage: React.FC = () => {
             <button
               type="button"
               onClick={() => handleGoogleLogin()}
-              className="w-full flex items-center justify-center gap-3 bg-white text-gray-700 font-semibold py-3 px-4 rounded-lg shadow hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 border border-gray-200"
+              className="w-full flex items-center justify-center gap-3 bg-white text-gray-700 font-semibold py-3 px-4 rounded-lg border border-gray-200"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -145,7 +141,7 @@ const RegisterPage: React.FC = () => {
             <button 
               type="button" 
               onClick={() => navigate("/login")}
-              className="w-full bg-transparent border border-border-main text-text-main font-semibold py-3 px-4 rounded-lg hover:bg-row-hover hover:border-text-main/30 active:scale-[0.98] transition-all duration-200"
+              className="tg-btn w-full !text-base !py-3 !px-4"
             >
               Back to Login
             </button>

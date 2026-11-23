@@ -1,13 +1,14 @@
 # Design — Radar & Table Refinement
 
-> **Status:** Design (awaiting alignment) · **Owner:** TBD · **Last updated:** 2026-06-13
+> **Status:** Implemented on `radar-table-refinement` · **Owner:** Thomas · **Last updated:** 2026-08-31
 >
-> Scope: three related polish/customization items on the MainPage portfolio table and radar:
-> 1. **Customizable table columns** — ship the most-used statistics by default, let the user add/remove columns.
+> Scope: make the MainPage analysis surface customizable *and* less exhausting to use:
+> 1. **Customizable table columns** — ship the most-used statistics by default, let the user add/remove columns. After feature 10, one picker drives **both** Watchlist and My Portfolio via the shared metric-column builders.
 > 2. **Removable radar axes** — let the user drop axes they don't care about (e.g. keep only 3 of the 6), reflected in both the table mini-radar and the detail radar.
-> 3. **Advanced panel restyle** — present the equation builder more clearly (grouped axes, inline validation, add/remove-axis controls).
+> 3. **Advanced panel restyle + light mode** — clearer equation builder (grouped axes, inline validation, add/remove-axis) using theme tokens so it is readable in light mode (today it is hardcoded dark: `bg-[#1a1c23]`, `bg-black/40`, `text-gray-300`).
+> 4. **MainPage density + progressive compare** — no empty compare chrome; Compare jumps to results; **deterministic charts (radar now, allocation in 07) render first** so the user has something to look at while the LLM analysis streams in.
 >
-> **Reuses / touches:** `StockTable` (AG Grid `columnDefs`, currently a hardcoded array), `AdvancedSettingsPanel` + `FormulaBuilder` (`RadarTemplate`), `RadarGraph`, `score_engine.py` (already evaluates each axis equation independently over arbitrary keys), and the per-stock radar "traffic light" health color (currently hardcodes a 6-axis / 600-max assumption).
+> **Reuses / touches:** MainPage stock table(s) (`StockTable` on `main`; Watchlist + Portfolio after 10 merges), `AdvancedSettingsPanel` + `FormulaBuilder` (`RadarTemplate`), `RadarGraph`, `score_engine.py` (already evaluates each axis equation independently over arbitrary keys), and the per-stock radar "traffic light" health color (currently hardcodes a 6-axis / 600-max assumption).
 
 ---
 
@@ -44,7 +45,17 @@ The backend already supports arbitrary radar axes: `evaluate_equations` iterates
 
 - **Health color must scale with the active axis count.** The "traffic light" is recomputed from the **average** axis score (0–100), not a fixed 600 sum, so a 3-axis radar and a 6-axis radar are colored on the same scale. This is a bug fix that becomes mandatory once axis count is variable. See **P3**.
 
-- **Table prefs live in `localStorage`; axis selection lives in the `RadarTemplate`.** Column visibility/order is a lightweight UI pref (client-only, instant). The active axis set is part of the template (so it's saved/shared by the community-templates feature). Personalization (feature 01) may *suggest* defaults but never overwrites the user's saved prefs. See **P6**, **P7**.
+- **Table prefs live in `localStorage`; axis selection lives in the `RadarTemplate`.** Column visibility/order is a lightweight UI pref (client-only, instant). The active axis set is part of the template (so it's saved/shared by the community-templates feature). Feature 08 later auto-applies a profile-matched default when the user has no owned templates; until then, 06 uses `DEFAULT_VISIBLE_COLUMNS`. A user who has already customized columns is never silently reset. See **P6**, **P7**.
+
+- **One column picker, every stock table.** Metric columns come from a shared registry. Watchlist-only (remove) and portfolio-only (qty / cost / PnL) columns stay structural and are not in the picker. Toggling "P/E" hides it in both tables. See **P1**, **P5**.
+
+- **Empty compare chrome does not occupy the page.** Compare Radar, Portfolio Distribution, and Comparison Analysis mount only after the user clicks Compare (or when a prior result is restored). News stays. See **P11**.
+
+- **Deterministic charts first; LLM analysis second.** Compare already fetches `/radar/compare` before starting the analysis stream. The results region leads with Radar (and Distribution). Those cards fill as soon as their data exists and must not wait on `compareResult`. The analysis card may keep streaming below. Feature 07 swaps the doughnut off Claude onto the allocation engine so it can fill on the same fast path as radar. See **P12**, **P14**.
+
+- **Compare is a jump, not a scavenger hunt.** Clicking Compare starts radar + analysis and `scrollIntoView`s `#compare-results` (the chart row), so the user lands on the radar, not the tables. See **P12**.
+
+- **Advanced panel uses theme tokens, not hardcoded dark surfaces.** Light mode must keep contrast on labels, chips, formula help, and buttons. See **P13**.
 
 - **Guardrails: never zero columns, never zero axes.** The customizer enforces at least one data column and the axis manager enforces at least one axis, so the grid and radar can't be rendered empty. See **P4**.
 
@@ -54,6 +65,7 @@ The backend already supports arbitrary radar axes: `evaluate_equations` iterates
 2. `StockTable` builds `columnDefs` from the registry filtered/ordered by prefs; `ColumnCustomizer` toggles update prefs and persist.
 3. The radar cell renderer computes color via `healthColor(scores, activeAxes)`.
 4. In `AdvancedSettingsPanel`, adding/removing an axis edits `template.equations`; "Apply" pushes the new template (with its axis set) through the existing `/radar/*` calls, which return scores for exactly the active axes.
+5. Compare click → `#compare-results` scrolls into view → `/radar/compare` paints the radar as soon as scores return → analysis stream fills the markdown card independently. Doughnut stays gated on its own data (Claude today, allocation engine in 07).
 
 ---
 
@@ -188,7 +200,7 @@ The radar, symbol, select, and remove columns are not user-removable and are alw
 Column visibility/order and the active axis set survive reloads: column prefs from `localStorage`, axes from the active template. Reopening the app reproduces the user's exact table and radar configuration.
 
 ### P7 — Personalization suggestions never overwrite user prefs
-A suggested default column set or template from feature 01 is applied only on an explicit opt-in and never silently replaces a configuration the user has already customized (shared invariant with feature 01's P7).
+A suggested default column set or template is applied only on first run (feature 08: no owned templates) or explicit opt-in, and never silently replaces a configuration the user has already customized (shared invariant with feature 01's P7 / 08's P15).
 
 ### P8 — Adding an axis can never produce NaN
 A newly added axis starts with a safe default equation that evaluates to a finite, in-range score (clamped 0–100 by the engine). An axis with a not-yet-written formula renders as a neutral value, never `NaN`/blank.
@@ -199,11 +211,25 @@ The active axis set drives both the in-row mini radar and the full-page detail r
 ### P10 — Default column set is deterministic
 With no saved prefs, the visible columns are exactly `DEFAULT_VISIBLE_COLUMNS` (the `defaultVisible` registry entries) in registry order — the same "common statistics" set for every fresh user.
 
+### P11 — Empty compare cards do not take layout space
+Until the user has started a compare (or restored a prior one), Radar / Distribution / Analysis cards are not rendered. Reloading with no active compare restores the compact layout. News is unaffected.
+
+### P12 — Compare scrolls the user to the charts
+Activating Compare brings `#compare-results` into view (smooth scroll, start-aligned) as soon as the click is handled. The region **leads with the deterministic charts**, so the user is looking at radar (and later allocation) while analysis is still loading.
+
+### P13 — Advanced panel is theme-correct in light and dark
+The panel and formula help use CSS/theme tokens (`bg-form-bg`, `text-text-main`, `border-border-main`, etc.). Hardcoded dark-only colors (`#1a1c23`, `black/40`, `gray-300`, `hover:text-white`) are not acceptable. Light mode keeps readable contrast on every control.
+
+### P14 — Charts are not blocked on the LLM
+Compare Radar renders as soon as `compareRadarScores` exists. It must not sit behind `compareLoading` / `compareResult` from the analysis stream. Portfolio Distribution renders as soon as *its* data exists (doughnut payload today; allocation plan in feature 07) and likewise must not wait on the analysis markdown. The analysis card may show its own loading/streaming state.
+
 ---
 
 ## 5. Resolved decisions (confirmed)
 
-1. **Columns = registry-driven; defaults = the common-stats subset; structural columns fixed.**
+1. **Columns = registry-driven; defaults = the common-stats subset; structural columns fixed.** One picker applies to every MainPage stock table.
 2. **Axes = `RadarTemplate` keys; add/remove via the restyled advanced panel; engine unchanged.**
-3. **Health color rescaled to average-based thresholds** (fixes the 6-axis assumption — applies to both `StockTable` and `StockPage`).
+3. **Health color rescaled to average-based thresholds** (fixes the 6-axis assumption — applies to table radar cells and `StockPage`).
 4. **Column prefs in `localStorage`; axis set in the template** (server-side pref persistence deferred to feature 08).
+5. **MainPage: hide empty compare cards; Compare auto-scrolls to the chart row; radar (and later doughnut) paint before the LLM analysis.**
+6. **Advanced panel restyle includes a light-mode token pass**, not just layout.

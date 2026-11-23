@@ -1,6 +1,6 @@
 # Design — Personalization & Onboarding
 
-> **Status:** Design (awaiting alignment) · **Owner:** TBD · **Last updated:** 2026-06-13
+> **Status:** Implemented · **Owner:** Thomas · **Last updated:** 2026-08-27
 >
 > Scope: the user-profiling foundation that the rest of the discovery/personalization features depend on. Three deliverables:
 > 1. **Investor Profiling Questionnaire** — a multi-step, scenario-based onboarding flow that captures behavioral risk tolerance, time horizon, and budget.
@@ -355,8 +355,8 @@ def suggest_default_template(profile) -> dict:
     Map a profile to a starting RadarTemplate dict (same shape as
     AdvancedSettingsPanel.DEFAULT_TEMPLATE). e.g. Aggressive+Long → weight Growth/
     Efficiency higher; Conservative → weight Stability/Valuation higher.
-    NEVER overwrites a user's saved custom template — it is only a *suggested*
-    starting point surfaced in the UI. See Correctness Property P7.
+    NEVER mutates saved templates. Feature 08 auto-applies the matching seeded
+    default only when the user has zero owned templates (P7 / 08-P15).
     """
     ...
 
@@ -467,7 +467,7 @@ There is no artificial cap below the number of canonical sectors — a user may 
 `persist_investor_profile` writes the `InvestorProfile` row and the two synced `User` columns inside a single transaction. If any part fails the whole commit rolls back, so the DB never reflects a half-applied profile (e.g. updated `User.budget` but stale `InvestorProfile.budget`).
 
 ### P7 — Personalization is additive, never destructive
-`suggest_default_template` only *proposes* a `RadarTemplate`; it never silently overwrites a template the user has saved or customized. The suggestion is surfaced as an opt-in ("Use suggested setup") and applying it is an explicit user action. A user's existing radar configuration is sacred.
+`suggest_default_template` is a lookup, not a writer. It never mutates saved templates. Feature 08 auto-applies the matching *seeded default* only when the user has **zero owned templates** (first run / incomplete-profile → Balanced). After the user saves or clones a template, their active view is sacred — including if they retake onboarding. See feature 08 **P15**.
 
 ### P8 — Budget is a single logical source of truth
 `InvestorProfile.budget` and `User.budget` are always equal after any successful write (`P6` guarantees atomicity). Reads may use either, but writes go through `persist_investor_profile`, which updates both. No code path mutates only one of them.

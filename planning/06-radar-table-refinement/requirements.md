@@ -1,6 +1,6 @@
 # Requirements — Radar & Table Refinement
 
-> Derived from `design.md`. Property tags reference design Correctness Properties.
+> Next feature. Derived from `design.md`.
 
 ---
 
@@ -39,3 +39,28 @@
 - THE SYSTEM SHALL group axes with per-axis enable/rename/remove controls and an "Add axis" action.
 - THE SYSTEM SHALL show inline validation state for each formula before "Apply".
 - THE SYSTEM SHALL not let personalization suggestions overwrite user prefs without explicit opt-in (P7).
+- THE SYSTEM SHALL style the panel with theme tokens so labels, chips, and help text are readable in light mode (P13).
+
+## R5 — MainPage density
+**User story:** As a user, I want the dashboard to show analysis I asked for, not a long page of empty cards.
+
+**Acceptance criteria:**
+- THE SYSTEM SHALL not render Compare Radar, Portfolio Distribution, or Comparison Analysis until a compare has been started or a prior result is restored (P11).
+- THE SYSTEM SHALL keep News visible independently of compare state.
+
+## R6 — Compare jumps to charts, then analysis fills in
+**User story:** As a user, I want Compare to show me the radar right away so I have something to look at while the write-up loads.
+
+**Acceptance criteria:**
+- WHEN the user clicks Compare, THE SYSTEM SHALL scroll `#compare-results` into view immediately (P12).
+- THE SYSTEM SHALL place Radar and Portfolio Distribution **before** Comparison Analysis in that region (P12).
+- THE SYSTEM SHALL render the radar as soon as `/radar/compare` scores exist, without waiting for the analysis stream (P14).
+- THE SYSTEM SHALL render the distribution chart as soon as its own data exists (Claude doughnut today; allocation engine in feature 07), without waiting for the analysis markdown (P14).
+- THE SYSTEM SHALL let Comparison Analysis show its own loading/streaming state independently.
+
+## R7 — One picker for every stock table
+**User story:** As a user, I want column choices to apply to Watchlist and My Portfolio together.
+
+**Acceptance criteria:**
+- THE SYSTEM SHALL drive metric columns from one registry × one `visibleColumns` list.
+- THE SYSTEM SHALL keep table-specific structural columns (remove vs qty/cost/PnL) out of the picker.

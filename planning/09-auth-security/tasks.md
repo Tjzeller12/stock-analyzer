@@ -1,6 +1,6 @@
 # Tasks — Authentication & Production Security Hardening
 
-> (Rn) requirement · (Pn) property. Reworks the auth mechanism while preserving the route contract (P12). Sequence carefully — this touches every protected route + the client transport.
+> Google OAuth login/register **shipped**. Remaining items are production hardening, **not the next feature**.
 
 - [ ] 1. Token service
   - [ ] 1.1 Create `server/app/services/token_service.py` — `issue_access_token` (jti, ~15m), `issue_refresh_token` (opaque, hashed, family), `verify_access_token` (sig/exp/type + blocklist check), `rotate_refresh` (reuse detection), `revoke_access`/`revoke_refresh_family` (R1, R2, P2, P6)

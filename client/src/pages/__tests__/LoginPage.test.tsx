@@ -3,11 +3,15 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import axios from 'axios';
+import { ROUTER_FUTURE } from '../../constants/router';
 import LoginPage from '../LoginPage';
 
 vi.mock('axios');
-// Mock logo import
 vi.mock('../../resources/alphaBotLogo.png', () => ({ default: 'logo.png' }));
+vi.mock('@react-oauth/google', () => ({
+  useGoogleLogin: () => vi.fn(),
+  GoogleOAuthProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
 
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async (importOriginal) => {
@@ -16,7 +20,7 @@ vi.mock('react-router-dom', async (importOriginal) => {
 });
 
 const renderLogin = () =>
-  render(<MemoryRouter><LoginPage /></MemoryRouter>);
+  render(<MemoryRouter future={ROUTER_FUTURE}><LoginPage /></MemoryRouter>);
 
 describe('LoginPage', () => {
   beforeEach(() => {

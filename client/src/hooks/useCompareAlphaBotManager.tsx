@@ -201,6 +201,7 @@ export const useCompareAlphaBotManager = () => {
      */
     const compareStocks = async (validSymbols: string[], template: RadarTemplate) => {
         setCompareError(null);
+        setCompareLoading(true);
         setCompareResult(null);
         setCompareRadarScores(null);
         localStorage.removeItem("compareResult");
@@ -216,16 +217,16 @@ export const useCompareAlphaBotManager = () => {
 
         if (symbols.length < 2) {
             setCompareError("Select at least 2 stocks to compare.");
+            setCompareLoading(false);
             return;
         }
         if (symbols.length > 10) {
             setCompareError("You can compare at most 10 stocks at once.");
+            setCompareLoading(false);
             return;
         }
 
         try {
-            setCompareLoading(true);
-
             // 1. FIRST: Await the Deterministic Radar Engine request
             const radarResult = await authPost<{scores: Record<string, Record<string, number>>}>(
                 RADAR_ENDPOINTS.COMPARE, 
@@ -251,7 +252,17 @@ export const useCompareAlphaBotManager = () => {
 
         } catch (err: unknown) {
             console.error("Comparison failed:", err);
-            setCompareError("Comparison failed. Please try again.");
+            if (
+                typeof err === "object" &&
+                err !== null &&
+                "response" in err &&
+                (err as { response?: { status?: number } }).response?.status === 429
+            ) {
+                setCompareError("You've used all 3 of your free AlphaBot queries for today. Come back tomorrow!");
+            } else {
+                setCompareError("Comparison failed. Please try again.");
+            }
+        } finally {
             setCompareLoading(false);
         }
     };

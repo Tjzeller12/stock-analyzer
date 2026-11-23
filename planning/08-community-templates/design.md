@@ -1,12 +1,14 @@
 # Design — Community Analysis Templates & Saveable Preferences
 
-> **Status:** Design (awaiting alignment) · **Owner:** TBD · **Last updated:** 2026-06-13
+> **Status:** After 06 · **Owner:** Thomas · **Last updated:** 2026-08-27
 >
-> Scope: let users **save their analysis configuration** (radar equations + normalization + scope + active axes + visible columns) as a named, reusable template; ship **3–4 default templates** for casual users; add a **"Save Current View as Template"** action; make **applying a template instantly update both the AG Grid column visibility and the radar/precedence state**; and build the **community** layer — public templates with creator attribution, **stars/likes** (a social popularity signal users can sort by), and — once brokerage data exists — real-world performance for credibility.
+> Scope: let users **save their analysis configuration** (radar equations + normalization + scope + active axes + visible columns) as a named, reusable template; ship **one high-quality default per investor `risk_tag`** (Conservative / Balanced / Growth / Aggressive) plus a clearly labeled Balanced fallback; add a **"Save Current View as Template"** action; make **applying a template instantly update both the AG Grid column visibility and the radar/precedence state**; **auto-apply the profile-matched default until the user has their own templates**; and build the **community** layer — public templates with creator attribution, **stars/likes**, and — once brokerage data exists — real-world performance for credibility.
+>
+> The defaults are the product. Placeholder copy ("Warren Buffett Value", "High-Risk Tech") is not acceptable. Each seeded template needs a written thesis, real `StockMaster` fields, and a ranking check against fixture stocks so it is genuinely useful for that investor type.
 >
 > **Two independent performance/credibility signals:** (1) **stars** — social popularity (how many users liked a template), and (2) **verified return** — real brokerage-backed performance (feature 10). They are surfaced side by side and are sortable independently; stars are available immediately, verified return only when brokerage data exists.
 >
-> **Reuses / extends:** the `AnalysisTemplate` model already exists (`name`, `description`, `creator_id`, `equations` JSON, `is_default`). This feature adds CRUD routes, default seeding (mirroring `seed_filters`), the template-config extension to carry the full `RadarTemplate` + column prefs (feature 06), and a template selector in the control panel.
+> **Reuses / extends:** the `AnalysisTemplate` model already exists (`name`, `description`, `creator_id`, `equations` JSON, `is_default`). Feature 01 already maps `risk_tag` → a suggested `RadarTemplate` in `personalization.suggest_default_template`. This feature **promotes those four presets into seeded, reviewed defaults** (single source of truth) and adds CRUD, community, and the apply policy. Depends on feature 06 (`visible_columns` registry).
 
 ---
 
@@ -48,7 +50,11 @@
 
 - **Apply is a non-destructive client state swap.** Applying a template sets `activeTemplate` and `visibleColumns`; it does **not** delete or overwrite the user's saved templates, and the user's current unsaved working config is simply replaced in memory (they can re-apply their own template to get it back). See **P2**.
 
-- **Defaults are seeded idempotently and are read-only.** `seed_default_templates()` runs at startup like `seed_filters()`; re-running is a no-op if the defaults already exist. Default templates (`is_default=True`, `creator_id=NULL`) cannot be edited or deleted by users — applying one that you want to tweak **clones** it into a new owned template. See **P1**, **P5**, **P6**.
+- **Defaults are seeded idempotently, one per `risk_tag`, and are read-only.** `seed_default_templates()` runs at startup like `seed_filters()`. Each default has `profile_risk_tag` in `Conservative | Balanced | Growth | Aggressive` so `suggest_default_template` is a lookup into the seed, not a second parallel dict. Defaults cannot be edited or deleted — applying one that you want to tweak **clones** it into a new owned template. See **P1**, **P5**, **P6**.
+
+- **Quality bar: defaults must actually discriminate.** Before ship, each default has (a) a one-paragraph thesis (who it is for, which axes, why those columns), (b) equations using real `StockMaster` fields only, (c) a fixture ranking test (e.g. a high-quality compounder outranks a leveraged speculative name on Conservative). Cute labels without working math do not ship. See **P16**.
+
+- **First-run apply is automatic; owned templates win thereafter.** If the user has a completed profile and **zero owned templates**, MainPage applies the matching default (incomplete profile → Balanced). If they have any owned template, use last-applied / most recently updated owned template. Changing the investor profile later does **not** swap the active view. This is the allowed exception to feature 01's P7. See **P15**.
 
 - **Ownership and visibility are enforced server-side.** Users can only edit/delete templates they own. Public templates are visible to everyone but read-only to non-owners; "using" someone's public template **clones** it rather than mutating the original. See **P4**, **P7**.
 
@@ -252,11 +258,33 @@ def create_template():
 
 ```python
 # server/app/services/template_seed.py  (idempotent, called at startup like seed_filters)
+# One default per InvestorProfile.risk_tag. Names/equations below are sketches —
+# replace with the reviewed thesis + ranking-tested config before seed ships.
 DEFAULT_TEMPLATES = [
-    {"name": "The Warren Buffett Value Setup", "description": "Weights moat, FCF, and low leverage.", "config": {...}},
-    {"name": "High-Risk Tech",                 "description": "Heavily weights growth and momentum.", "config": {...}},
-    {"name": "Dividend Income",                "description": "Prioritizes yield and stability.",     "config": {...}},
-    {"name": "Balanced Starter",               "description": "Even weighting across all axes.",      "config": {...}},
+    {
+        "name": "Stability First",
+        "profile_risk_tag": "Conservative",
+        "description": "Favors balance-sheet strength, modest valuation, and durable cash return over growth.",
+        "config": { "radar": { ... }, "visible_columns": [...] },
+    },
+    {
+        "name": "Balanced Core",
+        "profile_risk_tag": "Balanced",
+        "description": "Even mix of valuation, growth, and stability — the fallback when profile is incomplete.",
+        "config": { "radar": { ... }, "visible_columns": [...] },
+    },
+    {
+        "name": "Growth Tilt",
+        "profile_risk_tag": "Growth",
+        "description": "Weights earnings/revenue growth and reinvestment returns; valuation via PEG/sales, not deep value.",
+        "config": { "radar": { ... }, "visible_columns": [...] },
+    },
+    {
+        "name": "High Conviction Growth",
+        "profile_risk_tag": "Aggressive",
+        "description": "Sector-relative growth and momentum; accepts higher volatility for upside.",
+        "config": { "radar": { ... }, "visible_columns": [...] },
+    },
 ]
 
 def seed_default_templates():
@@ -264,7 +292,13 @@ def seed_default_templates():
         if not AnalysisTemplate.query.filter_by(name=spec["name"], is_default=True).first():
             db.session.add(AnalysisTemplate(is_default=True, creator_id=None, **_to_columns(spec)))
     db.session.commit()
+
+def default_for_risk_tag(risk_tag: str | None) -> AnalysisTemplate:
+    """Balanced if tag missing/unknown. Used by suggest_default_template + first-run apply."""
+    ...
 ```
+
+`personalization.suggest_default_template` becomes a thin wrapper over `default_for_risk_tag` so feature 01 tests keep passing against the seeded configs.
 
 ---
 
@@ -342,12 +376,19 @@ The community list can be sorted by stars, by verified return, or by recency, an
 ### P14 — Starring is read-only with respect to template config
 Liking/unliking a template never mutates its `config`, ownership, or visibility. A star is purely a social annotation; it can't alter what the template does or who controls it.
 
+### P15 — Profile default applies only until the user has their own set
+On MainPage load: completed profile + zero owned templates → apply `default_for_risk_tag(profile.risk_tag)`. Incomplete/unknown profile → Balanced default. Once the user owns at least one template (saved or cloned), the active view is last-applied / most recently updated owned template. Updating the investor profile later never silently swaps the active template.
+
+### P16 — Seeded defaults are reviewed, not placeholders
+Each default has a written thesis, uses only real `StockMaster` fields, and passes a fixture ranking test for that `risk_tag`. A template that cannot separate a quality name from a speculative one on Conservative (or the inverse on Aggressive) does not ship.
+
 ---
 
 ## 5. Resolved decisions (confirmed)
 
 1. **Store full config** (`radar` + `visible_columns`) in a new `config` JSON; retain `equations` for back-compat.
-2. **3–4 idempotently-seeded read-only defaults**; editing a default clones it.
-3. **Ownership-guarded CRUD; public = read-only to non-owners; "use" = clone.**
-4. **Community performance gated on verified brokerage data** (feature 10) — schema link reserved, UI shows nothing until real data exists.
-5. **Stars** (`TemplateStar` + denormalized `star_count`) provide a social popularity signal; the community feed is sortable by **stars / verified return / newest**. Stars and verified return are two independent credibility signals shown side by side.
+2. **Four idempotently-seeded read-only defaults, one per `risk_tag`**; editing a default clones it. Quality review is part of definition of done.
+3. **First-run auto-apply of the profile match; owned templates always win after that** (feature 01 P7 exception, documented there).
+4. **Ownership-guarded CRUD; public = read-only to non-owners; "use" = clone.**
+5. **Community performance gated on verified brokerage data** (feature 10) — schema link reserved, UI shows nothing until real data exists.
+6. **Stars** (`TemplateStar` + denormalized `star_count`) provide a social popularity signal; the community feed is sortable by **stars / verified return / newest**. Stars and verified return are two independent credibility signals shown side by side.

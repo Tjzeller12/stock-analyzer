@@ -37,6 +37,7 @@ __pycache__/
 # Secrets / auth debug artifacts (never commit)
 token.json
 login_response.json
+*.secrets.local.txt
 
 # Database files
 *.db

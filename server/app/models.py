@@ -18,6 +18,9 @@ class User(db.Model):
     budget = db.Column(db.Float)
     risk_tolerance_score = db.Column(db.Float)
     time_created = db.Column(db.DateTime, default=datetime.utcnow)
+    tier = db.Column(db.String(20), nullable=False, default='free')
+    alphabot_daily_uses = db.Column(db.Integer, default=0, nullable=False)
+    alphabot_last_use_date = db.Column(db.Date, nullable=True)
     def to_dict(self):
         return {
             'username' : self.username,
@@ -29,6 +32,8 @@ class User(db.Model):
     #relationships
     portfolio = db.relationship('Portfolio', backref='owner', uselist=False, cascade='all, delete-orphan')
     investor_profile = db.relationship('InvestorProfile', backref='user', uselist=False, cascade='all, delete-orphan')
+    brokerage_connections = db.relationship('BrokerageConnection', backref='user', cascade='all, delete-orphan')
+    performance_snapshots = db.relationship('PerformanceSnapshot', backref='user', cascade='all, delete-orphan')
 
     #Represent with the users username
     def __repr__(self):
@@ -167,7 +172,12 @@ class StockMaster(db.Model):
     ai_news_summary = db.Column(db.Text)
     ai_moat_score = db.Column(db.Float)         
     ai_moat_summary = db.Column(db.Text)
-    
+
+    # --- Scoring inputs: signs that decide whether a ratio means anything ---
+    # (planning/14-radar-scoring-refinement/phase-1-design.md §3.1)
+    eps_ttm = db.Column(db.Float)   # diluted EPS, trailing twelve months
+    ebitda = db.Column(db.Float)    # trailing twelve months
+
     # --- Update Tracking ---
     last_stock_update = db.Column(db.DateTime)      
     last_fundamental_update = db.Column(db.DateTime) 
@@ -176,6 +186,9 @@ class StockMaster(db.Model):
     income_statement_history = db.Column(db.JSON) 
     cash_flow_history = db.Column(db.JSON)
     news_sentiment_data = db.Column(db.JSON)
+    # Kept so later metrics can be derived without calling the provider again.
+    overview_raw = db.Column(db.JSON)
+    balance_sheet_history = db.Column(db.JSON)
 
     # --- Relationships ---
     news = db.relationship('StockNews', backref='stock', uselist=False, cascade='all, delete-orphan') # One to one relationship with news table
@@ -336,6 +349,102 @@ class MarketStats(db.Model):
             'last_updated': self.last_updated.isoformat() if self.last_updated else None
         }
 
+# --- Brokerage import (feature 10) ---
+
+# A read-only connection to a brokerage via an aggregator (SnapTrade now, Plaid
+# later). The aggregator secret is stored ENCRYPTED and is never serialized (P2).
+class BrokerageConnection(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.String(32), db.ForeignKey('user.id'), nullable=False)
+    provider = db.Column(db.String(40), nullable=False)        # 'snaptrade' | 'plaid'
+    brokerage_name = db.Column(db.String(80))                  # e.g. 'Robinhood' (discovered on sync)
+    provider_user_ref = db.Column(db.String(120))             # aggregator user/item id
+    access_token_enc = db.Column(db.LargeBinary)              # encrypted aggregator secret; never returned
+    status = db.Column(db.String(20), default='pending')      # pending | active | error | revoked
+    last_synced = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    holdings = db.relationship('Holding', backref='connection', cascade='all, delete-orphan')
+
+    def __repr__(self):
+        return f'<BrokerageConnection user={self.user_id} provider={self.provider} status={self.status}>'
+
+    def to_dict(self):
+        # Deliberately omits access_token_enc / provider_user_ref (P2).
+        return {
+            'id': self.id,
+            'provider': self.provider,
+            'brokerage_name': self.brokerage_name,
+            'status': self.status,
+            'last_synced': self.last_synced.isoformat() if self.last_synced else None,
+        }
+
+
+# A single reconciled position. Only quantity + cost basis are broker-specific;
+# live price/metrics come from StockMaster (symbol ingested on sync) (P6).
+class Holding(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    connection_id = db.Column(db.Integer, db.ForeignKey('brokerage_connection.id'), nullable=False)
+    symbol = db.Column(db.String(12), nullable=False)
+    quantity = db.Column(db.Float)
+    avg_cost = db.Column(db.Float)                            # per-share cost basis from broker
+    __table_args__ = (db.UniqueConstraint('connection_id', 'symbol', name='uq_holding_connection_symbol'),)
+
+    def __repr__(self):
+        return f'<Holding {self.symbol} x{self.quantity} conn={self.connection_id}>'
+
+    def to_dict(self, current_price=None):
+        """Performance fields are derived from broker cost basis only (P5).
+        `current_price` is supplied by the caller from StockMaster."""
+        qty = self.quantity or 0.0
+        avg = self.avg_cost or 0.0
+        cost_basis = qty * avg
+        price = current_price if current_price is not None else None
+        market_value = (qty * price) if price is not None else None
+        unrealized = (market_value - cost_basis) if market_value is not None else None
+        unrealized_pct = (
+            (unrealized / cost_basis * 100.0) if (unrealized is not None and cost_basis) else None
+        )
+        return {
+            'symbol': self.symbol,
+            'quantity': qty,
+            'avg_cost': avg,
+            'current_price': price,
+            'market_value': market_value,
+            'cost_basis': cost_basis,
+            'unrealized_pnl': unrealized,
+            'unrealized_pnl_pct': unrealized_pct,
+        }
+
+
+# A point-in-time snapshot of a user's real performance. Only created from a
+# verified, synced connection (P5/P8). `is_public` gates community visibility (P7).
+class PerformanceSnapshot(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.String(32), db.ForeignKey('user.id'), nullable=False)
+    total_value = db.Column(db.Float)
+    total_cost_basis = db.Column(db.Float)
+    total_return = db.Column(db.Float)
+    total_return_pct = db.Column(db.Float)
+    is_public = db.Column(db.Boolean, default=False)
+    template_id = db.Column(db.Integer, db.ForeignKey('analysis_template.id'), nullable=True)
+    captured_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f'<PerformanceSnapshot user={self.user_id} return%={self.total_return_pct}>'
+
+    def to_dict(self):
+        return {
+            'total_value': self.total_value,
+            'total_cost_basis': self.total_cost_basis,
+            'total_return': self.total_return,
+            'total_return_pct': self.total_return_pct,
+            'is_public': self.is_public,
+            'template_id': self.template_id,
+            'captured_at': self.captured_at.isoformat() if self.captured_at else None,
+        }
+
+
 class AnalysisTemplate(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
@@ -349,19 +458,40 @@ class AnalysisTemplate(db.Model):
     #   ...
     # }
     equations = db.Column(db.JSON, nullable=False)
-    
+    # Full applyable view: { radar: RadarTemplate, visible_columns: [...] }
+    config = db.Column(db.JSON)
+    # Set on seeded defaults so first-run can look up by InvestorProfile.risk_tag.
+    profile_risk_tag = db.Column(db.String(32), nullable=True)
+
     is_default = db.Column(db.Boolean, default=False)
     time_created = db.Column(db.DateTime, default=datetime.utcnow)
     def __repr__(self):
         return f'<AnalysisTemplate {self.name}>'
-        
-    def to_dict(self):
+
+    def resolved_config(self):
+        if self.config:
+            return self.config
         return {
-            'id': self.id,
-            'name': self.name,
-            'description': self.description,
-            'equations': self.equations,
-            'is_default': self.is_default
+            "radar": {
+                "name": self.name,
+                "scope": "global",
+                "equations": self.equations or {},
+            },
+            "visible_columns": [],
+        }
+
+    def to_dict(self, current_user_id=None):
+        config = self.resolved_config()
+        return {
+            "id": self.id,
+            "name": self.name,
+            "description": self.description,
+            "equations": (config.get("radar") or {}).get("equations") or self.equations,
+            "config": config,
+            "is_default": self.is_default,
+            "is_owner": bool(current_user_id and self.creator_id == current_user_id),
+            "profile_risk_tag": self.profile_risk_tag,
+            "time_created": self.time_created.isoformat() if self.time_created else None,
         }
     
     

@@ -209,10 +209,12 @@ class TestPersonalizationService:
         with app.app_context():
             user = self._make_user_with_profile(suffix="tpl", risk_tag="Aggressive")
             t1 = suggest_default_template(user.investor_profile)
-            t1["equations"]["Growth"] = "MUTATED"
+            # Any axis will do -- the point is isolation, not which axis exists.
+            axis = next(iter(t1["equations"]))
+            t1["equations"][axis] = "MUTATED"
             t2 = suggest_default_template(user.investor_profile)
             # Mutating one result must not leak into the next (non-destructive, P7).
-            assert t2["equations"]["Growth"] != "MUTATED"
+            assert t2["equations"][axis] != "MUTATED"
 
     def test_suggest_template_unknown_falls_back(self, app):
         with app.app_context():

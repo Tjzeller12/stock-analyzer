@@ -20,7 +20,7 @@ const List = <T,>(props: ListProps<T>) => {
     return (
         <div>
             {props.filterDropProp && (
-                <div className="flex flex-col md:flex-row items-center justify-start gap-3 w-full bg-form-bg p-3 rounded-lg shadow-inner border border-border-main/10 mb-3">
+                <div className="flex flex-col md:flex-row items-center justify-start gap-3 w-full p-2.5 rounded-xl bg-black/5 dark:bg-black/30 shadow-inner border border-[var(--tg-hairline)] mb-3">
                     <FilterDropdown
                         filter={props.filterDropProp?.filter}
                         setFilter={props.filterDropProp?.setFilter}
@@ -28,10 +28,10 @@ const List = <T,>(props: ListProps<T>) => {
                     />
                 </div>
             )}
-            <div className="w-full rounded-lg overflow-hidden border border-border-main/10">
+            <div className="w-full rounded-xl overflow-hidden">
                 <div className="overflow-y-auto max-h-[950px] [scrollbar-color:var(--scrollbar-thumb)_transparent]">
                     {props.items.map((item, index) => (
-                        <div key={index} className={index % 2 === 0 ? "bg-even-row" : "bg-transparent"}>
+                        <div key={index}>
                             {props.renderItem(item)}
                         </div>
                     ))}

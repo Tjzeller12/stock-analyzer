@@ -1,6 +1,8 @@
-# Design — Brokerage Portfolio Import (Stretch)
+# Design — Brokerage Portfolio Import
 
-> **Status:** Design (stretch / exploratory) · **Owner:** TBD · **Last updated:** 2026-06-13
+> **Status:** Implemented on `brokerage-import` (PR) · **Owner:** Thomas · **Last updated:** 2026-08-27
+>
+> Live: SnapTrade read-only connect, holdings on MainPage as **My Portfolio** under Watchlist, performance from broker cost basis, disconnect purge. Community verified-return still waits on feature 08.
 >
 > Scope: let a user connect a brokerage (Robinhood, etc.) and pull in their **real holdings** read-only. Surface those holdings in a second table identical to the MainPage table (with per-holding radar charts and metrics), show their real-world **performance**, and feed a **community** section where users can see how people actually perform IRL alongside the analysis templates they used — giving credibility to those templates (ties to feature 08).
 >
@@ -247,7 +249,7 @@ Every holdings/performance view carries `last_synced`, and the UI flags data old
 
 ## 5. Open decisions (stretch — to confirm if/when prioritized)
 
-1. **Aggregator choice** — SnapTrade (retail-investing focused, supports Robinhood) vs. Plaid Investments. Affects scopes, pricing, and the link flow. *(Leaning SnapTrade for Robinhood coverage.)*
+1. **Aggregator choice** — ✅ **Confirmed: SnapTrade** (retail-investing focused, best Robinhood OAuth coverage, free tier covers build/demo). Implemented behind a `BrokerageProvider` interface (`services/brokerage/`) so **Plaid** can drop in later (stub in place) — add it when bank/cash linking is needed (funding / deterministic-portfolio share counts), not for broker coverage.
 2. **Holdings home** — a tab on MainPage vs. a dedicated `/holdings` route.
 3. **Sync cadence** — manual-only vs. periodic background sync (and rate/cost implications).
 4. **Leaderboard ranking + anonymization defaults** — opt-in granularity and how returns are normalized for fair comparison (time-weighted vs. simple).

@@ -1,6 +1,20 @@
 @import "tailwindcss";
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/jetbrains-mono";
+
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
 
 @theme {
+  --font-sans: "Inter Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, Menlo, monospace;
+
+  --color-signal-up: var(--signal-up);
+  --color-signal-down: var(--signal-down);
+  --color-signal-flat: var(--signal-flat);
+  --color-signal-text: var(--signal-text);
+  --color-ink-up: var(--ink-up);
+  --color-ink-down: var(--ink-down);
+
   --color-background: var(--background-color);
   --color-text-main: var(--text-color);
   --color-header-btn-text: var(--header-button-txt-color);
@@ -44,6 +58,33 @@
   --primary-green: #069042;
   --row-hover-color: rgba(157, 157, 157, 0.1);
   --button-bg-color: #06a94d;
+
+  /* Ticker Glass (planning/12-design-language) */
+  --signal-up: #2cff8f;
+  --signal-down: #ff4d5e;
+  --signal-flat: #ffb238;
+  --signal-text: #e9fff2;
+  --led-off: rgba(255, 255, 255, 0.07);
+  --led-pitch-sm: 2px;
+  --led-pitch-md: 3px;
+  --led-pitch-lg: 4px;
+  --led-pitch: var(--led-pitch-sm);
+
+  --ink-up: #07803c;
+  --ink-down: #d42c3d;
+
+  --tg-canvas: #e9eeeb;
+  --tg-glow-a: rgba(6, 144, 66, 0.22);
+  --tg-glow-b: rgba(255, 178, 56, 0.16);
+  --tg-glow-c: rgba(44, 255, 143, 0.14);
+  --tg-pane-tint: rgba(255, 255, 255, 0.55);
+  --tg-pane-top: rgba(255, 255, 255, 0.75);
+  --tg-pane-border: rgba(255, 255, 255, 0.7);
+  --tg-pane-highlight: rgba(255, 255, 255, 0.95);
+  --tg-pane-shadow: 0 24px 50px -28px rgba(10, 40, 25, 0.35);
+  --tg-pane-dot: rgba(6, 64, 31, 0.05);
+  --tg-sheen: rgba(255, 255, 255, 0.45);
+  --tg-hairline: rgba(10, 40, 25, 0.1);
 }
 
 .dark, [data-theme="dark"] {
@@ -66,13 +107,28 @@
   --llm-field-bg-color: #313131;
   --passwrd-reset-bg-color: #363636;
   --row-hover-color: rgba(255, 255, 255, 0.05);
+
+  --ink-up: #2ee88a;
+  --ink-down: #ff5d6c;
+
+  --tg-canvas: #030604;
+  --tg-glow-a: rgba(6, 144, 66, 0.5);
+  --tg-glow-b: rgba(255, 178, 56, 0.14);
+  --tg-glow-c: rgba(44, 255, 143, 0.16);
+  --tg-pane-tint: rgba(12, 20, 16, 0.55);
+  --tg-pane-top: rgba(255, 255, 255, 0.1);
+  --tg-pane-border: rgba(255, 255, 255, 0.1);
+  --tg-pane-highlight: rgba(255, 255, 255, 0.22);
+  --tg-pane-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.9);
+  --tg-pane-dot: rgba(255, 255, 255, 0.04);
+  --tg-sheen: rgba(255, 255, 255, 0.075);
+  --tg-hairline: rgba(255, 255, 255, 0.08);
 }
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-    sans-serif;
+  font-family: var(--font-sans);
+  background-color: var(--tg-canvas);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden; /* Prevent horizontal scrolling */
@@ -84,8 +140,183 @@ body {
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
-    monospace;
+  font-family: var(--font-mono);
+}
+
+/* ---------- Ticker Glass: canvas ---------- */
+
+/* City bokeh behind the glass. Panes are tinted, not live-blurred. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: -15%;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(38% 32% at 12% 8%, var(--tg-glow-a), transparent 70%),
+    radial-gradient(26% 26% at 88% 14%, var(--tg-glow-b), transparent 70%),
+    radial-gradient(34% 38% at 72% 88%, var(--tg-glow-c), transparent 70%),
+    radial-gradient(22% 22% at 28% 78%, var(--tg-glow-a), transparent 70%);
+}
+
+/* ---------- Ticker Glass: dot grid ---------- */
+
+.tg-pitch-sm { --led-pitch: var(--led-pitch-sm); }
+.tg-pitch-md { --led-pitch: var(--led-pitch-md); }
+.tg-pitch-lg { --led-pitch: var(--led-pitch-lg); }
+
+/*
+ * The unlit grid starts at the display's padding box and the lit-dot mask at
+ * the `.tg-led-layer` box. The layer must be the display's only child, with no
+ * display padding, so both grids share an origin. Avoid
+ * `background-attachment: fixed` here: it forces main-thread repaints on scroll.
+ */
+.tg-display {
+  position: relative;
+  border-radius: 12px;
+  color: var(--signal-text);
+  background:
+    radial-gradient(circle, var(--led-off) 0 calc(var(--led-pitch) * 0.36), transparent calc(var(--led-pitch) * 0.44))
+      0 0 / var(--led-pitch) var(--led-pitch),
+    linear-gradient(180deg, #07100b 0%, #020503 100%);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow:
+    inset 0 2px 8px rgba(0, 0, 0, 0.8),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.6),
+    0 1px 0 var(--tg-pane-highlight);
+}
+
+.tg-led-layer {
+  --led-mask: radial-gradient(circle, #000 0 calc(var(--led-pitch) * 0.44), transparent calc(var(--led-pitch) * 0.52))
+    0 0 / var(--led-pitch) var(--led-pitch);
+  position: relative;
+  -webkit-mask: var(--led-mask);
+  mask: var(--led-mask);
+  /* Glow after the mask so neighbouring dots stay dark. One layer — no
+   * duplicated ticker/DOM, which was fighting the compositor. */
+  filter: drop-shadow(0 0 3px rgba(233, 255, 242, 0.55));
+}
+
+/* Solid glyphs; the surrounding `.tg-led-layer` mask turns them into dots. */
+.tg-led {
+  --led-color: var(--signal-text);
+  font-family: var(--font-mono);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  line-height: 1.1;
+  color: var(--led-color);
+}
+.tg-led-up { --led-color: var(--signal-up); }
+.tg-led-down { --led-color: var(--signal-down); }
+.tg-led-flat { --led-color: var(--signal-flat); }
+
+.tg-live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 9999px;
+  background: var(--signal-up);
+  box-shadow: 0 0 6px var(--signal-up), 0 0 14px color-mix(in srgb, var(--signal-up) 60%, transparent);
+  animation: tg-pulse 2.4s ease-in-out infinite;
+}
+
+/* ---------- Ticker Glass: glass ---------- */
+
+.tg-pane {
+  position: relative;
+  border-radius: 20px;
+  border: 1px solid var(--tg-pane-border);
+  background:
+    linear-gradient(180deg, var(--tg-pane-top), transparent 38%),
+    radial-gradient(circle, var(--tg-pane-dot) 0 0.9px, transparent 1.3px) 0 0 / 4px 4px,
+    var(--tg-pane-tint);
+  box-shadow:
+    inset 0 1px 0 var(--tg-pane-highlight),
+    var(--tg-pane-shadow);
+}
+
+.tg-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: 9px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--text-color);
+  background: color-mix(in srgb, var(--text-color) 6%, transparent);
+  border: 1px solid var(--tg-pane-border);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 150ms ease, border-color 150ms ease, box-shadow 200ms ease, color 150ms ease;
+}
+.tg-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--text-color) 11%, transparent);
+  border-color: color-mix(in srgb, var(--primary-green) 55%, transparent);
+}
+.tg-btn:active:not(:disabled) { transform: translateY(1px); }
+.tg-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.tg-btn-primary {
+  color: #fff;
+  background: var(--primary-green);
+  border-color: color-mix(in srgb, var(--signal-up) 25%, transparent);
+}
+.tg-btn-primary:hover:not(:disabled) {
+  background: #0aa34c;
+  border-color: color-mix(in srgb, var(--signal-up) 50%, transparent);
+  box-shadow: 0 0 18px -6px color-mix(in srgb, var(--signal-up) 70%, transparent);
+}
+.tg-btn-primary:disabled {
+  opacity: 1;
+  color: color-mix(in srgb, var(--text-color) 45%, transparent);
+  background: color-mix(in srgb, var(--primary-green) 18%, transparent);
+  border-color: var(--tg-hairline);
+}
+
+.tg-input {
+  border-radius: 9px;
+  border: 1px solid var(--tg-hairline);
+  background: color-mix(in srgb, var(--text-color) 5%, transparent);
+  color: var(--text-color);
+  outline: none;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+.tg-input:focus, .tg-input:focus-within {
+  border-color: color-mix(in srgb, var(--primary-green) 70%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-green) 18%, transparent);
+}
+
+/* CodeMirror sits on the glass instead of its own theme background. */
+.tg-input .cm-editor, .tg-input .cm-gutters { background: transparent !important; }
+.tg-input .cm-editor.cm-focused { outline: none; }
+.tg-input .cm-content { font-family: var(--font-mono); }
+
+/* ---------- Ticker Glass: motion ---------- */
+
+.tg-marquee {
+  display: flex;
+  width: max-content;
+  animation: tg-marquee var(--tg-marquee-duration, 40s) linear infinite;
+  will-change: transform;
+}
+/* Paused from the display so the bloom copy and the lit copy stay in sync. */
+.tg-display:hover .tg-marquee { animation-play-state: paused; }
+
+@keyframes tg-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@keyframes tg-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tg-marquee, .tg-live-dot { animation: none; }
 }
 
 /* AG Grid Glass Theme Overrides */
@@ -93,12 +324,31 @@ code {
   --ag-background-color: transparent !important;
   --ag-row-background-color: transparent !important;
   --ag-odd-row-background-color: transparent !important;
-  --ag-header-background-color: var(--list-color) !important;
-  --ag-row-hover-color: var(--row-hover-color) !important;
+  --ag-header-background-color: transparent !important;
+  --ag-row-hover-color: color-mix(in srgb, var(--primary-green) 10%, transparent) !important;
   --ag-wrapper-border-color: transparent !important;
   --ag-borders: none !important;
-  --ag-font-family: inherit !important;
+  --ag-font-family: var(--font-mono) !important;
   --ag-data-color: var(--text-color) !important;
+}
+
+.ag-theme-quartz .ag-header {
+  border-bottom: 1px solid var(--tg-hairline) !important;
+}
+.ag-theme-quartz .ag-header-cell-text {
+  font-family: var(--font-sans);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+.ag-theme-quartz .ag-cell {
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+.ag-theme-quartz .ag-row {
+  border-bottom: 1px solid var(--tg-hairline) !important;
 }
 
 /* Force aggressive background transparency on wrappers to prevent Quartz default white blocking */
@@ -109,7 +359,7 @@ code {
 
 /* Replicate old zebra striping manually on the exact row classes */
 .ag-theme-quartz .ag-row-even, .ag-theme-quartz-dark .ag-row-even {
-  background-color: var(--even-row-color) !important;
+  background-color: transparent !important;
 }
 .ag-theme-quartz .ag-row-odd, .ag-theme-quartz-dark .ag-row-odd {
   background-color: transparent !important;

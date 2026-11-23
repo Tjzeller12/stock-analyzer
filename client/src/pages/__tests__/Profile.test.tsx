@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { ROUTER_FUTURE } from '../../constants/router';
 import Profile from '../Profile';
 import axios from 'axios';
 
@@ -13,7 +14,7 @@ vi.mock('react-router-dom', async (importOriginal) => {
 });
 
 const renderProfile = () =>
-  render(<MemoryRouter><Profile /></MemoryRouter>);
+  render(<MemoryRouter future={ROUTER_FUTURE}><Profile /></MemoryRouter>);
 
 describe('Profile Page', () => {
   beforeEach(() => {

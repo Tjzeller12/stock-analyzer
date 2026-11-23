@@ -1,6 +1,6 @@
 # Requirements — Search Autocomplete
 
-> Derived from `design.md`. Property tags reference design Correctness Properties.
+> Shipped as live remote search. Criteria below describe the optional local-index design.
 
 ---
 
